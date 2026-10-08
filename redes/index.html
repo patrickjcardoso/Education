@@ -92,7 +92,10 @@
       box-shadow: var(--shadow); text-decoration: none;
       transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
-    .lesson:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 15px 36px rgb(20 38 70 / 12%); }
+    a.lesson:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 15px 36px rgb(20 38 70 / 12%); }
+    .lesson-disabled { opacity: .58; box-shadow: none; cursor: not-allowed; }
+    .lesson-disabled .status-unavailable { background: var(--surface-subtle); color: var(--muted); border: 1px solid var(--border); }
+    .lesson-disabled .lesson-link { color: var(--muted); }
     .lesson-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .lesson-number { color: var(--muted); font-size: .8rem; font-weight: 750; letter-spacing: .05em; }
     .status { background: var(--success-bg); color: var(--success-text); font-size: .72rem; padding: 3px 9px; border-radius: 99px; font-weight: 750; }
@@ -150,34 +153,34 @@
       <a class="brand" href="../" aria-label="Início do portal">PORTAL / ADS</a>
       <nav class="topnav" aria-label="Navegação principal"><a href="../">Início</a><a href="../redes/">Fundamentos de Redes</a><a href="../cyberseguranca/">Cybersegurança</a></nav>
     </div></div>
-    <div class="hero"><div class="container"><div class="eyebrow">Disciplina 01</div><h1>Fundamentos de Redes de Computadores</h1><p>Conceitos fundamentais, comunicação, OSI/TCP-IP, transmissão, enlace e roteamento. Acompanhe as aulas na sequência sugerida.</p><div class="hero-meta"><span>ADS</span><span>6 aulas disponíveis</span></div></div></div>
+    <div class="hero"><div class="container"><div class="eyebrow">Disciplina 01</div><h1>Fundamentos de Redes de Computadores</h1><p>Conceitos fundamentais, comunicação, OSI/TCP-IP, transmissão, enlace e roteamento. Acompanhe as aulas na sequência sugerida.</p><div class="hero-meta"><span>ADS</span><span>1 aula disponível</span></div></div></div>
   </header>
   <main id="conteudo" class="container"><nav class="breadcrumb" aria-label="Caminho de navegação"><a href="../">Início</a> / Fundamentos de Redes de Computadores</nav>
-<div class="layout"><section id="aulas" aria-labelledby="aulas-titulo"><div class="section-head"><div><h2 id="aulas-titulo">Trilha de aulas</h2><p class="section-desc">Escolha uma aula para abrir o conteúdo.</p></div><span id="result-count" class="count" aria-live="polite">6 aulas</span></div>
+<div class="layout"><section id="aulas" aria-labelledby="aulas-titulo"><div class="section-head"><div><h2 id="aulas-titulo">Trilha de aulas</h2><p class="section-desc">A Aula 06 está disponível. As demais serão publicadas posteriormente.</p></div><span id="result-count" class="count" aria-live="polite">6 aulas</span></div>
 <label for="lesson-search" class="visually-hidden" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Buscar aula</label>
 <input id="lesson-search" class="search" type="search" placeholder="Buscar aula ou assunto..." autocomplete="off" aria-controls="lesson-list">
         <div class="cards" id="lesson-list">
-          <a class="lesson" href="../01-introducao/" data-search="01 introducao redes computadores conceitos dispositivos topologias">
-            <div class="lesson-top"><span class="lesson-number">AULA 01</span><span class="status">Disponível</span></div>
-            <h3>Introdução a Redes de Computadores</h3><p>Conceitos básicos, dispositivos e tipos de rede.</p><span class="lesson-link">Acessar aula →</span>
-          </a>
-          <a class="lesson" href="../02-como-funcionam/" data-search="02 como redes funcionam pratica comunicacao pacotes protocolos">
-            <div class="lesson-top"><span class="lesson-number">AULA 02</span><span class="status">Disponível</span></div>
-            <h3>Como as Redes Funcionam na Prática</h3><p>Troca de dados, pacotes e protocolos de comunicação.</p><span class="lesson-link">Acessar aula →</span>
-          </a>
-          <a class="lesson" href="../03-modelos-osi-tcpip/" data-search="03 modelos osi tcp ip camadas encapsulamento">
-            <div class="lesson-top"><span class="lesson-number">AULA 03</span><span class="status">Disponível</span></div>
-            <h3>Modelos OSI e TCP/IP</h3><p>Camadas, funções e encapsulamento de dados.</p><span class="lesson-link">Acessar aula →</span>
-          </a>
-          <a class="lesson" href="../04-camada-fisica/" data-search="04 camada fisica cabos sinais meios transmissao">
-            <div class="lesson-top"><span class="lesson-number">AULA 04</span><span class="status">Disponível</span></div>
-            <h3>Camada Física</h3><p>Sinais, cabeamento e meios de transmissão.</p><span class="lesson-link">Acessar aula →</span>
-          </a>
-          <a class="lesson" href="../05-camada-de-enlace/" data-search="05 camada enlace quadros mac ethernet switches">
-            <div class="lesson-top"><span class="lesson-number">AULA 05</span><span class="status">Disponível</span></div>
-            <h3>Camada de Enlace</h3><p>Quadros, endereços MAC, Ethernet e switches.</p><span class="lesson-link">Acessar aula →</span>
-          </a>
-          <a class="lesson" href="../06-camada-de-redes/" data-search="06 camada rede ip roteadores roteamento enderecamento">
+          <article class="lesson lesson-disabled" data-search="01 introducao redes computadores conceitos dispositivos topologias">
+            <div class="lesson-top"><span class="lesson-number">AULA 01</span><span class="status status-unavailable">Em breve</span></div>
+            <h3>Introdução a Redes de Computadores</h3><p>Conceitos básicos, dispositivos e tipos de rede.</p><span class="lesson-link">Conteúdo indisponível</span>
+          </article>
+          <article class="lesson lesson-disabled" data-search="02 como redes funcionam pratica comunicacao pacotes protocolos">
+            <div class="lesson-top"><span class="lesson-number">AULA 02</span><span class="status status-unavailable">Em breve</span></div>
+            <h3>Como as Redes Funcionam na Prática</h3><p>Troca de dados, pacotes e protocolos de comunicação.</p><span class="lesson-link">Conteúdo indisponível</span>
+          </article>
+          <article class="lesson lesson-disabled" data-search="03 modelos osi tcp ip camadas encapsulamento">
+            <div class="lesson-top"><span class="lesson-number">AULA 03</span><span class="status status-unavailable">Em breve</span></div>
+            <h3>Modelos OSI e TCP/IP</h3><p>Camadas, funções e encapsulamento de dados.</p><span class="lesson-link">Conteúdo indisponível</span>
+          </article>
+          <article class="lesson lesson-disabled" data-search="04 camada fisica cabos sinais meios transmissao">
+            <div class="lesson-top"><span class="lesson-number">AULA 04</span><span class="status status-unavailable">Em breve</span></div>
+            <h3>Camada Física</h3><p>Sinais, cabeamento e meios de transmissão.</p><span class="lesson-link">Conteúdo indisponível</span>
+          </article>
+          <article class="lesson lesson-disabled" data-search="05 camada enlace quadros mac ethernet switches">
+            <div class="lesson-top"><span class="lesson-number">AULA 05</span><span class="status status-unavailable">Em breve</span></div>
+            <h3>Camada de Enlace</h3><p>Quadros, endereços MAC, Ethernet e switches.</p><span class="lesson-link">Conteúdo indisponível</span>
+          </article>
+          <a class="lesson" href="./06-Camada-de-rede/" data-search="06 camada rede ip roteadores roteamento enderecamento">
             <div class="lesson-top"><span class="lesson-number">AULA 06</span><span class="status">Disponível</span></div>
             <h3>Camada de Rede</h3><p>Endereçamento IP, roteadores e roteamento.</p><span class="lesson-link">Acessar aula →</span>
           </a>
