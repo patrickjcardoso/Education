@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camada de Rede · Protocolo IP e Endereçamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — Camada de Rede / ADS
+   Paleta herdada do material da disciplina (navy/azul/dourado), elevada
+   para um tema "dark-tech" premium. Ajuste as variáveis abaixo para
+   recustomizar toda a apresentação de uma vez.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12;
+  --bg-2:#0c131d;
+  --surface:#121b27;
+  --surface-2:#182434;
+  --border:#223049;
+  --border-soft:#1a2436;
+  --text:#eef3f8;
+  --text-dim:#9fb0c3;
+  --text-faint:#5c7080;
+  --blue:#2fb0e8;
+  --blue-dim:#12719e;
+  --navy:#0b3556;
+  --gold:#f2a93b;
+  --green:#36c58f;
+  --red:#ef5b5b;
+  --mono:'JetBrains Mono', monospace;
+  --sans:'Inter', sans-serif;
+  --disp:'Sora', sans-serif;
+  --radius:16px;
+  --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+
+/* background texture: soft grid + glow */
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;
+}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--blue); font-weight:600; display:flex; align-items:center; gap:.6em; margin-bottom:.8rem;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:66ch; line-height:1.5;}
+.accent{color:var(--gold);}
+.accent-b{color:var(--blue);}
+.accent-g{color:var(--green);}
+
+/* numbering + progress */
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+
+/* dot nav */
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px; max-height:84vh; overflow:visible;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease); flex-shrink:0;}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+/* reveal animation */
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;}
+.delay-4{transition-delay:.32s;} .delay-5{transition-delay:.40s;} .delay-6{transition-delay:.48s;}
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p{color:var(--text-dim); font-size:.84rem; line-height:1.48;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.2rem;
+  cursor:pointer; transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn:active{transform:translateY(0);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+
+.pill{display:inline-flex; align-items:center; gap:.4em; font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:99px; border:1px solid var(--border); color:var(--text-dim);}
+.pill.on{color:var(--gold); border-color:rgba(242,169,59,.4); background:rgba(242,169,59,.08);}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue);}
+
+/* ============================= SLIDE 1 — CAPA ========================= */
+#s-capa{align-items:flex-start; justify-content:center;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.14);
+  font-size:1.1rem; line-height:1.7; letter-spacing:.3em; text-align:right; user-select:none; pointer-events:none;}
+
+/* ============================= SUMÁRIO ================================ */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{padding:.28rem 0 !important;} .toc a .t{font-size:.8rem !important;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.4rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.78rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.88rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= PACKET JOURNEY (genérico) =============== */
+.journey{position:relative; height:230px; margin-top:1rem;}
+.j-track{position:absolute; left:4%; right:4%; top:98px; height:2px; background:repeating-linear-gradient(90deg,var(--border) 0 8px, transparent 8px 14px);}
+.j-node{position:absolute; top:52px; width:92px; text-align:center;}
+.j-node .box{width:62px; height:62px; margin:0 auto .4rem; border-radius:14px; background:var(--surface-2); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:1.5rem; position:relative;}
+.j-node.lan .box{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.08);}
+.j-node.router .box{border-color:rgba(242,169,59,.4); background:rgba(242,169,59,.08);}
+.j-node .lbl{font-family:var(--mono); font-size:.68rem; color:var(--text-dim);}
+.j-packet{position:absolute; top:80px; width:54px; height:36px; left:10%; border-radius:8px; background:linear-gradient(180deg,var(--blue),var(--blue-dim));
+  display:flex; align-items:center; justify-content:center; font-size:1.05rem; box-shadow:0 6px 20px rgba(47,176,232,.4); transition:left 1.1s var(--ease); z-index:3;}
+.j-ip-banner{margin-top:1.5rem; display:flex; justify-content:center;}
+.j-ip-banner .box{font-family:var(--mono); font-size:.82rem; padding:.6rem 1.3rem; border-radius:10px; border:1px solid rgba(242,169,59,.4); background:rgba(242,169,59,.07); color:var(--gold); transition:box-shadow .3s;}
+.j-ip-banner .box.pulse{box-shadow:0 0 0 6px rgba(242,169,59,.16);}
+.j-mac-caption{text-align:center; margin-top:.7rem; min-height:2.4em; color:var(--text-dim); font-size:.86rem;}
+.j-mac-caption b{color:var(--text); font-family:var(--mono); font-weight:600;}
+.j-arp-line{text-align:center; margin-top:.3rem; min-height:1.4em; color:var(--green); font-size:.78rem; font-family:var(--mono);}
+.j-controls{display:flex; gap:.7rem; justify-content:center; margin-top:.9rem;}
+
+/* ============================= IPV4 HEADER ============================= */
+.hdr-wrap{display:grid; grid-template-columns:1.5fr 1fr; gap:1.4rem; align-items:start;}
+.hdr-grid{border:1px solid var(--border); border-radius:12px; overflow:hidden;}
+.hdr-row{display:flex; border-bottom:1px solid var(--border);}
+.hdr-row:last-child{border-bottom:none;}
+.hfield{flex:0 0 auto; padding:.5rem .5rem; border-right:1px solid var(--border); cursor:pointer; text-align:center;
+  font-family:var(--mono); font-size:.7rem; color:var(--text-dim); background:var(--surface); transition:background .2s, color .2s;}
+.hfield:last-child{border-right:none;}
+.hfield b{display:block; font-size:.76rem; color:var(--text); font-weight:600; margin-bottom:.15rem;}
+.hfield:hover{background:var(--surface-2); color:var(--blue);}
+.hfield.active{background:rgba(47,176,232,.18); color:var(--blue); box-shadow:inset 0 0 0 1px var(--blue);}
+.hfield.opt{background:repeating-linear-gradient(135deg, rgba(242,169,59,.07) 0 8px, rgba(242,169,59,.12) 8px 16px); color:var(--gold);}
+
+.hdr-panel{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.3rem; min-height:260px;}
+.hdr-panel h4{font-family:var(--disp); color:var(--gold); font-size:1rem; margin-bottom:.15rem;}
+.hdr-panel .bits-tag{font-family:var(--mono); font-size:.72rem; color:var(--text-faint); margin-bottom:.8rem; display:block;}
+.hdr-panel dl{display:grid; grid-template-columns:auto 1fr; gap:.3rem 1rem; font-size:.83rem;}
+.hdr-panel dt{color:var(--text-faint); font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; padding-top:.15rem;}
+.hdr-panel dd{color:var(--text-dim); line-height:1.48;}
+.hdr-panel dd b{color:var(--text);}
+.hdr-empty{color:var(--text-faint); font-size:.88rem; display:flex; align-items:center; gap:.6em; height:100%;}
+
+/* ============================= BIT VISUALIZER ========================== */
+.octet-row{display:flex; gap:.5rem; margin-bottom:.5rem;}
+.octet{display:flex; gap:3px;}
+.bit{width:25px; height:32px; border-radius:5px; background:var(--surface-2); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:.78rem; color:var(--text-dim);
+  transition:background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease), transform .4s var(--ease);}
+.bit.net{background:rgba(47,176,232,.2); border-color:var(--blue); color:var(--blue);}
+.bit.host{background:rgba(242,169,59,.12); border-color:rgba(242,169,59,.4); color:var(--gold);}
+.bit.borrowed{background:rgba(54,197,143,.22); border-color:var(--green); color:var(--green); transform:scale(1.08);}
+.bit.toggle{cursor:pointer;}
+.bit.toggle:hover{transform:scale(1.1); border-color:var(--blue);}
+.octet-label{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-align:center; margin-top:.2rem; width:100%;}
+.octets-wrap .octet{flex-direction:column;}
+.octet-group{display:flex; flex-direction:column; align-items:center; gap:.3rem;}
+.octet-dec{font-family:var(--mono); font-weight:700; font-size:1rem; color:var(--text); min-width:2.4em; text-align:center;}
+
+.subnets-row{display:flex; gap:.6rem; margin-top:1.1rem;}
+.subnet-block{flex:1; border-radius:10px; padding:.65rem; text-align:center; border:1px solid var(--border); background:var(--surface);
+  opacity:0; transform:translateY(10px); transition:all .45s var(--ease); font-family:var(--mono);}
+.subnet-block.show{opacity:1; transform:translateY(0);}
+.subnet-block .id{font-size:.92rem; font-weight:700; margin-bottom:.15rem;}
+.subnet-block .rng{font-size:.68rem; color:var(--text-faint);}
+.subnet-block:nth-child(1){border-color:var(--navy); color:var(--blue);}
+.subnet-block:nth-child(2){border-color:var(--blue-dim); color:var(--blue);}
+.subnet-block:nth-child(3){border-color:var(--green); color:var(--green);}
+.subnet-block:nth-child(4){border-color:var(--gold); color:var(--gold);}
+
+/* ============================= CIDR CALCULATOR ========================== */
+.calc-wrap{display:grid; grid-template-columns:1fr 1.3fr; gap:2rem; align-items:center;}
+.calc-slider-box{text-align:center;}
+.calc-prefix{font-family:var(--mono); font-size:3.2rem; font-weight:700; color:var(--blue);}
+input[type=range]{width:100%; accent-color:var(--blue); margin-top:1rem;}
+.calc-results{display:grid; grid-template-columns:1fr 1fr; gap:.7rem;}
+.calc-stat{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:.75rem .9rem;}
+.calc-stat .lbl{font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint);}
+.calc-stat .val{font-family:var(--mono); font-size:1.2rem; font-weight:700; color:var(--text); margin-top:.2rem;}
+
+/* ============================= DORA SIMULATOR ============================ */
+.dora-stage{position:relative; height:210px;}
+.dora-box{position:absolute; top:0; width:170px; border-radius:12px; padding:.85rem 1rem; border:1px solid var(--border); background:var(--surface-2); text-align:center;}
+.dora-box.client{left:0;} .dora-box.server{right:0;}
+.dora-box .lbl{font-family:var(--disp); font-weight:700; font-size:.92rem;}
+.dora-box .state{font-family:var(--mono); font-size:.72rem; color:var(--text-dim); margin-top:.4rem; min-height:2.5em; transition:color .3s;}
+.dora-box.lit{border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.16);}
+.dora-line{position:absolute; top:38px; left:185px; right:185px; height:2px; background:var(--border);}
+.dora-arrow{position:absolute; top:29px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:1rem;
+  color:var(--bg); background:var(--gold); border-radius:50%; opacity:0; transition:left 1s var(--ease), opacity .3s;}
+.dora-msg{position:absolute; top:54px; left:185px; right:185px; text-align:center; font-family:var(--mono); font-size:.8rem; color:var(--text-dim); min-height:2.8em;}
+.dora-msg b{color:var(--gold);}
+.dora-steps{display:flex; justify-content:center; gap:.5rem; margin-top:1.2rem;}
+.dora-step-pill{font-family:var(--mono); font-size:.68rem; padding:.3rem .65rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint);}
+.dora-step-pill.active{color:var(--gold); border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.08);}
+.dora-step-pill.done{color:var(--green); border-color:rgba(54,197,143,.4);}
+.dora-controls{display:flex; justify-content:center; gap:.8rem; margin-top:1.1rem;}
+
+/* ============================= QUIZ ===================================== */
+.quiz-list{display:flex; flex-direction:column; gap:.55rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.7rem 1.05rem; cursor:pointer; gap:1rem;}
+.qcard .qhead .qtext{font-size:.86rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.64rem; color:var(--text-faint); flex-shrink:0;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:140px;}
+.qcard .qanswer{padding:0 1.05rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft); padding-top:.6rem; margin-top:0;}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= CTA / FIM ================================ */
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border);
+  background:var(--surface); margin-top:1.6rem;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+
+/* ============================= 5 CAMADAS (NOVO) ========================= */
+.layers-split{display:grid; grid-template-columns:230px 1fr; gap:2rem; align-items:center; margin-top:1rem;}
+.layer-stack{display:flex; flex-direction:column; gap:6px;}
+.layer{padding:.6rem .9rem; border-radius:9px; border:1px solid var(--border); background:var(--surface);
+  font-family:var(--mono); font-size:.78rem; color:var(--text-dim); text-align:center; transition:all .3s var(--ease);}
+.layer .pdu{display:block; font-size:.64rem; color:var(--text-faint); margin-top:.1rem;}
+.layer.highlight{background:rgba(47,176,232,.18); border-color:var(--blue); color:var(--blue); font-weight:700; transform:scale(1.045); box-shadow:0 0 22px rgba(47,176,232,.22);}
+.layer.highlight .pdu{color:var(--blue-dim);}
+
+/* ============================= ILUSTRAÇÃO ARP / CAM (NOVO) ============== */
+.arp-topo{display:flex; align-items:flex-start; justify-content:space-between; gap:.7rem; margin-top:1rem;}
+.arp-dev{flex:1; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem .7rem; text-align:center;}
+.arp-dev.sw{background:linear-gradient(180deg,var(--surface),rgba(242,169,59,.04));}
+.arp-ic{font-size:1.6rem; margin-bottom:.3rem;}
+.arp-name{font-family:var(--mono); font-size:.76rem; color:var(--text); font-weight:700; margin-bottom:.5rem;}
+table.arp-tbl{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.64rem;}
+table.arp-tbl th{color:var(--blue); border-bottom:1px solid var(--border); padding:.2rem; text-align:left;}
+table.arp-tbl.cam th{color:var(--gold);}
+table.arp-tbl td{color:var(--text-dim); padding:.2rem; border-bottom:1px solid var(--border-soft); text-align:left;}
+.arp-note{font-size:.6rem; color:var(--text-faint); margin-top:.45rem; line-height:1.4; font-style:italic;}
+.arp-warn{margin-top:1rem; font-size:.78rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.65rem .9rem;}
+.arp-warn b{color:var(--gold);}
+
+/* ============================= REFERÊNCIAS EXTERNAS (NOVO) ============== */
+.refs-box{margin-top:.9rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:.7rem .95rem;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.4rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.3rem;}
+.refs-box a{color:var(--text-dim); text-decoration:none; font-size:.78rem; display:flex; align-items:center; gap:.5em; transition:color .2s;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box a .ext{color:var(--text-faint); font-family:var(--mono); font-size:.68rem;}
+
+/* ============================= ANIMAÇÃO ARP AUTOMÁTICA (NOVO) =========== */
+.arp-anim-grid{display:grid; grid-template-columns:1fr 280px; gap:1.4rem; align-items:start; margin-top:.9rem;}
+.bcast-ring{position:absolute; left:50%; top:50%; width:10px; height:10px; margin:-5px 0 0 -5px; border-radius:50%;
+  border:2px solid var(--blue); opacity:0; pointer-events:none;}
+.bcast-ring.go{animation:bcastPulse 1s ease-out;}
+@keyframes bcastPulse{0%{width:10px; height:10px; margin:-5px 0 0 -5px; opacity:.85;} 100%{width:84px; height:84px; margin:-42px 0 0 -42px; opacity:0;}}
+.reply-dot{position:absolute; top:50%; width:10px; height:10px; margin-top:-5px; border-radius:50%; background:var(--green);
+  box-shadow:0 0 10px var(--green); opacity:0; transition:left .8s var(--ease), opacity .2s;}
+.arp-live{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.9rem 1rem;}
+.arp-live .al-title{font-family:var(--mono); font-size:.72rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;}
+.arp-live .al-device{font-family:var(--disp); font-weight:700; color:var(--gold); font-size:.95rem; margin-bottom:.6rem; min-height:1.3em;}
+table.arp-live-tbl{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.74rem;}
+table.arp-live-tbl th{text-align:left; color:var(--blue); border-bottom:1px solid var(--border); padding:.3rem .2rem;}
+table.arp-live-tbl td{padding:.35rem .2rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+.arp-row{opacity:0; transform:translateX(8px); transition:opacity .4s var(--ease), transform .4s var(--ease);}
+.arp-row.show{opacity:1; transform:translateX(0);}
+.arp-row.pending td{color:var(--text-faint); font-style:italic;}
+.arp-row.resolved td{color:var(--text);}
+.arp-row.resolved .st{color:var(--green);}
+.arp-row .st{font-weight:700;}
+.arp-row.flash td{animation:rowFlash .6s ease-out;}
+@keyframes rowFlash{0%{background:rgba(54,197,143,.3);} 100%{background:transparent;}}
+
+/* ============================= ROTEAMENTO SVG (NOVO) ===================== */
+.routing-wrap{margin-top:1rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1rem 1.1rem;}
+.routing-wrap svg{width:100%; height:auto; display:block;}
+.rt-path-alt{stroke:var(--border); stroke-width:2; stroke-dasharray:5 6; fill:none;}
+.rt-path-main{stroke:var(--blue); stroke-width:2.5; fill:none; opacity:.55;}
+.rt-node-rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1;}
+.rt-node-rect.src{stroke:rgba(54,197,143,.6);} .rt-node-rect.dst{stroke:rgba(242,169,59,.6);}
+.rt-label{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim);}
+.rt-label.strong{fill:var(--text); font-weight:700;}
+.rt-packet{fill:var(--blue); filter:drop-shadow(0 0 4px rgba(47,176,232,.7));}
+.rt-links line{stroke:var(--border); stroke-width:1.5; stroke-dasharray:4 5;}
+.rt-trail{fill:none; stroke-width:2.5; opacity:.5;} .rt-trail.p1{stroke:var(--blue);} .rt-trail.p2{stroke:var(--gold);} .rt-trail.p3{stroke:var(--green);}
+.rt-packet.p2{fill:var(--gold); filter:drop-shadow(0 0 4px rgba(242,169,59,.7));} .rt-packet.p3{fill:var(--green); filter:drop-shadow(0 0 4px rgba(54,197,143,.7));}
+.rt-node-rect.down{stroke:#e5484d; fill:rgba(229,72,77,.15);}
+.routing-legend span.lsw-g{color:var(--gold);} .routing-legend span.lsw-gr{color:var(--green);} .routing-legend{align-items:center; flex-wrap:wrap;}
+.routing-legend{display:flex; gap:1.3rem; justify-content:center; margin-top:.6rem; font-family:var(--mono); font-size:.72rem; color:var(--text-faint);}
+.routing-legend span.lsw{color:var(--blue);} .routing-legend span.lsw2{color:var(--text-faint);}
+
+/* ============================= ENCAPSULAMENTO (NOVO) ==================== */
+.pdu-who{margin-top:.8rem; font-family:var(--mono); font-size:.74rem; color:var(--gold); letter-spacing:.04em;}
+.pdu-strip.going-up .pdu-seg.active{border-color:var(--green); background:rgba(54,197,143,.1); color:var(--green);} .pdu-strip.going-up .pdu-seg.active b{color:var(--green);}
+.pdu-strip{display:flex; gap:.4rem; margin-top:.9rem;}
+.pdu-seg{flex:1; text-align:center; padding:.55rem .3rem; border-radius:9px; border:1px solid var(--border); background:var(--surface);
+  font-family:var(--mono); font-size:.72rem; color:var(--text-faint); transition:all .3s var(--ease);}
+.pdu-seg b{display:block; font-size:.8rem; color:var(--text-dim); font-weight:700;}
+.pdu-seg.active{border-color:var(--gold); background:rgba(242,169,59,.1); color:var(--gold);}
+.pdu-seg.active b{color:var(--gold);}
+.pdu-seg.done{border-color:rgba(54,197,143,.4); color:var(--green);}
+
+/* ============================= GATEWAY DECISION (NOVO) ================== */
+.gw-flow{display:flex; align-items:center; gap:1rem; margin-top:1rem; flex-wrap:wrap;}
+.gw-cond{font-family:var(--mono); font-size:.84rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:.8rem 1rem; flex:1; min-width:220px; color:var(--text-dim);}
+.gw-cond b{color:var(--text);}
+.gw-outs{display:flex; flex-direction:column; gap:.5rem; flex:1; min-width:220px;}
+.gw-out{font-family:var(--mono); font-size:.78rem; border-radius:10px; padding:.6rem .9rem; border:1px solid var(--border);}
+.gw-out.yes{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.08); color:var(--green);}
+.gw-out.no{border-color:rgba(242,169,59,.4); background:rgba(242,169,59,.08); color:var(--gold);}
+
+/* ============================= TIMELINE (NOVO) =========================== */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.95rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item:nth-child(3){border-color:var(--gold);}
+.tl-item:nth-child(3) .yr{color:var(--gold);}
+
+/* ============================= NAT — TRADUÇÃO AUTOMÁTICA (NOVO) ========== */
+.nat-wrap{display:grid; grid-template-columns:1fr auto 1fr; gap:1rem; align-items:center; margin-top:1rem;}
+.nat-private{display:flex; flex-direction:column; gap:.4rem;}
+.nat-row{display:flex; align-items:center; justify-content:space-between; gap:.6rem; background:var(--surface); border:1px solid var(--border-soft);
+  border-radius:9px; padding:.5rem .7rem; font-family:var(--mono); font-size:.72rem; color:var(--text-dim); opacity:.4; transition:all .4s var(--ease);}
+.nat-row .dev{display:flex; align-items:center; gap:.5em;}
+.nat-row.active{opacity:1; border-color:rgba(47,176,232,.4); background:rgba(47,176,232,.06);}
+.nat-row .arrow-st{color:var(--text-faint); font-size:.68rem;}
+.nat-row.active .arrow-st{color:var(--gold);}
+.nat-router{display:flex; flex-direction:column; align-items:center; gap:.3rem; font-family:var(--mono); font-size:.72rem; color:var(--text-dim);}
+.nat-router .box{width:60px; height:60px; border-radius:14px; background:var(--surface-2); border:1px solid rgba(242,169,59,.4);
+  display:flex; align-items:center; justify-content:center; font-size:1.5rem; transition:box-shadow .3s;}
+.nat-router .box.pulse{box-shadow:0 0 0 7px rgba(242,169,59,.18);}
+.nat-public{background:var(--surface); border:1px solid rgba(54,197,143,.4); border-radius:12px; padding:1rem; text-align:center;}
+.nat-public .lbl{font-family:var(--mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em;}
+.nat-public .ip{font-family:var(--mono); font-size:1.1rem; color:var(--green); font-weight:700; margin-top:.2rem;}
+
+/* ============================= IDENTIFICAÇÃO DE SUB-REDES (NOVO) ========= */
+.subid-wrap{position:relative; margin-top:.8rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.6rem;}
+.subid-wrap svg{width:100%; height:auto; display:block;}
+.si-line{stroke:var(--border); stroke-width:2;}
+.si-node{fill:var(--surface-2); stroke:var(--border); stroke-width:1;}
+.si-node.router{stroke:rgba(47,176,232,.5);}
+.si-ip{font-family:'JetBrains Mono', monospace; font-size:9.5px; fill:var(--gold); text-anchor:middle;}
+.si-label.host{fill:var(--text); font-weight:700; font-size:10.5px;}
+.si-label{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim); text-anchor:middle;}
+.si-zone{position:absolute; transform:translate(-50%,-50%); width:30px; height:30px; border-radius:50%; border:2px dashed var(--border);
+  background:rgba(7,11,18,.6); color:var(--text-faint); font-family:var(--mono); font-size:.7rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .3s var(--ease);}
+.si-zone:hover{border-color:var(--blue); color:var(--blue); transform:translate(-50%,-50%) scale(1.1);}
+.si-zone.found{border-style:solid; border-color:var(--green); background:rgba(54,197,143,.16); color:var(--green); width:auto; height:auto;
+  padding:.3rem .55rem; border-radius:8px; white-space:nowrap;}
+.subid-counter{text-align:center; font-family:var(--mono); font-size:.8rem; color:var(--text-dim); margin-top:.6rem;}
+.subid-counter b{color:var(--gold);}
+
+/* ============================= IPv6 (NOVO) ================================ */
+.v6-groups{display:flex; gap:.4rem; justify-content:center; flex-wrap:wrap; margin-top:1rem;}
+.v6-grp{font-family:var(--mono); font-size:1.05rem; font-weight:700; color:var(--text); background:var(--surface);
+  border:1px solid var(--border-soft); border-radius:8px; padding:.5rem .7rem; transition:all .4s var(--ease);}
+.v6-grp.dim{color:var(--text-faint); border-color:var(--border-soft);}
+.v6-grp.cut{color:var(--green); border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.08); text-decoration:line-through; opacity:.6;}
+.v6-grp.zero-run{color:var(--gold); border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.1);}
+.v6-bignum{font-family:var(--mono); text-align:center; color:var(--gold); font-weight:700; letter-spacing:.02em; line-height:1.3;
+  font-size:clamp(.8rem,1.6vw,1.15rem); word-break:break-all;}
+.v6-stat-row{display:flex; justify-content:center; gap:1.6rem; margin-top:.8rem; flex-wrap:wrap;}
+.v6-stat{text-align:center;}
+.v6-stat .n{font-family:var(--disp); font-weight:800; font-size:1.4rem; color:var(--blue);}
+.v6-stat .l{font-family:var(--mono); font-size:.68rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em;}
+.v6-invalid{margin-top:.8rem; font-family:var(--mono); font-size:.8rem; color:var(--red); background:rgba(239,91,91,.08);
+  border:1px solid rgba(239,91,91,.35); border-radius:10px; padding:.6rem .9rem;}
+.v6-invalid b{color:var(--red);}
+
+
+/* ===== Mão na massa (atividades práticas intercaladas) ===== */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; margin-left:.4rem; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.55rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+.hands-on .qcard.open .qbody{max-height:260px;}
+.hands-on .quiz-list{display:grid; gap:.5rem; margin-top:.4rem;}
+/* ===== Endereços privados ===== */
+.priv-svg-wrap{margin-top:.8rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.8rem 1rem;}
+.priv-svg-wrap svg{width:100%; height:auto; display:block; max-height:40vh;}
+.pz-priv{fill:rgba(54,197,143,.05); stroke:rgba(54,197,143,.5); stroke-width:1.5; stroke-dasharray:6 5;}
+.pz-pub{fill:rgba(47,176,232,.05); stroke:rgba(47,176,232,.5); stroke-width:1.5; stroke-dasharray:6 5;}
+.pv-box{fill:var(--surface-2); stroke:var(--border); stroke-width:1;}
+.pv-t{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim);} .pv-t.s{font-size:9px; fill:var(--text-faint);} .pv-t.g{fill:var(--green);} .pv-t.b{fill:var(--blue);} .pv-t.y{fill:var(--gold);} .pv-t.r{fill:#e5484d; font-weight:700;}
+.ip-input{font-family:var(--mono); font-size:.9rem; padding:.55rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%; max-width:230px;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+.verdict{margin-top:.7rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.6em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.priv{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.priv b.t{color:var(--green);}
+.verdict.pub{border-color:rgba(47,176,232,.5); background:rgba(47,176,232,.07);} .verdict.pub b.t{color:var(--blue);}
+.verdict.esp{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.esp b.t{color:var(--gold);}
+.drill-ip{font-family:var(--mono); font-size:1.6rem; font-weight:700; color:var(--text); text-align:center; padding:.5rem 0;}
+.drill-btns{display:flex; gap:.6rem; justify-content:center;}
+.drill-score{font-family:var(--mono); font-size:.74rem; color:var(--gold); text-align:center; margin-top:.5rem;}
+@media (max-width:860px){
+  .grid-3,.grid-2,.hdr-wrap,.calc-wrap,.layers-split,.nat-wrap{grid-template-columns:1fr;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits{display:none;}
+  .arp-topo,.timeline{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">24</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ 1. CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> FUNDAMENTOS DE REDES DE COMPUTADORES · ADS · AULA 06</div>
+      <h1 class="title animate delay-1">A Camada de <span class="accent-b">Rede</span><br>Protocolo IP e <span class="accent">Endereçamento</span></h1>
+      <p class="subtitle animate delay-2" style="margin-top:1.1rem;">Como um pacote criado em um computador encontra o caminho certo até outro — mesmo quando esse outro está em uma rede completamente diferente, do outro lado do mundo.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas</div>
+        <div><b>20+ módulos</b><br>interativos &amp; simuladores</div>
+      </div>
+    </div>
+    <div class="capa-bits">01001000<br>01010100<br>01010100<br>01010000<br>00101111<br>01001001<br>01010000</div>
+  </section>
+
+  <!-- ============================================================ 2. SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que vamos construir juntos</h2>
+      <div class="toc animate delay-2" style="margin-top:.8rem; font-size:.74rem;">
+        <div>
+          <div class="toc-group">Camada de enlace</div>
+          <a href="#s-enlace-rede"><span class="n">01</span><span class="t">Enlace x Rede: hop-by-hop x end-to-end</span></a>
+          <a href="#s-layers-enlace"><span class="n">02</span><span class="t">As 5 camadas &amp; a Tabela ARP</span></a>
+          <a href="#s-arp-anim"><span class="n">03</span><span class="t">Animação: ARP e o MAC a cada salto</span></a>
+          <a href="#s-mm-arp"><span class="n">04</span><span class="t">🛠️ Mão na massa: sua Tabela ARP</span></a>
+          <div class="toc-group">Camada de rede</div>
+          <a href="#s-layers-rede"><span class="n">05</span><span class="t">Camada de Rede &amp; roteamento em malha</span></a>
+          <a href="#s-encapsulamento"><span class="n">06</span><span class="t">Encapsulamento ponta a ponta</span></a>
+          <a href="#s-header-ip"><span class="n">07</span><span class="t">Anatomia do Cabeçalho IPv4</span></a>
+          <a href="#s-mm-ttl"><span class="n">08</span><span class="t">🛠️ Mão na massa: TTL e traceroute</span></a>
+          <div class="toc-group">Endereçamento IPv4</div>
+          <a href="#s-enderecamento-intro"><span class="n">09</span><span class="t">O que é endereçamento IP</span></a>
+          <a href="#s-ipv4-historia"><span class="n">10</span><span class="t">IPv4: história, bits e decimal</span></a>
+          <a href="#s-ipv6"><span class="n">11</span><span class="t">IPv4 x IPv6 — visão geral</span></a>
+          <a href="#s-estrutura-ip"><span class="n">12</span><span class="t">Estrutura: ID de Rede e ID de Host</span></a>
+          <a href="#s-escassez-classful"><span class="n">13</span><span class="t">O Grande Problema do IPv4 &amp; Classful</span></a>
+          <a href="#s-classes"><span class="n">14</span><span class="t">Classes e Endereços Especiais</span></a>
+        </div>
+        <div>
+          <div class="toc-group">Endereços privados &amp; NAT</div>
+          <a href="#s-priv-conceito"><span class="n">15</span><span class="t">Endereços Privados: o que são</span></a>
+          <a href="#s-priv-mundos"><span class="n">16</span><span class="t">Dois mundos separados pelo roteador</span></a>
+          <a href="#s-priv-classificador"><span class="n">17</span><span class="t">🛠️ Público ou privado? (interativo)</span></a>
+          <a href="#s-privados"><span class="n">18</span><span class="t">O Gateway Padrão</span></a>
+          <a href="#s-mm-ippriv"><span class="n">19</span><span class="t">🛠️ Mão na massa: meu IP privado × público</span></a>
+          <a href="#s-nat-intro"><span class="n">20</span><span class="t">NAT: o tradutor do roteador</span></a>
+          <a href="#s-nat-table"><span class="n">21</span><span class="t">Tabela NAT na prática</span></a>
+          <a href="#s-nat-reuse"><span class="n">22</span><span class="t">Mesmo IP privado, redes diferentes</span></a>
+          <div class="toc-group">Máscaras &amp; sub-redes</div>
+          <a href="#s-mascara"><span class="n">23</span><span class="t">Máscara, CIDR e a Operação AND</span></a>
+          <a href="#s-subred-conceito"><span class="n">24</span><span class="t">Por que dividir em sub-redes?</span></a>
+          <a href="#s-subnet-identify"><span class="n">25</span><span class="t">Quantas sub-redes você identifica?</span></a>
+          <a href="#s-subnet-anim"><span class="n">26</span><span class="t">Dividindo uma rede /24 em /26</span></a>
+          <a href="#s-calc"><span class="n">27</span><span class="t">Calculadora CIDR Interativa</span></a>
+          <a href="#s-mm-calculo"><span class="n">28</span><span class="t">🛠️ Mão na massa: cálculo no papel</span></a>
+        </div>
+        <div>
+          <div class="toc-group">Endereçamento IPv6</div>
+          <a href="#s-ipv6-motivacao"><span class="n">29</span><span class="t">IPv6: 128 bits contra a escassez</span></a>
+          <a href="#s-ipv6-compressao"><span class="n">30</span><span class="t">Compressão de endereços IPv6</span></a>
+          <a href="#s-ipv6-prefixo"><span class="n">31</span><span class="t">Prefixo /64 &amp; exercício</span></a>
+          <a href="#s-mm-ipv6"><span class="n">32</span><span class="t">🛠️ Mão na massa: seu IPv6</span></a>
+          <div class="toc-group">Revisão &amp; fixação</div>
+          <a href="#s-atividades-terminal"><span class="n">33</span><span class="t">Revisão: ipconfig, ping, tracert</span></a>
+          <a href="#s-atividade-desafio"><span class="n">34</span><span class="t">Desafio de sub-rede</span></a>
+          <a href="#s-estudo"><span class="n">35</span><span class="t">Como estudar &amp; casos reais</span></a>
+          <a href="#s-estatico-dhcp"><span class="n">36</span><span class="t">Estático x DHCP</span></a>
+          <a href="#s-dora"><span class="n">37</span><span class="t">Simulador DORA</span></a>
+          <a href="#s-quiz"><span class="n">38</span><span class="t">Quiz de Fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 3. ENLACE x REDE -->
+  <section class="slide" id="s-enlace-rede">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Camada de Enlace</div>
+      <h2 class="stitle animate delay-1">Camada de Rede x Camada de Enlace</h2>
+      <p class="subtitle animate delay-2">A camada de enlace entrega quadros <b style="color:var(--text)">salto a salto</b> (hop-by-hop), só entre vizinhos diretos. A camada de rede entrega pacotes <b style="color:var(--text)">de ponta a ponta</b> (end-to-end), atravessando quantas redes forem necessárias. É como comparar o <b style="color:var(--text)">carteiro do seu bairro</b> (entrega local, um trecho) com os <b style="color:var(--text)">Correios</b> (a carta chega de qualquer cidade do país).</p>
+      <table class="cmp animate delay-3" style="margin-top:1.2rem;">
+        <tr><th>Aspecto</th><th>Camada de Enlace</th><th>Camada de Rede</th></tr>
+        <tr><td>Unidade</td><td>Quadro (frame)</td><td>Pacote (datagrama)</td></tr>
+        <tr><td>Endereço</td><td>MAC — físico, plano</td><td>IP — lógico, hierárquico</td></tr>
+        <tr><td>Alcance</td><td>Vizinho direto (hop-by-hop)</td><td>Fim a fim (end-to-end)</td></tr>
+        <tr><td>Equipamento</td><td>Switch</td><td>Roteador</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ 4. 5 CAMADAS (ENLACE) + ARP -->
+  <section class="slide" id="s-layers-enlace">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Camada de Enlace</div>
+      <h2 class="stitle animate delay-1">Onde estamos: Camada de Enlace &amp; Tabela ARP</h2>
+      <div class="layers-split animate delay-2">
+        <div class="layer-stack">
+          <div class="layer">Aplicação</div>
+          <div class="layer">Transporte</div>
+          <div class="layer">Rede</div>
+          <div class="layer highlight">Enlace</div>
+          <div class="layer">Física</div>
+        </div>
+        <div>
+          <p class="subtitle" style="margin-bottom:.6rem;">Antes de criar um quadro, um host precisa saber <b style="color:var(--text)">qual MAC</b> corresponde ao IP com quem vai falar. Quem resolve isso é o <b class="accent-b">ARP</b> (Address Resolution Protocol) — e o resultado fica guardado na <b class="accent-b">Tabela ARP</b> de cada dispositivo com pilha IP.</p>
+          <p class="subtitle">Pense nela como uma <b style="color:var(--text)">agenda de contatos</b>: ao invés de "nome → telefone", é "IP → MAC". Sem ela, o host perguntaria (em broadcast) o MAC de todo mundo, a cada pacote enviado.</p>
+        </div>
+      </div>
+      <div class="arp-topo animate delay-3">
+        <div class="arp-dev"><div class="arp-ic">💻</div><div class="arp-name">PC-A · .10</div>
+          <table class="arp-tbl"><tr><th>IP</th><th>MAC</th></tr><tr><td>.1 (GW)</td><td>GW:01</td></tr><tr><td>.20 (PC-B)</td><td>BB:BB</td></tr></table>
+          <div class="arp-note">Tabela ARP (IP → MAC)</div>
+        </div>
+        <div class="arp-dev sw"><div class="arp-ic">🔀</div><div class="arp-name">Switch 1</div>
+          <table class="arp-tbl cam"><tr><th>MAC</th><th>Porta</th></tr><tr><td>AA:AA</td><td>1</td></tr><tr><td>GW:01</td><td>3</td></tr></table>
+          <div class="arp-note">Tabela MAC/CAM (Aula 05) — não tem IP, não monta ARP</div>
+        </div>
+        <div class="arp-dev sw"><div class="arp-ic">🔀</div><div class="arp-name">Switch 2</div>
+          <table class="arp-tbl cam"><tr><th>MAC</th><th>Porta</th></tr><tr><td>BB:BB</td><td>2</td></tr><tr><td>GW:01</td><td>1</td></tr></table>
+          <div class="arp-note">Tabela MAC/CAM (Aula 05) — não tem IP, não monta ARP</div>
+        </div>
+        <div class="arp-dev"><div class="arp-ic">💻</div><div class="arp-name">PC-B · .20</div>
+          <table class="arp-tbl"><tr><th>IP</th><th>MAC</th></tr><tr><td>.1 (GW)</td><td>GW:01</td></tr><tr><td>.10 (PC-A)</td><td>AA:AA</td></tr></table>
+          <div class="arp-note">Tabela ARP (IP → MAC)</div>
+        </div>
+      </div>
+      <div class="arp-warn animate delay-4">⚠ <b>Switches comuns não têm tabela ARP</b> — eles não processam IP, apenas encaminham quadros usando a Tabela MAC/CAM que você já viu na Aula 05. Só dispositivos com pilha IP (PCs, servidores, roteadores) mantêm tabela ARP.</div>
+      <div class="refs-box animate delay-5">
+        <div class="refs-title">📚 Para aprofundar (consulta externa)</div>
+        <ul>
+          <li><a href="https://datatracker.ietf.org/doc/html/rfc826" target="_blank" rel="noopener">RFC 826 — An Ethernet Address Resolution Protocol (especificação oficial do ARP, IETF, 1982) <span class="ext">↗</span></a></li>
+          <li><a href="https://en.wikipedia.org/wiki/Address_Resolution_Protocol" target="_blank" rel="noopener">Wikipedia — Address Resolution Protocol (visão geral, histórico e variações) <span class="ext">↗</span></a></li>
+          <li><a href="#" onclick="return false;" style="cursor:default;">Kurose &amp; Ross — <i>Redes de Computadores e a Internet</i>, capítulo de Camada de Enlace (livro-texto de referência)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 5. ANIMAÇÃO ARP / MAC POR SALTO -->
+  <section class="slide" id="s-arp-anim">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Camada de Enlace · Animação</div>
+      <h2 class="stitle animate delay-1">O IP não muda. O MAC muda a cada salto.</h2>
+      <p class="subtitle animate delay-2">Esta animação roda <b style="color:var(--text)">sozinha</b> assim que o slide aparece na tela: acompanhe a tabela ARP sendo preenchida em tempo real, salto a salto, até o pacote chegar ao destino.</p>
+      <div class="arp-anim-grid animate delay-3">
+        <div>
+          <div class="journey" style="height:200px;">
+            <div class="j-track"></div>
+            <div class="j-node lan" style="left:4%"><div class="box" id="arpNodeA">💻<div class="bcast-ring" id="ringA"></div></div><div class="lbl">PC-A (LAN A)</div></div>
+            <div class="j-node router" style="left:35%"><div class="box" id="arpNodeR1">🌐<div class="bcast-ring" id="ringR1"></div></div><div class="lbl">Roteador 1</div></div>
+            <div class="j-node router" style="left:65%"><div class="box" id="arpNodeR2">🌐<div class="bcast-ring" id="ringR2"></div></div><div class="lbl">Roteador 2</div></div>
+            <div class="j-node lan" style="left:88%"><div class="box" id="arpNodeB">💻<div class="bcast-ring" id="ringB"></div></div><div class="lbl">PC-B (LAN B)</div></div>
+            <div class="reply-dot" id="replyDot"></div>
+            <div class="j-packet" id="jPacket">📦</div>
+          </div>
+          <div class="j-mac-caption" id="jCaption">Preparando simulação automática…</div>
+          <div class="j-ip-banner"><div class="box" id="jIpBox">Cabeçalho IP (inalterado): Origem 10.0.0.5 → Destino 200.150.1.10</div></div>
+        </div>
+        <div class="arp-live">
+          <div class="al-title">Tabela ARP sendo aprendida por</div>
+          <div class="al-device" id="alDevice">—</div>
+          <table class="arp-live-tbl"><tr><th>IP próx. salto</th><th>MAC</th><th></th></tr><tbody id="alRows"></tbody></table>
+        </div>
+      </div>
+      <div class="j-controls">
+        <button class="btn" id="jReplay">▶ Reproduzir novamente</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MÃO NA MASSA: s-mm-arp -->
+  <section class="slide hands-on" id="s-mm-arp">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Espie a Tabela ARP do seu computador</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><h3 class="accent">Passo a passo</h3><ol class="steps"><li><span>Abra o terminal (Windows: <b>Prompt de Comando</b> · Linux/macOS: <b>Terminal</b>).</span></li><li><span>Descubra o gateway: <span class="code">ipconfig</span> (Windows) ou <span class="code">ip route</span> (Linux). Anote o <b>Gateway Padrão</b>.</span></li><li><span>Dispare um ping nele: <span class="code">ping &lt;IP do gateway&gt;</span></span></li><li><span>Veja a tabela ARP: <span class="code">arp -a</span> — localize a linha do gateway e anote o <b>endereço físico (MAC)</b>.</span></li></ol></div>
+        <div class="card"><h3 class="accent-b">Observe e responda <span style="font-weight:400; color:var(--text-faint); font-size:.75rem;">(clique para ver o gabarito)</span></h3><div class="quiz-list"><div class="qcard"><div class="qhead"><span class="qtext">Por que o ping fez surgir (ou atualizar) uma linha na tabela ARP?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">Para montar o <b>quadro</b>, o PC precisava do <b>MAC do gateway</b>. Sem entrada na tabela, ele disparou um <b>ARP Request</b> em broadcast e guardou o <b>ARP Reply</b> — exatamente a animação do slide anterior.</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">Por que só aparecem IPs da sua rede local (e não o de sites como 8.8.8.8)?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">O ARP só resolve <b>vizinhos da mesma rede</b>. Para destinos remotos o PC entrega o quadro ao <b>MAC do gateway</b>; quem cuida do resto do caminho é o roteador.</div></div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ 6. 5 CAMADAS (REDE) -->
+  <section class="slide" id="s-layers-rede">
+    <div class="slide-inner">
+      <div class="kicker animate">02 · Camada de Rede</div>
+      <h2 class="stitle animate delay-1">Entramos na Camada de Rede</h2>
+      <div class="layers-split animate delay-2">
+        <div class="layer-stack">
+          <div class="layer">Aplicação</div>
+          <div class="layer">Transporte</div>
+          <div class="layer highlight">Rede</div>
+          <div class="layer">Enlace</div>
+          <div class="layer">Física</div>
+        </div>
+        <div>
+          <p class="subtitle" style="margin-bottom:.4rem;"><b style="color:var(--text)">O que é e qual seu papel:</b> a camada que leva um pacote da origem ao destino <b class="accent-b">atravessando múltiplas redes</b>, decidindo em cada roteador qual é o melhor próximo salto — o <b class="accent-b">roteamento</b>.</p>
+          <p class="subtitle"><b style="color:var(--text)">Analogia:</b> se o enlace é o carteiro entregando na rua certa, a rede é o sistema dos Correios escolhendo por quais cidades a carta deve passar — ou, como diria o professor, <b class="accent">pense no Waze ou no Google Maps</b> recalculando o melhor caminho em tempo real.</p>
+        </div>
+      </div>
+      <div class="routing-wrap animate delay-3">
+        <svg viewBox="0 0 640 200" id="routingSvg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-height:31vh;">
+          <!-- enlaces físicos da malha (cinza) -->
+          <g class="rt-links">
+            <line x1="60" y1="100" x2="185" y2="30"/><line x1="60" y1="100" x2="185" y2="100"/><line x1="60" y1="100" x2="185" y2="170"/>
+            <line x1="185" y1="30" x2="325" y2="65"/><line x1="185" y1="100" x2="325" y2="65"/><line x1="185" y1="100" x2="325" y2="135"/><line x1="185" y1="170" x2="325" y2="135"/>
+            <line x1="325" y1="65" x2="455" y2="65"/><line x1="325" y1="65" x2="455" y2="135"/><line x1="325" y1="135" x2="455" y2="65"/><line x1="325" y1="135" x2="455" y2="135"/>
+            <line x1="455" y1="65" x2="580" y2="100"/><line x1="455" y1="135" x2="580" y2="100"/>
+          </g>
+          <!-- caminhos escolhidos pelo roteamento (um por pacote; recalculados se R4 cair) -->
+          <path class="rt-trail p1" id="rtP1" d="M60,100 L185,30 L325,65 L455,65 L580,100"/>
+          <path class="rt-trail p2" id="rtP2" d="M60,100 L185,100 L325,65 L455,135 L580,100"/>
+          <path class="rt-trail p3" id="rtP3" d="M60,100 L185,170 L325,135 L455,65 L580,100"/>
+          <rect class="rt-node-rect src" x="20" y="78" width="80" height="44" rx="8"/><text class="rt-label strong" x="60" y="104" text-anchor="middle">Rede A</text>
+          <rect class="rt-node-rect dst" x="540" y="78" width="80" height="44" rx="8"/><text class="rt-label strong" x="580" y="104" text-anchor="middle">Rede B</text>
+          <g class="rt-routers">
+            <rect class="rt-node-rect" x="163" y="18" width="44" height="24" rx="7"/><text class="rt-label" x="185" y="34" text-anchor="middle">R1</text>
+            <rect class="rt-node-rect" x="163" y="88" width="44" height="24" rx="7"/><text class="rt-label" x="185" y="104" text-anchor="middle">R2</text>
+            <rect class="rt-node-rect" x="163" y="158" width="44" height="24" rx="7"/><text class="rt-label" x="185" y="174" text-anchor="middle">R3</text>
+            <rect class="rt-node-rect" id="rtR4" x="303" y="53" width="44" height="24" rx="7"/><text class="rt-label" id="rtR4t" x="325" y="69" text-anchor="middle">R4</text>
+            <rect class="rt-node-rect" x="303" y="123" width="44" height="24" rx="7"/><text class="rt-label" x="325" y="139" text-anchor="middle">R5</text>
+            <rect class="rt-node-rect" x="433" y="53" width="44" height="24" rx="7"/><text class="rt-label" x="455" y="69" text-anchor="middle">R6</text>
+            <rect class="rt-node-rect" x="433" y="123" width="44" height="24" rx="7"/><text class="rt-label" x="455" y="139" text-anchor="middle">R7</text>
+          </g>
+          <circle class="rt-packet p1" id="rtK1" r="6" cx="0" cy="0" transform="translate(60,100)"/>
+          <circle class="rt-packet p2" id="rtK2" r="6" cx="0" cy="0" transform="translate(60,100)"/>
+          <circle class="rt-packet p3" id="rtK3" r="6" cx="0" cy="0" transform="translate(60,100)"/>
+        </svg>
+        <div class="routing-legend"><span class="lsw">● Pacote 1</span><span class="lsw-g">● Pacote 2</span><span class="lsw-gr">● Pacote 3</span><span class="lsw2">— enlaces da malha</span>
+          <button class="btn ghost" id="rtFail" style="padding:.25rem .7rem; font-size:.72rem;">⚡ Derrubar o roteador R4</button></div>
+        <p class="subtitle" id="rtCaption" style="text-align:center; margin-top:.4rem; font-size:.82rem;">Cada pacote do mesmo fluxo pode seguir um caminho diferente: cada roteador decide, na hora, o melhor próximo salto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 7. ENCAPSULAMENTO -->
+  <section class="slide" id="s-encapsulamento">
+    <div class="slide-inner">
+      <div class="kicker animate">02 · Camada de Rede · Animação</div>
+      <h2 class="stitle animate delay-1">Encapsulamento: o pacote ganhando (e perdendo) camadas</h2>
+      <p class="subtitle animate delay-2">Clique em <b style="color:var(--text)">"Próximo passo"</b> para acompanhar os <b style="color:var(--text)">Dados</b> de Host A sendo encapsulados camada a camada, atravessando um roteador, e desencapsulados em Host B.</p>
+      <div class="journey animate delay-3" style="height:140px; margin-top:.8rem;">
+        <div class="j-track" style="top:58px;"></div>
+        <div class="j-node lan" style="left:6%; top:14px;"><div class="box">💻</div><div class="lbl">Host A</div></div>
+        <div class="j-node router" style="left:46%; top:14px;"><div class="box">🌐</div><div class="lbl">Roteador</div></div>
+        <div class="j-node lan" style="left:86%; top:14px;"><div class="box">💻</div><div class="lbl">Host B</div></div>
+        <div class="j-packet" id="encPacket" style="top:40px;">📦</div>
+      </div>
+      <div class="pdu-who" id="pduWho">Host A ↓ (descendo as camadas)</div>
+      <div class="pdu-strip animate delay-4" id="pduStrip" style="margin-top:.3rem;">
+        <div class="pdu-seg" data-p="app">Aplicação<b>Dados</b></div>
+        <div class="pdu-seg" data-p="transp">Transporte<b>Segmento</b></div>
+        <div class="pdu-seg" data-p="rede">Rede<b>Pacote</b></div>
+        <div class="pdu-seg" data-p="enlace">Enlace<b>Quadro</b></div>
+        <div class="pdu-seg" data-p="fisica">Física<b>Bits</b></div>
+      </div>
+      <div class="j-mac-caption" id="encCaption" style="margin-top:.8rem;">Host A: a camada de Aplicação gera os Dados que você quer enviar (ex: uma mensagem).</div>
+      <div class="j-controls">
+        <button class="btn ghost" id="encReset">Reiniciar</button>
+        <button class="btn" id="encNext">Próximo passo →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 8. CABEÇALHO IPV4 -->
+  <section class="slide" id="s-header-ip">
+    <div class="slide-inner" style="max-width:1220px;">
+      <div class="kicker animate">02 · Camada de Rede · Diagrama interativo</div>
+      <h2 class="stitle animate delay-1">Anatomia do Cabeçalho IPv4 <span style="color:var(--text-faint); font-weight:400; font-size:.6em;">— clique em um campo</span></h2>
+      <div class="hdr-wrap animate delay-2" style="margin-top:1rem;">
+        <div class="hdr-grid" id="hdrGrid">
+          <div class="hdr-row">
+            <div class="hfield" data-f="ver" style="flex:4">Versão<b>4 bits</b></div>
+            <div class="hfield" data-f="ihl" style="flex:4">IHL<b>4 bits</b></div>
+            <div class="hfield" data-f="tos" style="flex:8">Tipo de Serviço<b>8 bits</b></div>
+            <div class="hfield" data-f="len" style="flex:16">Comprimento Total<b>16 bits</b></div>
+          </div>
+          <div class="hdr-row">
+            <div class="hfield" data-f="id" style="flex:16">Identificação<b>16 bits</b></div>
+            <div class="hfield" data-f="flags" style="flex:3">Flags<b>3b</b></div>
+            <div class="hfield" data-f="frag" style="flex:13">Offset do Fragmento<b>13 bits</b></div>
+          </div>
+          <div class="hdr-row">
+            <div class="hfield" data-f="ttl" style="flex:8">TTL<b>8 bits</b></div>
+            <div class="hfield" data-f="proto" style="flex:8">Protocolo<b>8 bits</b></div>
+            <div class="hfield" data-f="chk" style="flex:16">Checksum<b>16 bits</b></div>
+          </div>
+          <div class="hdr-row"><div class="hfield" data-f="src" style="flex:32">Endereço IP de Origem<b>32 bits</b></div></div>
+          <div class="hdr-row"><div class="hfield" data-f="dst" style="flex:32">Endereço IP de Destino<b>32 bits</b></div></div>
+          <div class="hdr-row"><div class="hfield opt" data-f="opt" style="flex:32">Opções (variável) + Padding<b>se IHL &gt; 5</b></div></div>
+        </div>
+        <div class="hdr-panel" id="hdrPanel"><div class="hdr-empty">👆 Passe o mouse ou clique em um campo do cabeçalho ao lado para ver tamanho, função, valores comuns e impacto prático.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MÃO NA MASSA: s-mm-ttl -->
+  <section class="slide hands-on" id="s-mm-ttl">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 8 min</span></div>
+      <h2 class="stitle animate delay-1">TTL na prática: contando os saltos do pacote</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><h3 class="accent">Passo a passo</h3><ol class="steps"><li><span>Faça 4 pings: <span class="code">ping -n 4 8.8.8.8</span> (Windows) · <span class="code">ping -c 4 8.8.8.8</span> (Linux/macOS). Anote o <b>TTL</b> da resposta.</span></li><li><span>Trace a rota: <span class="code">tracert 8.8.8.8</span> (Windows) · <span class="code">traceroute 8.8.8.8</span> (Linux/macOS). <b>Conte os saltos.</b></span></li><li><span>Compare um site nacional com um internacional: <span class="code">tracert www.uol.com.br</span> × <span class="code">tracert www.bbc.co.uk</span>.</span></li><li><span>Pergunta-bônus: algum salto mostrou <b>* * *</b>? O que isso significa?</span></li></ol></div>
+        <div class="card"><h3 class="accent-b">Observe e responda <span style="font-weight:400; color:var(--text-faint); font-size:.75rem;">(clique para ver o gabarito)</span></h3><div class="quiz-list"><div class="qcard"><div class="qhead"><span class="qtext">A resposta veio com TTL=117 (ou 57). De onde vêm esses números?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">O TTL <b>começa em 64, 128 ou 255</b> (depende do sistema) e cada roteador <b>subtrai 1</b>. TTL=117 sugere início em 128 e ~11 roteadores no caminho de volta.</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">Como o traceroute descobre cada roteador do caminho?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">Envia pacotes com <b>TTL=1, 2, 3…</b>. Quem zera o TTL descarta o pacote e devolve um <b>ICMP "Time Exceeded"</b> — revelando seu IP, salto a salto.</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">E os asteriscos (* * *)?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">O roteador <b>não respondeu</b> (firewall ou ICMP bloqueado), mas continuou encaminhando — o pacote seguiu viagem.</div></div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ 9. O QUE É ENDEREÇAMENTO -->
+  <section class="slide" id="s-enderecamento-intro">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Endereçamento</div>
+      <h2 class="stitle animate delay-1">O que é Endereçamento IP</h2>
+      <p class="subtitle animate delay-2">Endereçamento é o conjunto de regras que dá a <b style="color:var(--text)">cada dispositivo um identificador único</b> na rede, para que pacotes saibam exatamente de onde vieram e para onde devem ir — assim como CPF identifica uma pessoa ou CEP+número identifica um endereço físico.</p>
+      <div class="grid-3 animate delay-3" style="margin-top:1.1rem;">
+        <div class="card"><div class="icon-chip">L2/L3</div><h3>Físico x Lógico</h3><p>MAC (enlace) é fixo na placa de rede. IP (rede) é lógico — pode mudar conforme o dispositivo muda de rede.</p></div>
+        <div class="card"><div class="icon-chip">v4/v6</div><h3>IPv4 x IPv6</h3><p>Duas versões do protocolo de endereçamento de rede, convivendo hoje na mesma Internet.</p></div>
+        <div class="card"><div class="icon-chip">🔒/🌐</div><h3>Privado x Público</h3><p>Privado só vale dentro da sua rede local; público é único e roteável em toda a Internet.</p></div>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:.9rem;">
+        <div class="card"><h3>Estático x Dinâmico</h3><p>Configurado manualmente uma vez, ou atribuído automaticamente (DHCP) a cada conexão.</p></div>
+        <div class="card"><h3>Unicast, Broadcast, Multicast</h3><p>Entrega para um único destino, para todos da rede, ou para um grupo específico de interessados.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 10. IPV4: HISTÓRIA / BITS / DECIMAL -->
+  <section class="slide" id="s-ipv4-historia">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Endereçamento IPv4</div>
+      <h2 class="stitle animate delay-1">IPv4: o que é, quando surgiu, como funciona</h2>
+      <p class="subtitle animate delay-2">Definido pela <b style="color:var(--text)">RFC 791 em 1981</b>, o IPv4 usa endereços de <b class="accent-b">32 bits</b>. Como ler 32 zeros e uns seria péssimo para humanos, dividimos em <b style="color:var(--text)">4 octetos de 8 bits</b> e escrevemos cada um em decimal (0–255), separados por pontos. Clique nos bits abaixo e veja o decimal mudar em tempo real:</p>
+      <div class="animate delay-3" style="margin-top:1.1rem; display:flex; justify-content:center; gap:.9rem;" id="ipv4BitWidget"></div>
+      <div class="animate delay-4" style="text-align:center; margin-top:.9rem; font-family:var(--mono); font-size:1.3rem; color:var(--gold);" id="ipv4Decimal">192.168.1.10</div>
+      <div class="refs-box animate delay-5">
+        <div class="refs-title">📚 Vídeo complementar (indicado pelo professor)</div>
+        <ul><li><a href="https://youtu.be/jnuHODaLcO8" target="_blank" rel="noopener">Os endereços IP não são todos iguais — NIC.br <span class="ext">↗</span></a></li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 11. IPV4 x IPV6 -->
+  <section class="slide" id="s-ipv6">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Endereçamento · Transição</div>
+      <h2 class="stitle animate delay-1">IPv4 x IPv6 — uma transição ainda em curso</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:1.1rem;">
+        <div class="card">
+          <div class="icon-chip">v4</div>
+          <h3>IPv4 — 32 bits</h3>
+          <p>≈ 4,3 bilhões de endereços. Ainda hoje dominante na prática — seu espaço está praticamente esgotado, prolongado por paliativos como o <b style="color:var(--text)">NAT</b> (tema da próxima aula).</p>
+        </div>
+        <div class="card">
+          <div class="icon-chip" style="background:rgba(242,169,59,.14); color:var(--gold);">v6</div>
+          <h3>IPv6 — 128 bits</h3>
+          <p>Espaço de endereços astronomicamente maior, pensado para eliminar a necessidade de NAT. Adoção crescente, mas ainda convive lado a lado com o IPv4 na maior parte da Internet.</p>
+        </div>
+      </div>
+      <div class="animate delay-3" style="margin-top:1.4rem;">
+        <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:.72rem; color:var(--text-faint); margin-bottom:.3rem;"><span>IPv4 · 32 bits</span><span>IPv6 · 128 bits</span></div>
+        <div style="height:10px; border-radius:6px; background:var(--surface-2); overflow:hidden; display:flex;">
+          <div style="width:25%; background:linear-gradient(90deg,var(--blue-dim),var(--blue));"></div>
+          <div style="width:75%; background:var(--surface);"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 12. ESTRUTURA DO ENDEREÇO (+ binário) -->
+  <section class="slide" id="s-estrutura-ip">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Endereçamento · Hierarquia</div>
+      <h2 class="stitle animate delay-1">Estrutura do Endereço: ID de Rede e ID de Host</h2>
+      <p class="subtitle animate delay-2">Assim como um <b style="color:var(--text)">CEP</b> identifica o bairro e o <b style="color:var(--text)">número</b> identifica a casa, o endereço IP tem uma parte de <span class="accent-b">ID de Rede</span> — "qual rua o dispositivo está" — e uma parte de <span class="accent">ID de Host</span> — "qual o número da casa nessa rua".</p>
+      <div class="animate delay-3" style="margin-top:1.2rem;">
+        <div class="octet-row" style="justify-content:center;">
+          <div class="octet"><div class="bit net">192</div></div>
+          <div class="octet"><div class="bit net">168</div></div>
+          <div class="octet"><div class="bit net">1</div></div>
+          <div class="octet"><div class="bit host">10</div></div>
+        </div>
+        <div style="display:flex; justify-content:center; gap:1.2rem; font-family:var(--mono); font-size:.76rem; margin-top:.5rem;">
+          <span class="accent-b">⬤ REDE (24 bits) — como o CEP</span>
+          <span class="accent">⬤ HOST (8 bits) — como o número da casa</span>
+        </div>
+      </div>
+      <div class="animate delay-4" style="margin-top:1.1rem;">
+        <div class="octet-label" style="text-align:center; margin-bottom:.4rem;">O mesmo endereço, em binário — repare onde a parte de rede termina e a de host começa:</div>
+        <div style="display:flex; justify-content:center; gap:.6rem;">
+          <div class="octet">
+            <div class="bit net">1</div><div class="bit net">1</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div>
+          </div>
+          <div class="octet">
+            <div class="bit net">1</div><div class="bit net">0</div><div class="bit net">1</div><div class="bit net">0</div><div class="bit net">1</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div>
+          </div>
+          <div class="octet">
+            <div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">0</div><div class="bit net">1</div>
+          </div>
+          <div class="octet">
+            <div class="bit host">0</div><div class="bit host">0</div><div class="bit host">0</div><div class="bit host">0</div><div class="bit host">1</div><div class="bit host">0</div><div class="bit host">1</div><div class="bit host">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 13. ESCASSEZ IPv4 + CLASSFUL -->
+  <section class="slide" id="s-escassez-classful">
+    <div class="slide-inner">
+      <div class="kicker animate">04 · Classes &amp; Endereços Especiais</div>
+      <h2 class="stitle animate delay-1">A Escassez do IPv4 e o Endereçamento Classful</h2>
+      <p class="subtitle animate delay-2">Nos anos 1980, a Internet distribuía blocos de IP em <b style="color:var(--text)">classes fixas</b> (A, B ou C) — um modelo simples, mas que desperdiçava endereços em massa: uma única organização que ganhasse um bloco Classe A recebia <b style="color:var(--text)">16 milhões de endereços</b>, usasse ela ou não.</p>
+      <div class="timeline animate delay-3">
+        <div class="tl-item"><div class="yr">1981</div><p>RFC 791 define o IPv4 e o endereçamento <b style="color:var(--text)">classful</b> (A/B/C fixos).</p></div>
+        <div class="tl-item"><div class="yr">1993</div><p>CIDR (classless) substitui as classes rígidas por máscaras flexíveis — o foco desta aula.</p></div>
+        <div class="tl-item"><div class="yr">2011</div><p>A IANA distribui o <b style="color:var(--text)">último bloco livre</b> de IPv4 global — hoje só se consegue um bloco novo no mercado secundário.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 14. CLASSES + ESPECIAIS -->
+  <section class="slide" id="s-classes">
+    <div class="slide-inner">
+      <div class="kicker animate">04 · Classes &amp; Endereços Especiais</div>
+      <h2 class="stitle animate delay-1">Classes Históricas e Endereços que Fogem da Regra</h2>
+      <table class="cmp animate delay-2" style="margin-top:.9rem;">
+        <tr><th>Classe</th><th>1º Octeto</th><th>Máscara Padrão</th><th>Uso</th></tr>
+        <tr><td>A</td><td>1–126</td><td>/8</td><td>Poucas redes, milhões de hosts</td></tr>
+        <tr><td>B</td><td>128–191</td><td>/16</td><td>Redes de porte médio/grande</td></tr>
+        <tr><td>C</td><td>192–223</td><td>/24</td><td>Muitas redes pequenas</td></tr>
+        <tr><td>D / E</td><td>224–255</td><td>—</td><td>Multicast / experimental</td></tr>
+      </table>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem;">
+        <div class="card"><h3 class="accent-b">↻ Loopback</h3><p>127.0.0.1 aponta para a própria máquina — usado para testar se a pilha de rede local está funcionando (<span class="code">ping 127.0.0.1</span>).</p></div>
+        <div class="card"><h3 class="accent-b">📡 Broadcast</h3><p>Último endereço da rede (host todo em 1s) — entrega para todos os dispositivos da rede simultaneamente.</p></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ ENDEREÇOS PRIVADOS 1: O QUE SÃO -->
+  <section class="slide" id="s-priv-conceito">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Endereços Privados</div>
+      <h2 class="stitle animate delay-1">Endereços Privados: o "Ramal Interno" da Rede</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:stretch;">
+        <div class="card">
+          <h3 class="accent">☎️ A analogia do ramal</h3>
+          <p>Numa empresa, o <b style="color:var(--text)">ramal 204</b> só funciona <i>dentro</i> do prédio — ninguém de fora disca "204". Mil empresas podem ter um ramal 204 sem conflito. Para falar com o mundo, a ligação passa pela <b style="color:var(--text)">central</b>, que usa o <b style="color:var(--text)">número público</b> da empresa.</p>
+          <p style="margin-top:.5rem;"><b class="accent-b">Ramal</b> = IP privado · <b class="accent-b">Número público</b> = IP público · <b class="accent-b">Central</b> = roteador/NAT</p>
+        </div>
+        <div class="card">
+          <h3 class="accent">📐 As 3 regras de ouro</h3>
+          <ol class="steps">
+            <li><span><b style="color:var(--text)">Reservados:</b> a RFC 1918 (1996) separou 3 faixas só para uso interno.</span></li>
+            <li><span><b style="color:var(--text)">Não roteáveis:</b> os roteadores da Internet <b>descartam</b> pacotes com origem ou destino privado.</span></li>
+            <li><span><b style="color:var(--text)">Reutilizáveis:</b> milhões de casas usam 192.168.0.x ao mesmo tempo — sem conflito, pois cada rede é um mundo isolado.</span></li>
+          </ol>
+        </div>
+      </div>
+      <table class="cmp animate delay-3" style="margin-top:.9rem;">
+        <tr><th>Faixa (CIDR)</th><th>Intervalo completo</th><th>Quantidade</th><th>Onde você já viu</th></tr>
+        <tr><td>10.0.0.0/8</td><td>10.0.0.0 – 10.255.255.255</td><td>~16,7 milhões</td><td>Empresas e universidades grandes, VPNs</td></tr>
+        <tr><td>172.16.0.0/12</td><td>172.16.0.0 – 172.31.255.255</td><td>~1 milhão</td><td>Docker, redes médias, nuvem</td></tr>
+        <tr><td>192.168.0.0/16</td><td>192.168.0.0 – 192.168.255.255</td><td>~65 mil</td><td>Seu roteador Wi-Fi de casa</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ ENDEREÇOS PRIVADOS 2: DOIS MUNDOS -->
+  <section class="slide" id="s-priv-mundos">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Endereços Privados · Animação</div>
+      <h2 class="stitle animate delay-1">Dois Mundos Separados pelo Roteador</h2>
+      <p class="subtitle animate delay-2">O roteador tem <b style="color:var(--text)">duas faces</b>: a interface <b class="accent-b">LAN</b> (IP privado, voltada para dentro) e a interface <b class="accent-b">WAN</b> (IP público, voltada para a Internet). Observe o que acontece com cada pacote.</p>
+      <div class="priv-svg-wrap animate delay-3">
+        <svg viewBox="0 0 640 215" id="privSvg" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <rect class="pz-priv" x="8" y="8" width="252" height="199" rx="14"/>
+          <text class="pv-t g" x="134" y="28" text-anchor="middle">REDE PRIVADA · 192.168.1.0/24</text>
+          <rect class="pz-pub" x="380" y="8" width="252" height="199" rx="14"/>
+          <text class="pv-t b" x="506" y="28" text-anchor="middle">INTERNET PÚBLICA</text>
+          <rect class="pv-box" x="25" y="55" width="125" height="36" rx="8"/><text class="pv-t" x="87" y="77" text-anchor="middle">💻 192.168.1.10</text>
+          <rect class="pv-box" x="25" y="115" width="125" height="36" rx="8"/><text class="pv-t" x="87" y="137" text-anchor="middle">📱 192.168.1.11</text>
+          <line x1="150" y1="73" x2="272" y2="103" stroke="#3a4a63" stroke-width="1.5"/><line x1="150" y1="133" x2="272" y2="113" stroke="#3a4a63" stroke-width="1.5"/>
+          <line x1="328" y1="108" x2="500" y2="108" stroke="#3a4a63" stroke-width="1.5"/>
+          <rect class="pv-box" x="270" y="82" width="58" height="52" rx="10" style="stroke:#f2a93b"/><text x="299" y="116" text-anchor="middle" font-size="22">🌐</text>
+          <text class="pv-t y" x="299" y="150" text-anchor="middle">Roteador (NAT)</text>
+          <text class="pv-t s" x="299" y="166" text-anchor="middle">LAN 192.168.1.1</text><text class="pv-t s" x="299" y="178" text-anchor="middle">WAN 200.150.20.5</text>
+          <rect class="pv-box" x="505" y="82" width="110" height="52" rx="8"/><text class="pv-t" x="560" y="112" text-anchor="middle">🖥️ 8.8.8.8</text>
+          <text class="pv-t g" x="190" y="66" text-anchor="middle">origem 192.168.1.10</text>
+          <text class="pv-t y" x="420" y="98" text-anchor="middle">origem 200.150.20.5</text>
+          <text class="pv-t r" x="515" y="192" text-anchor="middle" id="privDropMsg" opacity="0">destino 192.168.1.10 → descartado!
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.5;.55;.95;.98;1" dur="7s" repeatCount="indefinite"/>
+          </text>
+          <!-- pacote 1: sai da LAN, ganha IP público ao passar pelo roteador -->
+          <circle r="6" cx="150" cy="73" fill="#36c58f" id="privP1">
+            <animateMotion dur="7s" repeatCount="indefinite" path="M0,0 L149,35 L350,35 L350,35" keyPoints="0;1;1" keyTimes="0;.42;1" calcMode="linear"/>
+            <animate attributeName="fill" values="#36c58f;#36c58f;#f2a93b;#f2a93b" keyTimes="0;.18;.22;1" dur="7s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;.42;.46;1" dur="7s" repeatCount="indefinite"/>
+          </circle>
+          <!-- pacote 2: vem da Internet com destino privado e é barrado -->
+          <circle r="6" cx="500" cy="145" fill="#e5484d" id="privP2" opacity="0">
+            <animateMotion dur="7s" repeatCount="indefinite" path="M0,0 L-172,0" keyPoints="0;0;1;1" keyTimes="0;.5;.85;1" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.5;.52;.85;.88;1" dur="7s" repeatCount="indefinite"/>
+          </circle>
+          <text x="328" y="150" text-anchor="middle" font-size="18" fill="#e5484d" id="privX" opacity="0">✕
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.85;.88;.98;1;1" dur="7s" repeatCount="indefinite"/>
+          </text>
+        </svg>
+        <div class="routing-legend"><span style="color:#36c58f">● Pacote do PC (origem privada)</span><span style="color:#f2a93b">● Mesmo pacote após o NAT (origem pública)</span><span style="color:#e5484d">● Pacote da Internet com destino privado: barrado</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ ENDEREÇOS PRIVADOS 3: CLASSIFICADOR + DESAFIO -->
+  <section class="slide hands-on" id="s-priv-classificador">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Endereços Privados · Interativo <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Público ou Privado? Teste seu olho clínico</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">🔎 Classificador</h3>
+          <p style="margin-bottom:.5rem;">Digite um IPv4 (ou clique num exemplo) e veja a classificação:</p>
+          <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;"><input class="ip-input" id="privIn" placeholder="ex: 172.20.4.15" autocomplete="off" inputmode="decimal"><button class="btn" id="privBtn">Classificar</button></div>
+          <div class="chips" id="privChips"></div>
+          <div class="verdict" id="privOut">Aguardando um endereço… <i>Pegadinha clássica:</i> 172.<b>32</b>.0.1 é público! A faixa privada vai só de 172.<b>16</b> a 172.<b>31</b>.</div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">⚡ Desafio relâmpago</h3>
+          <p style="text-align:center;">Este endereço é…</p>
+          <div class="drill-ip" id="drillIp">—</div>
+          <div class="drill-btns"><button class="btn" id="drillPriv">Privado</button><button class="btn ghost" id="drillPub">Público</button></div>
+          <div class="verdict" id="drillFb" style="text-align:center;">Clique em um dos botões para responder.</div>
+          <div class="drill-score" id="drillScore">Acertos: 0 / 0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 15. IPS PRIVADOS + GATEWAY -->
+  <section class="slide" id="s-privados">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Endereços Privados · Gateway</div>
+      <h2 class="stitle animate delay-1">Falando com o Mundo: o Gateway Padrão</h2>
+      <p class="subtitle animate delay-2">Um host com IP privado só enxerga a própria rede. Para qualquer destino <b style="color:var(--text)">fora dela</b>, ele precisa de uma porta de saída: o <b style="color:var(--text)">Gateway Padrão</b> (normalmente o roteador, ex.: 192.168.1.1).</p>
+      <div class="animate delay-3" style="margin-top:1rem;">
+        <h3 style="font-family:var(--disp); font-size:1rem; margin-bottom:.4rem;">Como o host decide: destino local ou remoto?</h3>
+        <div class="gw-flow">
+          <div class="gw-cond">Ao enviar um pacote, o host compara a <b>rede do IP de destino</b> com a <b>sua própria rede</b> (mesmo cálculo com a máscara que veremos a seguir).</div>
+          <div class="gw-outs">
+            <div class="gw-out yes">✓ Mesma rede → entrega direto na LAN, sem gateway</div>
+            <div class="gw-out no">→ Rede diferente → envia para o <b>Gateway Padrão</b>, que sabe o caminho para fora</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MÃO NA MASSA: s-mm-ippriv -->
+  <section class="slide hands-on" id="s-mm-ippriv">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Meu IP privado × meu IP público</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><h3 class="accent">Passo a passo</h3><ol class="steps"><li><span>Descubra seu IPv4 local: <span class="code">ipconfig</span> (Windows) · <span class="code">ip addr</span> (Linux) · <span class="code">ifconfig</span> (macOS).</span></li><li><span>Ele está em <b>10.x</b>, <b>172.16–31.x</b> ou <b>192.168.x</b>? Confirme no classificador do slide anterior.</span></li><li><span>Abra um site do tipo <b>"qual é o meu IP"</b> (busque por <i>what is my IP</i>) e anote o IP que ele mostra.</span></li><li><span>Compare os dois números e combine com o colega ao lado: quem tem o mesmo IP público? E o mesmo privado?</span></li></ol></div>
+        <div class="card"><h3 class="accent-b">Observe e responda <span style="font-weight:400; color:var(--text-faint); font-size:.75rem;">(clique para ver o gabarito)</span></h3><div class="quiz-list"><div class="qcard"><div class="qhead"><span class="qtext">Por que os dois IPs são diferentes?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">O PC tem um IP <b>privado</b> (válido só na LAN). O site enxerga o IP <b>público da WAN do roteador</b> — o que o NAT usa para falar com a Internet. É o tema dos próximos slides.</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">Colegas no mesmo Wi-Fi: o IP público é igual? E o privado?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">Normalmente o <b>público é igual</b> (mesmo roteador/NAT) e o <b>privado é diferente</b> — cada dispositivo recebeu o seu via DHCP.</div></div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ NAT: INTRODUÇÃO + ANIMAÇÃO -->
+  <section class="slide" id="s-nat-intro">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · IPs Privados &amp; NAT</div>
+      <h2 class="stitle animate delay-1">NAT: o Tradutor do Roteador</h2>
+      <p class="subtitle animate delay-2">O roteador da sua casa ou empresa atua como um <b style="color:var(--text)">tradutor</b>: tem 1 IP público (válido na Internet) e gerencia vários IPs privados ao mesmo tempo. Analogia: o NAT é como a <b style="color:var(--text)">recepcionista de um prédio</b> — para o mundo exterior só existe o endereço do prédio (IP público); a recepcionista sabe para qual apartamento (IP privado) encaminhar cada visita.</p>
+      <div class="nat-wrap animate delay-3">
+        <div class="nat-private" id="natRows"></div>
+        <div class="nat-router"><div class="box" id="natRouterBox">🌐</div><span>NAT</span></div>
+        <div class="nat-public"><div class="lbl">Visto pela Internet como</div><div class="ip">82.129.80.111</div></div>
+      </div>
+      <div class="j-controls">
+        <button class="btn" id="natReplay">▶ Reproduzir tradução</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ NAT: TABELA NA PRÁTICA -->
+  <section class="slide" id="s-nat-table">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · IPs Privados &amp; NAT</div>
+      <h2 class="stitle animate delay-1">A Tabela NAT na Prática</h2>
+      <p class="subtitle animate delay-2">O roteador guarda, para cada conversa, de onde veio o pacote e para onde ele foi traduzido — assim sabe como entregar a resposta certa a cada dispositivo interno.</p>
+      <table class="cmp animate delay-3" style="margin-top:.9rem;">
+        <tr><th>Protocolo</th><th>IP:Porta Local (Inside Local)</th><th>IP:Porta Global (Inside Global)</th><th>Destino (Outside Global)</th></tr>
+        <tr><td>TCP</td><td>10.1.1.2:1723 (Host A)</td><td>172.16.0.1:1723</td><td>192.168.0.1:23 (Host C)</td></tr>
+        <tr><td>TCP</td><td>10.1.1.3:1024 (Host B)</td><td>172.16.0.1:1024</td><td>192.168.0.1:23 (Host C)</td></tr>
+      </table>
+      <div class="grid-3 animate delay-4" style="margin-top:1rem;">
+        <div class="card"><h3 class="accent-b">Inside Local</h3><p>O IP privado real do dispositivo dentro da sua rede — nunca visto de fora.</p></div>
+        <div class="card"><h3 class="accent-b">Inside Global</h3><p>Como esse mesmo dispositivo aparece para o mundo: o IP público do roteador + uma porta própria.</p></div>
+        <div class="card"><h3 class="accent-b">Outside Global</h3><p>O endereço do servidor de destino, fora da sua rede — não é traduzido.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ NAT: REAPROVEITAMENTO DE IP PRIVADO -->
+  <section class="slide" id="s-nat-reuse">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · IPs Privados &amp; NAT</div>
+      <h2 class="stitle animate delay-1">O Mesmo IP Privado, em Redes Diferentes</h2>
+      <p class="subtitle animate delay-2">Como um IP privado nunca sai da rede local, <b style="color:var(--text)">duas redes diferentes podem reutilizar a mesma faixa</b> sem conflito — só o IP público de saída de cada uma precisa ser único no mundo.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1.1rem;">
+        <div class="card">
+          <div class="icon-chip">🏠</div><h3>Rede 1 — Casa</h3>
+          <p>Interna: <span class="code">192.168.1.0/24</span><br>Saída via modem com IP público: <b class="accent-g">204.200.50.101</b></p>
+        </div>
+        <div class="card">
+          <div class="icon-chip">🏢</div><h3>Rede 2 — Escritório</h3>
+          <p>Interna: <span class="code">192.168.1.0/24</span> <i>(a mesma faixa!)</i><br>Saída via modem com IP público: <b class="accent-g">185.200.73.208</b></p>
+        </div>
+      </div>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">Para a Internet, essas duas redes nunca se confundem — ela só enxerga os IPs públicos distintos de cada uma. O <span class="code">192.168.1.10</span> de uma é completamente invisível (e irrelevante) para a outra.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 16. MÁSCARA / CIDR / AND -->
+  <section class="slide" id="s-mascara">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Máscaras &amp; Sub-redes</div>
+      <h2 class="stitle animate delay-1">O que é Máscara de Sub-rede?</h2>
+      <p class="subtitle animate delay-2">A máscara é um padrão de 32 bits que diz <b style="color:var(--text)">onde termina a parte de rede e começa a de host</b> — como um gabarito que cobre o "bairro" do endereço e deixa só o "número da casa" visível. O roteador descobre a rede fazendo, bit a bit: <b style="color:var(--text)">IP AND Máscara = ID da Rede</b> — a mesma operação lógica AND que você usa em bitwise no código.</p>
+      <div class="card animate delay-3" style="margin-top:1rem; font-family:var(--mono); font-size:.88rem;">
+        <div style="display:grid; grid-template-columns:140px 1fr; row-gap:.5rem;">
+          <span style="color:var(--text-faint)">IP</span><span>11000000.10101000.00000001.<span class="accent">00001010</span></span>
+          <span style="color:var(--text-faint)">Máscara /24</span><span>11111111.11111111.11111111.<span style="color:var(--text-faint)">00000000</span></span>
+          <span style="color:var(--blue-dim)">AND →</span><span class="accent-b" style="font-weight:700;">11000000.10101000.00000001.00000000 &nbsp;(192.168.1.0)</span>
+        </div>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:1rem;">
+        <div class="card"><h3>Hosts utilizáveis</h3><p style="font-family:var(--mono); font-size:1.05rem; color:var(--text);">(2<sup>h</sup> − 2)</p><p>Subtrai o endereço de <b style="color:var(--text)">rede</b> (todos 0) e o de <b style="color:var(--text)">broadcast</b> (todos 1) — nenhum dos dois identifica um host real.</p></div>
+        <div class="card"><h3>Notação CIDR: conte os bits '1'</h3><p>Basta contar quantos bits '1' tem a máscara: <span class="code">255.0.0.0</span> → 8 bits → <b class="accent-b">/8</b>. <span class="code">255.255.0.0</span> → 16 bits → <b class="accent-b">/16</b>. <span class="code">255.255.255.0</span> → 24 bits → <b class="accent-b">/24</b>. Mais compacto e flexível que as classes fixas (A/B/C).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 17. CONCEITO DE SUB-REDE -->
+  <section class="slide" id="s-subred-conceito">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Máscaras &amp; Sub-redes</div>
+      <h2 class="stitle animate delay-1">Por que (e como) dividir uma rede em sub-redes?</h2>
+      <p class="subtitle animate delay-2">Sub-redes (subnetting) pegam uma rede grande e a fatiam em <b style="color:var(--text)">redes lógicas menores</b>, "emprestando" bits da parte de host para a parte de rede na máscara. O resultado: redes menores, mais fáceis de organizar e proteger.</p>
+      <div class="grid-3 animate delay-3" style="margin-top:1rem;">
+        <div class="card"><div class="icon-chip">🗂️</div><h3>Organização</h3><p>Ex: uma empresa separa TI, RH e Financeiro em sub-redes próprias, cada setor com seu próprio bloco de IPs.</p></div>
+        <div class="card"><div class="icon-chip">🔐</div><h3>Segurança</h3><p>Isola tráfego sensível — um problema (ou invasor) em uma sub-rede não se espalha automaticamente para as outras.</p></div>
+        <div class="card"><div class="icon-chip">⚡</div><h3>Desempenho</h3><p>Reduz o domínio de broadcast — menos ruído de rede chegando a dispositivos que não precisam dele.</p></div>
+      </div>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">Exemplo real: provedores de nuvem como AWS e Azure fazem exatamente isso ao dividir uma <span class="code">VPC</span> em sub-redes por zona de disponibilidade.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ IDENTIFICAÇÃO DE SUB-REDES (EXERCÍCIO) -->
+  <section class="slide" id="s-subnet-identify">
+    <div class="slide-inner" style="max-width:1200px;">
+      <div class="kicker animate">06 · Máscaras &amp; Sub-redes</div>
+      <h2 class="stitle animate delay-1">Quantas Sub-redes Você Consegue Identificar?</h2>
+      <p class="subtitle animate delay-2">Dica do professor: destaque cada interface do hospedeiro ou roteador, criando "ilhas" de rede isoladas — cada ilha isolada é uma sub-rede. <b style="color:var(--text)">Olhe os IPs:</b> interfaces com os mesmos 3 primeiros octetos (máscara /24) estão na mesma ilha. Depois clique nos "?" para conferir.</p>
+      <div class="subid-wrap animate delay-3" style="max-width:min(100%, 100vh); margin:.7rem auto 0;">
+        <svg viewBox="0 0 760 372">
+          <line class="si-line" x1="380" y1="70" x2="235" y2="28"/><line class="si-line" x1="380" y1="70" x2="525" y2="28"/>
+          <line class="si-line" x1="150" y1="215" x2="60" y2="310"/><line class="si-line" x1="150" y1="215" x2="240" y2="310"/>
+          <line class="si-line" x1="610" y1="215" x2="520" y2="310"/><line class="si-line" x1="610" y1="215" x2="700" y2="310"/>
+          <line class="si-line" x1="380" y1="70" x2="150" y2="215"/><line class="si-line" x1="380" y1="70" x2="610" y2="215"/><line class="si-line" x1="150" y1="215" x2="610" y2="215"/>
+          <rect class="si-node" x="183" y="12" width="104" height="32" rx="9"/><text class="si-label host" x="235" y="26">H1</text><text class="si-ip" x="235" y="38">223.1.1.2</text>
+          <rect class="si-node" x="473" y="12" width="104" height="32" rx="9"/><text class="si-label host" x="525" y="26">H2</text><text class="si-ip" x="525" y="38">223.1.1.3</text>
+          <rect class="si-node" x="8" y="294" width="104" height="32" rx="9"/><text class="si-label host" x="60" y="308">H3</text><text class="si-ip" x="60" y="320">223.1.2.2</text>
+          <rect class="si-node" x="188" y="294" width="104" height="32" rx="9"/><text class="si-label host" x="240" y="308">H4</text><text class="si-ip" x="240" y="320">223.1.2.3</text>
+          <rect class="si-node" x="468" y="294" width="104" height="32" rx="9"/><text class="si-label host" x="520" y="308">H5</text><text class="si-ip" x="520" y="320">223.1.3.2</text>
+          <rect class="si-node" x="648" y="294" width="104" height="32" rx="9"/><text class="si-label host" x="700" y="308">H6</text><text class="si-ip" x="700" y="320">223.1.3.3</text>
+          <rect class="si-node router" x="350" y="54" width="60" height="32" rx="8"/><text class="si-label host" x="380" y="74">R1</text>
+          <rect class="si-node router" x="120" y="199" width="60" height="32" rx="8"/><text class="si-label host" x="150" y="219">R2</text>
+          <rect class="si-node router" x="580" y="199" width="60" height="32" rx="8"/><text class="si-label host" x="610" y="219">R3</text>
+          <text class="si-ip" x="380" y="50">223.1.1.1</text>
+          <text class="si-ip" x="150" y="255">223.1.2.1</text>
+          <text class="si-ip" x="610" y="255">223.1.3.1</text>
+          <text class="si-ip" x="335" y="104" text-anchor="end">223.1.9.1</text><text class="si-ip" x="200" y="190" text-anchor="start">223.1.9.2</text>
+          <text class="si-ip" x="425" y="104" text-anchor="start">223.1.7.1</text><text class="si-ip" x="560" y="190" text-anchor="end">223.1.7.2</text>
+          <text class="si-ip" x="228" y="207">223.1.8.1</text><text class="si-ip" x="532" y="207">223.1.8.2</text>
+        </svg>
+        <div class="si-zone" data-net="223.1.1.0/24" title="R1 + H1 + H2" style="left:50%; top:5.4%;">?</div>
+        <div class="si-zone" data-net="223.1.2.0/24" title="R2 + H3 + H4" style="left:19.7%; top:94%;">?</div>
+        <div class="si-zone" data-net="223.1.3.0/24" title="R3 + H5 + H6" style="left:80.3%; top:94%;">?</div>
+        <div class="si-zone" data-net="223.1.9.0/24" title="enlace R1–R2" style="left:34.5%; top:38.2%;">?</div>
+        <div class="si-zone" data-net="223.1.7.0/24" title="enlace R1–R3" style="left:65.5%; top:38.2%;">?</div>
+        <div class="si-zone" data-net="223.1.8.0/24" title="enlace R2–R3" style="left:50%; top:57.8%;">?</div>
+      </div>
+      <div class="subid-counter"><b id="subidCount">0</b>/6 sub-redes encontradas — não esqueça os <i>links entre roteadores</i>, eles também são sub-redes!</div>
+      <div class="j-controls">
+        <button class="btn ghost" id="subidReveal">Revelar todas</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 18. SUBNETTING ANIMADO -->
+  <section class="slide" id="s-subnet-anim">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Máscaras &amp; Sub-redes · Simulação</div>
+      <h2 class="stitle animate delay-1">Dividindo 192.168.1.0/24 em 4 Sub-redes /26</h2>
+      <p class="subtitle animate delay-2">Clique em <b style="color:var(--text)">"Emprestar bits"</b> para ver 2 bits de host virarem bits de rede na máscara — dobrando as sub-redes a cada bit.</p>
+      <div class="animate delay-3" style="margin-top:1.1rem;">
+        <div class="octet-label" style="text-align:left; margin-bottom:.3rem;">Último octeto do IP (192.168.1.<b style="color:var(--text)">0</b>) — bits de host:</div>
+        <div class="octets-wrap" style="display:flex; gap:4px;" id="subnetBits">
+          <!-- 8 bits gerados via JS -->
+        </div>
+        <div class="subnets-row" id="subnetBlocks">
+          <div class="subnet-block"><div class="id">Sub-rede 0</div><div class="rng">.0 – .63</div></div>
+          <div class="subnet-block"><div class="id">Sub-rede 1</div><div class="rng">.64 – .127</div></div>
+          <div class="subnet-block"><div class="id">Sub-rede 2</div><div class="rng">.128 – .191</div></div>
+          <div class="subnet-block"><div class="id">Sub-rede 3</div><div class="rng">.192 – .255</div></div>
+        </div>
+      </div>
+      <div class="j-controls">
+        <button class="btn ghost" id="subReset">Reiniciar (/24)</button>
+        <button class="btn" id="subBorrow">Emprestar 2 bits → /26</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 19. CALCULADORA CIDR -->
+  <section class="slide" id="s-calc">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Máscaras &amp; Sub-redes · Widget</div>
+      <h2 class="stitle animate delay-1">Calculadora CIDR — teste você mesmo</h2>
+      <div class="calc-wrap animate delay-2" style="margin-top:1.1rem;">
+        <div class="calc-slider-box">
+          <div class="calc-prefix">/<span id="calcPrefixNum">24</span></div>
+          <input type="range" min="16" max="30" value="24" id="calcSlider">
+          <div style="font-family:var(--mono); font-size:.74rem; color:var(--text-faint); margin-top:.5rem;">arraste para mudar o prefixo</div>
+        </div>
+        <div class="calc-results">
+          <div class="calc-stat"><div class="lbl">Máscara Decimal</div><div class="val" id="calcMask">255.255.255.0</div></div>
+          <div class="calc-stat"><div class="lbl">Total de IPs</div><div class="val" id="calcTotal">256</div></div>
+          <div class="calc-stat"><div class="lbl">IPs Utilizáveis</div><div class="val" id="calcUsable">254</div></div>
+          <div class="calc-stat"><div class="lbl">Salto (Magic Number)</div><div class="val" id="calcMagic">256</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MÃO NA MASSA: s-mm-calculo -->
+  <section class="slide hands-on" id="s-mm-calculo">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">Calcule no papel, confira na calculadora</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><h3 class="accent">Passo a passo</h3><ol class="steps"><li><span>Resolva cada exercício no caderno <b>antes</b> de abrir a resposta.</span></li><li><span>Passos: (1) identifique o <b>salto</b> (256 − valor da máscara no octeto); (2) ache o bloco que contém o IP; (3) rede = início do bloco; broadcast = fim do bloco.</span></li><li><span>Confira o resultado na <b>Calculadora CIDR</b> do slide anterior.</span></li><li><span>Desafio: troque os prefixos (/26 → /27, /20 → /22) e refaça de cabeça.</span></li></ol></div>
+        <div class="card"><h3 class="accent-b">Observe e responda <span style="font-weight:400; color:var(--text-faint); font-size:.75rem;">(clique para ver o gabarito)</span></h3><div class="quiz-list"><div class="qcard"><div class="qhead"><span class="qtext">1) O host 192.168.1.130/26 — qual a rede, o broadcast, a faixa útil e o nº de hosts?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">Salto = 64. Bloco 128–191. <b>Rede 192.168.1.128</b> · <b>Broadcast 192.168.1.191</b> · úteis <b>.129 a .190</b> · <b>62 hosts</b> (2⁶ − 2).</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">2) O host 172.16.45.200/20 — qual a rede, o broadcast e quantos hosts?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">Máscara 255.255.<b>240</b>.0 → salto 16 no 3º octeto. 45 está no bloco 32–47. <b>Rede 172.16.32.0</b> · <b>Broadcast 172.16.47.255</b> · <b>4094 hosts</b> (2¹² − 2).</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">3) Uma sala precisa de 50 computadores. Qual o menor prefixo e quantos IPs sobram?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">2⁶ − 2 = 62 ≥ 50, logo <b>/26</b> (um /27 só dá 30). Sobram <b>12 IPs</b> ociosos.</div></div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ IPv6: MOTIVAÇÃO + REPRESENTAÇÃO -->
+  <section class="slide" id="s-ipv6-motivacao">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Endereçamento IPv6</div>
+      <h2 class="stitle animate delay-1">IPv6: 128 Bits Contra a Escassez</h2>
+      <p class="subtitle animate delay-2">Motivação: o esgotamento do IPv4. Um endereço IPv6 tem <b style="color:var(--text)">128 bits</b> (8 bytes a mais que os 32 do IPv4) — representados em <b style="color:var(--text)">8 grupos de 16 bits</b>, escritos em hexadecimal e separados por "<span class="code">:</span>".</p>
+      <div class="v6-groups animate delay-3">
+        <div class="v6-grp">2001</div><div class="v6-grp">0DB8</div><div class="v6-grp">0000</div><div class="v6-grp">0000</div>
+        <div class="v6-grp">130F</div><div class="v6-grp">0000</div><div class="v6-grp">0000</div><div class="v6-grp">140B</div>
+      </div>
+      <div class="v6-stat-row animate delay-4">
+        <div class="v6-stat"><div class="n">2³²</div><div class="l">IPv4 ≈ 4,3 bilhões</div></div>
+        <div class="v6-stat"><div class="n">2¹²⁸</div><div class="l">IPv6 = 340 undecilhões</div></div>
+        <div class="v6-stat"><div class="n">~79 oct.</div><div class="l">vezes mais que o IPv4</div></div>
+        <div class="v6-stat"><div class="n">~56 oct.</div><div class="l">endereços por ser humano</div></div>
+      </div>
+      <p class="subtitle animate delay-5" style="margin-top:.9rem;">Regras de escrita: maiúsculo ou minúsculo tanto faz, zeros à esquerda podem ser omitidos, e uma sequência de zeros contínuos pode virar "<span class="code">::</span>" — uma única vez por endereço.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ IPv6: COMPRESSÃO PASSO A PASSO -->
+  <section class="slide" id="s-ipv6-compressao">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Endereçamento IPv6</div>
+      <h2 class="stitle animate delay-1">Comprimindo um Endereço IPv6</h2>
+      <p class="subtitle animate delay-2">Clique em <b style="color:var(--text)">"Aplicar regra"</b> e veja o endereço original ser comprimido passo a passo.</p>
+      <div class="v6-groups animate delay-3" id="v6CompGroups"></div>
+      <div class="j-mac-caption" id="v6CompCaption" style="margin-top:.9rem;">Endereço original — ainda sem nenhuma compressão aplicada.</div>
+      <div class="j-controls">
+        <button class="btn ghost" id="v6CompReset">Reiniciar</button>
+        <button class="btn" id="v6CompNext">Aplicar regra →</button>
+      </div>
+      <div class="v6-invalid animate delay-4">⚠ <b>Formato inválido:</b> <span class="code">2001:0DB8::130F::140B</span> — nunca use "<span class="code">::</span>" duas vezes no mesmo endereço, pois gera ambiguidade (o computador não saberia quantos zeros tem em cada lacuna).</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ IPv6: PREFIXO + EXERCÍCIO -->
+  <section class="slide" id="s-ipv6-prefixo">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Endereçamento IPv6</div>
+      <h2 class="stitle animate delay-1">Adeus, Máscara! Olá, Prefixo!</h2>
+      <p class="subtitle animate delay-2">O IPv6 não usa máscara de sub-rede (como 255.255.255.0) — usa um <b style="color:var(--text)">Prefixo</b>, igual ao CIDR do IPv4. Em <span class="code">2001:db8:a::/64</span>, os primeiros 64 bits são o ID da Rede; os outros 64, o ID do Host. O padrão para redes locais (LANs) é sempre <b class="accent-b">/64</b> — isso simplifica tudo.</p>
+      <div class="card animate delay-3" style="margin-top:1rem;">
+        <h3>Exercício: expanda o endereço comprimido</h3>
+        <p style="font-family:var(--mono); font-size:1.05rem; color:var(--text); margin:.5rem 0;">0:15::1:12:1213</p>
+        <button class="btn ghost" id="v6ExReveal" style="margin-top:.3rem;">Revelar resposta</button>
+        <p id="v6ExAnswer" style="display:none; margin-top:.7rem; font-family:var(--mono); font-size:.92rem; color:var(--green);">0000:0015:0000:0000:0000:0001:0012:1213</p>
+      </div>
+      <div class="refs-box animate delay-4">
+        <div class="refs-title">📚 Saiba mais (indicado pelo professor)</div>
+        <ul>
+          <li><a href="https://www.youtube.com/watch?v=jnuHODaLcO8&ab_channel=NICbrvideos" target="_blank" rel="noopener">Os endereços IP não são todos iguais — Parte 01 <span class="ext">↗</span></a></li>
+          <li><a href="https://www.youtube.com/watch?v=63M61wttuMk&ab_channel=NICbrvideos" target="_blank" rel="noopener">Os endereços IP não são todos iguais — Parte 02 <span class="ext">↗</span></a></li>
+          <li><a href="https://www.youtube.com/watch?v=_JbLr_C-HLk" target="_blank" rel="noopener">O que é IPv6 <span class="ext">↗</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MÃO NA MASSA: s-mm-ipv6 -->
+  <section class="slide hands-on" id="s-mm-ipv6">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Descubra o seu endereço IPv6</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><h3 class="accent">Passo a passo</h3><ol class="steps"><li><span>No terminal: <span class="code">ipconfig</span> (Windows) · <span class="code">ip -6 addr</span> (Linux) · <span class="code">ifconfig</span> (macOS).</span></li><li><span>Procure as linhas <b>IPv6</b>: uma começando com <b>fe80::</b> (link-local) e, se houver, outra começando com <b>2</b> (global).</span></li><li><span>Identifique o <b>prefixo /64</b> (os 4 primeiros grupos) e tente <b>expandir</b> o endereço escrevendo os 8 grupos completos.</span></li><li><span>Teste o loopback IPv6: <span class="code">ping -6 ::1</span></span></li></ol></div>
+        <div class="card"><h3 class="accent-b">Observe e responda <span style="font-weight:400; color:var(--text-faint); font-size:.75rem;">(clique para ver o gabarito)</span></h3><div class="quiz-list"><div class="qcard"><div class="qhead"><span class="qtext">O seu endereço começa com fe80::. Ele é roteável na Internet?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer"><b>Não.</b> É <b>link-local</b>: só vale no enlace local (falar com o gateway e vizinhos). Os endereços globais costumam começar com <b>2</b> (faixa 2000::/3).</div></div></div><div class="qcard"><div class="qhead"><span class="qtext">Não apareceu nenhum IPv6 global. Algo está errado?</span><span class="chev">＋</span></div><div class="qbody"><div class="qanswer">Provavelmente não: sua rede ou provedor pode ainda <b>não entregar IPv6</b>. É o cenário real da transição, em que IPv4 e IPv6 convivem (<b>dual-stack</b>).</div></div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ ATIVIDADES: TERMINAL -->
+  <section class="slide" id="s-atividades-terminal">
+    <div class="slide-inner">
+      <div class="kicker animate">08 · Atividades Práticas</div>
+      <h2 class="stitle animate delay-1">Mão na Massa: Explore sua Própria Rede</h2>
+      <p class="subtitle animate delay-2">Abra o terminal do seu computador (Prompt de Comando no Windows, Terminal no Linux/macOS) e siga as três atividades:</p>
+      <div class="grid-3 animate delay-3" style="margin-top:1rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>Qual é o meu IP?</h3><p>Windows: <span class="code">ipconfig /all</span><br>Linux/macOS: <span class="code">ip addr</span> ou <span class="code">ifconfig</span><br>Anote: IPv4, máscara, gateway padrão e se há IPv6.</p></div>
+        <div class="card"><div class="icon-chip">2</div><h3>Ping</h3><p>Envia um pacote ICMP e espera resposta — o "teste de vida" da rede.<br>Gateway: <span class="code">ping 192.168.0.1</span><br>Site: <span class="code">ping google.com</span> · IPv6: <span class="code">ping -6 google.com</span></p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Traceroute</h3><p>Mostra todos os saltos (roteadores) até o destino.<br>Windows: <span class="code">tracert google.com</span><br>Linux/macOS: <span class="code">traceroute google.com</span><br>1º salto = seu gateway; últimos = roteadores do destino.</p></div>
+      </div>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">Dica do professor: o traceroute visualiza, na prática, o conceito de roteamento da Camada 3 que vimos nesta aula.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ ATIVIDADE: DESAFIO DE SUB-REDE -->
+  <section class="slide" id="s-atividade-desafio">
+    <div class="slide-inner">
+      <div class="kicker animate">08 · Atividades Práticas</div>
+      <h2 class="stitle animate delay-1">Desafio de Sub-rede (Simples)</h2>
+      <p class="subtitle animate delay-2">Cenário: um dispositivo tem o IP <b style="color:var(--text)">192.168.10.77/24</b>. Responda cada pergunta e clique para conferir:</p>
+      <div class="quiz-list animate delay-3" id="desafioList" style="margin-top:.9rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 20. COMO ESTUDAR -->
+  <section class="slide" id="s-estudo">
+    <div class="slide-inner">
+      <div class="kicker animate">09 · Para Estudar Melhor</div>
+      <h2 class="stitle animate delay-1">Sabemos que sub-redes são difíceis — aqui vai um plano</h2>
+      <p class="subtitle animate delay-2">Ninguém calcula sub-rede de cabeça na primeira tentativa. É uma habilidade que se constrói com repetição, como tabuada. Veja como treinar de forma mais eficiente:</p>
+      <div class="grid-3 animate delay-3" style="margin-top:1rem;">
+        <div class="card"><div class="icon-chip">📝</div><h3>Como estudar</h3><p>Resolva no papel antes de usar calculadora. Refaça os exemplos desta aula trocando os números. Revise ARP/MAC — a camada de rede depende deles.</p></div>
+        <div class="card"><div class="icon-chip">🔁</div><h3>Repita as atividades</h3><p>Rode de novo <span class="code">ipconfig</span>, <span class="code">ping</span> e <span class="code">tracert</span> em redes diferentes (casa, celular, faculdade) e compare os resultados.</p></div>
+        <div class="card"><div class="icon-chip">🌍</div><h3>Casos reais</h3><p>Seu Wi-Fi de casa usa IP privado atrás de NAT. Ao trocar de Wi-Fi para dados móveis, seu celular recebe um IP novo via DHCP. Nuvens como AWS organizam redes inteiras em blocos CIDR.</p></div>
+      </div>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">Experimente agora: identifique de qual faixa privada (RFC 1918) é o IP que apareceu no seu <span class="code">ipconfig</span> — e lembre-se de que é o NAT do seu roteador que traduz esse endereço sempre que você acessa a Internet.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 21. ESTÁTICO x DHCP -->
+  <section class="slide" id="s-estatico-dhcp">
+    <div class="slide-inner">
+      <div class="kicker animate">10 · Atribuição de Endereços</div>
+      <h2 class="stitle animate delay-1">Atribuição Estática x Dinâmica (DHCP)</h2>
+      <table class="cmp animate delay-2" style="margin-top:1rem;">
+        <tr><th>Aspecto</th><th>Estática</th><th>DHCP</th></tr>
+        <tr><td>Quem configura</td><td>Administrador, manualmente</td><td>Servidor, automaticamente</td></tr>
+        <tr><td>Uso típico</td><td>Servidores, roteadores, impressoras</td><td>Notebooks, celulares, estações comuns</td></tr>
+        <tr><td>Reaproveitamento</td><td>Endereço fica reservado sempre</td><td>Volta ao pool quando o lease expira</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ 22. SIMULADOR DORA -->
+  <section class="slide" id="s-dora">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">10 · Atribuição de Endereços · Simulador</div>
+      <h2 class="stitle animate delay-1">Como o DHCP Atribui um Endereço — Processo DORA</h2>
+      <div class="dora-stage animate delay-2" style="margin-top:.9rem;">
+        <div class="dora-box client" id="doraClient"><div class="lbl">💻 Cliente</div><div class="state" id="doraClientState">IP: 0.0.0.0 (sem IP ainda)</div></div>
+        <div class="dora-box server" id="doraServer"><div class="lbl">🖧 Servidor DHCP</div><div class="state" id="doraServerState">Pool disponível: .50 – .99</div></div>
+        <div class="dora-line"></div>
+        <div class="dora-arrow" id="doraArrow">➤</div>
+        <div class="dora-msg" id="doraMsg">Clique em "Iniciar DORA" para começar a simulação.</div>
+      </div>
+      <div class="dora-steps" id="doraSteps">
+        <div class="dora-step-pill" data-s="0">1. DISCOVER</div>
+        <div class="dora-step-pill" data-s="1">2. OFFER</div>
+        <div class="dora-step-pill" data-s="2">3. REQUEST</div>
+        <div class="dora-step-pill" data-s="3">4. ACK</div>
+      </div>
+      <div class="dora-controls">
+        <button class="btn ghost" id="doraReset">Reiniciar</button>
+        <button class="btn" id="doraNext">Iniciar DORA →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 23. QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate">11 · Fixação</div>
+      <h2 class="stitle animate delay-1">Fixação — clique para revelar o gabarito</h2>
+      <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 24. FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Hoje o pacote aprendeu <span class="accent-b">onde</span> ir.<br>Na próxima aula, ele aprende <span class="accent">por onde</span> passar.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Revisamos ARP, encapsulamento, cabeçalho IPv4, endereçamento, classes, IPs privados, NAT, máscaras/CIDR, sub-redes, IPv6 e atribuição de endereços (DHCP). A próxima aula aprofunda Roteamento e os Protocolos de Roteamento.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula: <b style="color:var(--text)">Roteamento &amp; Protocolos de Roteamento</b></span><span class="arrow">→</span></div>
+      <div class="refs-box animate delay-4" style="margin-top:1.4rem; max-width:620px;">
+        <div class="refs-title">📚 Referências da disciplina</div>
+        <ul>
+          <li><a href="#" onclick="return false;" style="cursor:default;">KUROSE, J.; ROSS, K. <i>Redes de Computadores e a Internet: uma abordagem top-down.</i> Bookman.</a></li>
+          <li><a href="#" onclick="return false;" style="cursor:default;">TANENBAUM, A. <i>Redes de Computadores.</i> Bookman.</a></li>
+          <li><a href="#" onclick="return false;" style="cursor:default;">STALLINGS, W. <i>Criptografia e Segurança de Redes.</i> Pearson.</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const totalNo = document.getElementById('totalNo');
+const progress = document.getElementById('progress');
+totalNo.textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      e.target.classList.add('in-view');
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.55,1], root:deck});
+slides.forEach(s=>io.observe(s));
+
+document.addEventListener('keydown', (e)=>{
+  const curr = slides.findIndex(s=>s.classList.contains('in-view'));
+  if(['ArrowDown','PageDown',' '].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+// internal anchor links (sumário)
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ======================================================================
+   WIDGET 0 — Roteamento em malha: 3 pacotes, 3 caminhos; botão derruba R4 e o roteamento recalcula
+   ====================================================================== */
+(function(){
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const NS = 'http://www.w3.org/2000/svg';
+  const normal = {
+    1:'M60,100 L185,30 L325,65 L455,65 L580,100',
+    2:'M60,100 L185,100 L325,65 L455,135 L580,100',
+    3:'M60,100 L185,170 L325,135 L455,65 L580,100'};
+  const detour = {
+    1:'M60,100 L185,100 L325,135 L455,65 L580,100',
+    2:'M60,100 L185,170 L325,135 L455,135 L580,100',
+    3:normal[3]};
+  const dur = {1:4.5, 2:5.5, 3:6.5};
+  let down = false;
+  function anim(n){
+    const k = document.getElementById('rtK'+n);
+    const old = k.querySelector('animateMotion'); if(old) old.remove();
+    if(reduced){ k.setAttribute('transform','translate(60,100)'); return; }
+    k.removeAttribute('transform');
+    const a = document.createElementNS(NS,'animateMotion');
+    a.setAttribute('dur', dur[n]+'s'); a.setAttribute('repeatCount','indefinite');
+    const m = document.createElementNS(NS,'mpath');
+    m.setAttribute('href','#rtP'+n); m.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','#rtP'+n);
+    a.appendChild(m); k.appendChild(a);
+  }
+  function apply(){
+    [1,2,3].forEach(n=>{ document.getElementById('rtP'+n).setAttribute('d', (down?detour:normal)[n]); anim(n); });
+    document.getElementById('rtR4').classList.toggle('down', down);
+    document.getElementById('rtFail').textContent = down ? '🔧 Restaurar R4' : '⚡ Derrubar o roteador R4';
+    document.getElementById('rtCaption').innerHTML = down
+      ? '<b style="color:#e5484d">R4 caiu!</b> Os roteadores vizinhos perceberam e <b>recalcularam</b> as rotas: os pacotes 1 e 2 agora desviam por R2/R5 e R3/R5 — a comunicação continua (é o "Waze" da rede).'
+      : 'Cada pacote do mesmo fluxo pode seguir um caminho diferente: cada roteador decide, na hora, o melhor próximo salto.';
+  }
+  document.getElementById('rtFail').addEventListener('click', ()=>{ down = !down; apply(); });
+  apply();
+})();
+
+/* ======================================================================
+   WIDGET 1 — Animação ARP automática (preenchimento da tabela a cada salto)
+   Roda sozinha quando o slide entra na tela; botão só para replay manual.
+   ====================================================================== */
+(function(){
+  const reducedMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hops = [
+    {resolver:'PC-A',      ring:'ringA',  fromPct:4,  toPct:35, ip:'192.168.0.1 (próx. salto)',  mac:'R1-eth0', deviceLbl:'Tabela ARP de PC-A'},
+    {resolver:'Roteador 1',ring:'ringR1', fromPct:35, toPct:65, ip:'203.0.113.2 (próx. salto)',  mac:'R2-eth0', deviceLbl:'Tabela ARP do Roteador 1'},
+    {resolver:'Roteador 2',ring:'ringR2', fromPct:65, toPct:88, ip:'200.150.1.10 (destino final)', mac:'BB:BB',  deviceLbl:'Tabela ARP do Roteador 2'},
+  ];
+  const packet = document.getElementById('jPacket');
+  const caption = document.getElementById('jCaption');
+  const ipBox = document.getElementById('jIpBox');
+  const replyDot = document.getElementById('replyDot');
+  const alDevice = document.getElementById('alDevice');
+  const alRows = document.getElementById('alRows');
+  const replayBtn = document.getElementById('jReplay');
+  let timers = [];
+  function clearTimers(){ timers.forEach(t=>clearTimeout(t)); timers = []; }
+  function after(ms, fn){ timers.push(setTimeout(fn, ms)); }
+
+  function resetVisuals(){
+    clearTimers();
+    packet.style.left = '4%';
+    caption.textContent = reducedMotion ? 'Resumo: a cada salto, o roteador resolve via ARP o MAC do próximo salto e reescreve o quadro — o IP nunca muda.' : 'Preparando simulação automática…';
+    ipBox.classList.remove('pulse');
+    replyDot.style.opacity = 0;
+    alDevice.textContent = '—';
+    alRows.innerHTML = '';
+    document.querySelectorAll('.bcast-ring').forEach(r=>r.classList.remove('go'));
+  }
+
+  function addRow(ip, deviceLbl){
+    alDevice.textContent = deviceLbl;
+    const tr = document.createElement('tr');
+    tr.className = 'arp-row pending';
+    tr.innerHTML = '<td>'+ip+'</td><td>…</td><td class="st">procurando</td>';
+    alRows.appendChild(tr);
+    requestAnimationFrame(()=> tr.classList.add('show'));
+    return tr;
+  }
+  function resolveRow(tr, mac){
+    tr.classList.remove('pending');
+    tr.classList.add('resolved','flash');
+    tr.innerHTML = '<td>'+tr.children[0].textContent+'</td><td>'+mac+'</td><td class="st">✓</td>';
+    after(650, ()=> tr.classList.remove('flash'));
+  }
+
+  function playHop(i){
+    if(i >= hops.length){
+      caption.innerHTML = 'Pacote chega ao destino final. Em todo o trajeto, o cabeçalho <b>IP nunca mudou</b> — só o <b>MAC</b> foi reescrito a cada salto, graças à resolução ARP.';
+      return;
+    }
+    const h = hops[i];
+    const ring = document.getElementById(h.ring);
+    caption.innerHTML = '<b>'+h.resolver+'</b> envia um <b>ARP Request</b> (broadcast): "quem tem esse endereço?"';
+    if(!reducedMotion){ ring.classList.remove('go'); void ring.offsetWidth; ring.classList.add('go'); }
+    const row = addRow(h.ip, h.deviceLbl);
+    after(reducedMotion?0:900, ()=>{
+      // resposta ARP (unicast) viaja de volta ao solicitante
+      replyDot.style.transition = 'none';
+      replyDot.style.left = h.toPct+'%';
+      replyDot.style.opacity = reducedMotion?0:1;
+      void replyDot.offsetWidth;
+      replyDot.style.transition = 'left .8s cubic-bezier(.16,.8,.3,1), opacity .2s';
+      replyDot.style.left = h.fromPct+'%';
+    });
+    after(reducedMotion?0:1750, ()=>{
+      replyDot.style.opacity = 0;
+      resolveRow(row, h.mac);
+      caption.innerHTML = '<b>'+h.resolver+'</b> aprendeu o MAC e reencapsula o quadro: <b>MAC Destino = '+h.mac+'</b>. O cabeçalho IP continua idêntico.';
+    });
+    after(reducedMotion?0:2200, ()=>{
+      packet.style.left = h.toPct+'%';
+      ipBox.classList.add('pulse');
+      after(500, ()=>ipBox.classList.remove('pulse'));
+    });
+    after(reducedMotion?0:3350, ()=> playHop(i+1));
+  }
+
+  function play(){
+    resetVisuals();
+    if(reducedMotion){
+      packet.style.left = '88%';
+      hops.forEach(h=>{ const row=addRow(h.ip, h.deviceLbl); resolveRow(row, h.mac); });
+      alDevice.textContent = 'Resumo (3 saltos resolvidos)';
+      return;
+    }
+    after(400, ()=> playHop(0));
+  }
+
+  replayBtn.addEventListener('click', play);
+  // auto-play na primeira vez que o slide entra na tela
+  const target = document.getElementById('s-arp-anim');
+  const once = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ play(); once.disconnect(); } });
+  }, {threshold:.6});
+  once.observe(target);
+  resetVisuals();
+})();
+
+/* ======================================================================
+   WIDGET 2 — Encapsulamento (PDU por camada, Host A → Roteador → Host B)
+   ====================================================================== */
+(function(){
+  const steps = [
+    {pos:'8%',  pdu:'app',    who:'Host A ↓ (descendo as camadas)', caption:'Host A: a camada de <b>Aplicação</b> gera os Dados que você quer enviar (ex: uma mensagem).'},
+    {pos:'8%',  pdu:'transp', who:'Host A ↓ (descendo as camadas)', caption:'Host A: a camada de <b>Transporte</b> adiciona seu cabeçalho (porta de origem/destino) → agora é um <b>Segmento</b>.'},
+    {pos:'8%',  pdu:'rede',   who:'Host A ↓ (descendo as camadas)', caption:'Host A: a camada de <b>Rede</b> adiciona o cabeçalho IP (origem/destino) → agora é um <b>Pacote</b>.'},
+    {pos:'8%',  pdu:'enlace', who:'Host A ↓ (descendo as camadas)', caption:'Host A: a camada de <b>Enlace</b> adiciona o cabeçalho MAC → agora é um <b>Quadro</b>, pronto para virar Bits no cabo/Wi-Fi.'},
+    {pos:'46%', pdu:'enlace', who:'Roteador (só Rede e Enlace)', caption:'Roteador: recebe o Quadro, remove o cabeçalho de Enlace (decapsula), olha o <b>Pacote</b> (IP inalterado!) e decide o próximo salto, reencapsulando em um <b>novo Quadro</b>.'},
+    {pos:'86%', pdu:'fisica', up:true, who:'Host B ↑ (subindo as camadas)', caption:'Host B: os <b>Bits</b> chegam pelo cabo/Wi-Fi na camada <b>Física</b> — começa o caminho <b>de baixo para cima</b>.'},
+    {pos:'86%', pdu:'enlace', up:true, who:'Host B ↑ (subindo as camadas)', caption:'Host B · <b>Enlace</b>: lê o MAC de destino (é o meu!), confere o erro e <b>remove o cabeçalho de Enlace</b> → sobra o <b>Pacote</b>.'},
+    {pos:'86%', pdu:'rede',   up:true, who:'Host B ↑ (subindo as camadas)', caption:'Host B · <b>Rede</b>: lê o IP de destino (também sou eu!) e <b>remove o cabeçalho IP</b> → sobra o <b>Segmento</b>.'},
+    {pos:'86%', pdu:'transp', up:true, who:'Host B ↑ (subindo as camadas)', caption:'Host B · <b>Transporte</b>: usa a porta de destino para saber a qual aplicação entregar e <b>remove o cabeçalho</b> → sobram os <b>Dados</b>.'},
+    {pos:'86%', pdu:'app',    up:true, who:'Host B ↑ (chegou ao topo!)', caption:'Host B · <b>Aplicação</b>: recebe os <b>Dados originais</b>, exatamente como Host A os enviou. Ciclo completo: desceu 4 camadas em A, subiu 4 em B!'},
+  ];
+  let idx = 0;
+  const packet = document.getElementById('encPacket');
+  const caption = document.getElementById('encCaption');
+  const segs = document.querySelectorAll('.pdu-seg');
+  const order = ['app','transp','rede','enlace','fisica'];
+  function render(){
+    const s = steps[idx];
+    packet.style.left = s.pos;
+    caption.innerHTML = s.caption;
+    const activeIdx = order.indexOf(s.pdu);
+    segs.forEach((seg,i)=>{
+      seg.classList.toggle('active', i===activeIdx);
+      // descendo (Host A): camadas acima já foram; subindo (Host B): camadas abaixo já foram
+      seg.classList.toggle('done', s.up ? i>activeIdx : i<activeIdx);
+    });
+    document.getElementById('pduWho').textContent = s.who;
+    document.getElementById('pduStrip').classList.toggle('going-up', !!s.up);
+  }
+  document.getElementById('encNext').addEventListener('click', ()=>{ idx = Math.min(idx+1, steps.length-1); render(); });
+  document.getElementById('encReset').addEventListener('click', ()=>{ idx = 0; render(); });
+  render();
+})();
+
+/* ======================================================================
+   WIDGET 3 — Cabeçalho IPv4 interativo (dados + render do painel)
+   ====================================================================== */
+(function(){
+  const data = {
+    ver:   {t:'Versão', bits:'4 bits', body:'Indica a versão do protocolo IP.', val:'4 (IPv4) ou 6 (IPv6)', impact:'É o primeiro campo lido — define como o resto do cabeçalho será interpretado.'},
+    ihl:   {t:'IHL (Internet Header Length)', bits:'4 bits', body:'Tamanho do cabeçalho em palavras de 4 bytes.', val:'5 (20 bytes, sem opções) até 15', impact:'Sem ele, o roteador não saberia onde o cabeçalho termina e os dados começam.'},
+    tos:   {t:'Tipo de Serviço (DSCP/ECN)', bits:'8 bits', body:'Prioriza certos pacotes (ex. voz/vídeo) sobre outros.', val:'Normalmente 0 (melhor esforço)', impact:'Usado em QoS para dar prioridade a tráfego sensível a atraso.'},
+    len:   {t:'Comprimento Total', bits:'16 bits', body:'Tamanho total do pacote (cabeçalho + dados) em bytes.', val:'Até 65.535 bytes', impact:'Permite ao receptor saber exatamente onde o pacote termina.'},
+    id:    {t:'Identificação', bits:'16 bits', body:'Identifica os fragmentos de um mesmo pacote original.', val:'Número sequencial', impact:'Usado junto com o Offset para remontar fragmentos na ordem certa.'},
+    flags: {t:'Flags', bits:'3 bits', body:'Controla a fragmentação do pacote.', val:'DF (não fragmentar), MF (mais fragmentos)', impact:'Se DF=1 e o pacote é grande demais, o roteador descarta e avisa com ICMP.'},
+    frag:  {t:'Offset do Fragmento', bits:'13 bits', body:'Posição deste fragmento dentro do pacote original.', val:'Múltiplo de 8 bytes', impact:'Permite remontar fragmentos fora de ordem no destino.'},
+    ttl:   {t:'TTL (Time to Live)', bits:'8 bits', body:'Contador decrescido em 1 a cada roteador atravessado.', val:'Típico: 64, 128 ou 255', impact:'Ao chegar a 0, o pacote é descartado — é assim que o <b>traceroute</b> mapeia a rota, aumentando o TTL a cada tentativa.'},
+    proto: {t:'Protocolo', bits:'8 bits', body:'Indica o protocolo de transporte encapsulado nos dados.', val:'TCP=6 · UDP=17 · ICMP=1', impact:'É como o destino sabe para qual protocolo entregar o conteúdo ao desencapsular.'},
+    chk:   {t:'Checksum do Cabeçalho', bits:'16 bits', body:'Verificação de integridade — cobre só o cabeçalho.', val:'Recalculado a cada salto', impact:'Como o TTL muda a cada roteador, o checksum precisa ser recalculado no caminho todo.'},
+    src:   {t:'Endereço IP de Origem', bits:'32 bits', body:'Quem enviou o pacote.', val:'Ex. 10.0.0.5', impact:'Nunca muda durante o trajeto — diferente do MAC, que é reencapsulado a cada salto.'},
+    dst:   {t:'Endereço IP de Destino', bits:'32 bits', body:'Para quem o pacote é destinado.', val:'Ex. 200.150.1.10', impact:'É o que cada roteador consulta na tabela de rotas para decidir o próximo salto.'},
+    opt:   {t:'Opções + Padding', bits:'Variável', body:'Campo raramente usado hoje (ex. registro de rota, timestamps).', val:'Presente só se IHL > 5', impact:'Aumenta o tamanho do cabeçalho — por isso a maioria dos pacotes modernos não usa.'},
+  };
+  const panel = document.getElementById('hdrPanel');
+  const fields = document.querySelectorAll('.hfield');
+  function show(key){
+    const d = data[key];
+    fields.forEach(f=>f.classList.toggle('active', f.dataset.f===key));
+    panel.innerHTML = '<h4>'+d.t+'</h4><span class="bits-tag">'+d.bits+'</span><dl>'+
+      '<dt>Função</dt><dd>'+d.body+'</dd>'+
+      '<dt>Valor comum</dt><dd><b>'+d.val+'</b></dd>'+
+      '<dt>Impacto prático</dt><dd>'+d.impact+'</dd></dl>';
+  }
+  fields.forEach(f=>{
+    f.addEventListener('mouseenter', ()=>show(f.dataset.f));
+    f.addEventListener('click', ()=>show(f.dataset.f));
+  });
+})();
+
+/* ======================================================================
+   WIDGET 4 — Visualizador de bits interativo (IPv4: bits → decimal)
+   ====================================================================== */
+(function(){
+  const initial = [
+    [1,1,0,0,0,0,0,0],
+    [1,0,1,0,1,0,0,0],
+    [0,0,0,0,0,0,0,1],
+    [0,0,0,0,1,0,1,0],
+  ];
+  const wrap = document.getElementById('ipv4BitWidget');
+  const decimalLine = document.getElementById('ipv4Decimal');
+  const state = JSON.parse(JSON.stringify(initial));
+  initial.forEach((octet, oi)=>{
+    const group = document.createElement('div');
+    group.className = 'octet-group';
+    const row = document.createElement('div');
+    row.className = 'octet';
+    octet.forEach((bitVal, bi)=>{
+      const cell = document.createElement('div');
+      cell.className = 'bit toggle ' + (oi<3 ? 'net' : 'host');
+      cell.textContent = bitVal;
+      cell.addEventListener('click', ()=>{
+        state[oi][bi] = state[oi][bi] ? 0 : 1;
+        cell.textContent = state[oi][bi];
+        updateDecimal();
+      });
+      row.appendChild(cell);
+    });
+    const dec = document.createElement('div');
+    dec.className = 'octet-dec';
+    dec.id = 'oct-dec-'+oi;
+    group.appendChild(row);
+    group.appendChild(dec);
+    wrap.appendChild(group);
+  });
+  function updateDecimal(){
+    const octVals = state.map(bits => parseInt(bits.join(''),2));
+    octVals.forEach((v,i)=> document.getElementById('oct-dec-'+i).textContent = v);
+    decimalLine.textContent = octVals.join('.');
+  }
+  updateDecimal();
+})();
+
+/* ======================================================================
+   WIDGET 5 — Visualizador de bits / divisão em sub-redes
+   ====================================================================== */
+(function(){
+  const wrap = document.getElementById('subnetBits');
+  for(let i=0;i<8;i++){
+    const b = document.createElement('div');
+    b.className = 'bit host';
+    b.textContent = '0';
+    b.dataset.i = i;
+    wrap.appendChild(b);
+  }
+  const bits = Array.from(wrap.children);
+  const blocks = document.getElementById('subnetBlocks').children;
+  document.getElementById('subBorrow').addEventListener('click', ()=>{
+    [0,1].forEach(i=>{ bits[i].classList.remove('host'); bits[i].classList.add('borrowed'); });
+    Array.from(blocks).forEach((bl,i)=> setTimeout(()=>bl.classList.add('show'), i*140));
+  });
+  document.getElementById('subReset').addEventListener('click', ()=>{
+    bits.forEach(b=>{ b.classList.remove('borrowed'); b.classList.add('host'); });
+    Array.from(blocks).forEach(bl=>bl.classList.remove('show'));
+  });
+})();
+
+/* ======================================================================
+   WIDGET 6 — Calculadora CIDR em tempo real
+   ====================================================================== */
+(function(){
+  const slider = document.getElementById('calcSlider');
+  const els = {
+    num: document.getElementById('calcPrefixNum'),
+    mask: document.getElementById('calcMask'),
+    total: document.getElementById('calcTotal'),
+    usable: document.getElementById('calcUsable'),
+    magic: document.getElementById('calcMagic'),
+  };
+  function maskForPrefix(p){
+    const bits = '1'.repeat(p) + '0'.repeat(32-p);
+    const octs = [0,1,2,3].map(i => parseInt(bits.slice(i*8,i*8+8),2));
+    return octs.join('.');
+  }
+  function update(){
+    const p = parseInt(slider.value,10);
+    const hostBits = 32-p;
+    const total = Math.pow(2,hostBits);
+    const usable = total>2 ? total-2 : 0;
+    const lastOctetPrefix = p % 8 === 0 ? 8 : p % 8;
+    const magic = p>=24 ? Math.pow(2, 8-lastOctetPrefix) : total;
+    els.num.textContent = p;
+    els.mask.textContent = maskForPrefix(p);
+    els.total.textContent = total.toLocaleString('pt-BR');
+    els.usable.textContent = usable.toLocaleString('pt-BR');
+    els.magic.textContent = p>=24 ? magic : '—';
+  }
+  slider.addEventListener('input', update);
+  update();
+})();
+
+/* ======================================================================
+   WIDGET 7 — Simulador DORA (DHCP)
+   ====================================================================== */
+(function(){
+  const seq = [
+    {pct:'10%', from:'client', msg:'<b>1. DISCOVER</b> — broadcast: "alguém tem um IP pra mim?"', client:'Enviando DISCOVER (broadcast)...', server:'Recebendo pedido...'},
+    {pct:'90%', from:'server', msg:'<b>2. OFFER</b> — "posso te oferecer 192.168.1.50"', client:'Recebendo oferta de 192.168.1.50...', server:'Oferecendo 192.168.1.50'},
+    {pct:'10%', from:'client', msg:'<b>3. REQUEST</b> — broadcast: "aceito o endereço .50"', client:'Solicitando 192.168.1.50 (broadcast)...', server:'Recebendo confirmação...'},
+    {pct:'90%', from:'server', msg:'<b>4. ACK</b> — concede o endereço com lease ativo', client:'IP: 192.168.1.50 · Máscara: 255.255.255.0 · Gateway: 192.168.1.1 · DNS: 8.8.8.8 · Lease ativo ✓', server:'Lease concedido a 192.168.1.50'},
+  ];
+  let step = -1;
+  const arrow = document.getElementById('doraArrow');
+  const msg = document.getElementById('doraMsg');
+  const clientState = document.getElementById('doraClientState');
+  const serverState = document.getElementById('doraServerState');
+  const clientBox = document.getElementById('doraClient');
+  const serverBox = document.getElementById('doraServer');
+  const pills = document.querySelectorAll('.dora-step-pill');
+  const nextBtn = document.getElementById('doraNext');
+
+  function render(){
+    if(step < 0){
+      msg.innerHTML = 'Clique em "Iniciar DORA" para começar a simulação.';
+      clientState.textContent = 'IP: 0.0.0.0 (sem IP ainda)';
+      serverState.textContent = 'Pool disponível: .50 – .99';
+      clientBox.classList.remove('lit'); serverBox.classList.remove('lit');
+      arrow.style.opacity = 0;
+      pills.forEach(p=>p.classList.remove('active','done'));
+      nextBtn.textContent = 'Iniciar DORA →';
+      return;
+    }
+    const s = seq[step];
+    arrow.style.opacity = 1;
+    arrow.style.left = s.pct;
+    arrow.textContent = s.from==='client' ? '➤' : '➤';
+    arrow.style.transform = s.from==='client' ? 'scaleX(1)' : 'scaleX(-1)';
+    msg.innerHTML = s.msg;
+    clientState.textContent = s.client;
+    serverState.textContent = s.server;
+    clientBox.classList.toggle('lit', s.from==='client');
+    serverBox.classList.toggle('lit', s.from==='server');
+    pills.forEach((p,i)=>{
+      p.classList.toggle('active', i===step);
+      p.classList.toggle('done', i<step);
+    });
+    nextBtn.textContent = step < seq.length-1 ? 'Próximo passo →' : 'Concluído ✓';
+    nextBtn.disabled = step >= seq.length-1;
+  }
+  nextBtn.addEventListener('click', ()=>{ step = Math.min(step+1, seq.length-1); render(); });
+  document.getElementById('doraReset').addEventListener('click', ()=>{ step=-1; nextBtn.disabled=false; render(); });
+  render();
+})();
+
+/* ======================================================================
+   WIDGET 8 — Quiz / Desafios (accordion com gabarito)
+   ====================================================================== */
+(function(){
+  const quiz = [
+    {tag:'Cálculo de sub-redes', q:'Dividindo 172.16.0.0/24 em 2 sub-redes iguais, qual é a nova máscara e quais as duas faixas resultantes?', a:'Nova máscara <b>/25</b> (255.255.255.128). Faixas: <b>172.16.0.0–172.16.0.127</b> e <b>172.16.0.128–172.16.0.255</b>.'},
+    {tag:'Leitura de pacote', q:'Um pacote chega com TTL = 1 e Protocolo = 17. O que acontece a seguir, e que protocolo de transporte está encapsulado?', a:'O roteador decrementa o TTL para 0 e <b>descarta o pacote</b> (evita loops infinitos). Protocolo 17 = <b>UDP</b>.'},
+    {tag:'Classificação de cenário', q:'O servidor de banco de dados de uma empresa deve usar IP estático ou DHCP? Por quê?', a:'<b>Estático</b> — outros sistemas precisam alcançá-lo sempre pelo mesmo endereço; um IP que muda quebraria essas integrações.'},
+    {tag:'Endereços especiais', q:'192.168.0.255, numa rede /24, é um endereço de host válido? Justifique.', a:'<b>Não.</b> É o endereço de <b>broadcast</b> dessa sub-rede (todos os bits de host em 1) — não pode ser atribuído a um host.'},
+    {tag:'Dia a dia', q:'Seu notebook mostra o IP 192.168.15.23 no Wi-Fi de casa. Esse endereço é alcançável diretamente pela Internet?', a:'<b>Não.</b> É um endereço privado (RFC 1918). O roteador faz <b>NAT</b>, trocando-o por um IP público compartilhado sempre que você navega.'},
+    {tag:'Dia a dia', q:'Rodando `arp -a` no terminal, você só vê equipamentos da sua própria rede local. Por quê a tabela ARP nunca mostra servidores da Internet?', a:'ARP só resolve endereços dentro do <b>mesmo domínio de broadcast</b> (mesma rede/enlace). Para destinos remotos, o host só precisa do MAC do <b>gateway padrão</b>, não do destino final.'},
+    {tag:'NAT', q:'Duas casas diferentes usam a mesma faixa 192.168.1.0/24 na rede interna. Isso causa conflito na Internet?', a:'<b>Não.</b> IPs privados nunca saem da rede local — cada casa sai para a Internet com seu próprio <b>IP público</b>, que é o único que precisa ser globalmente exclusivo.'},
+    {tag:'IPv6', q:'O endereço 2001:0db8:0000:0000:0000:0000:0000:0001 pode ser escrito como 2001:db8::1. Por que essa forma é válida?', a:'Os zeros à esquerda de cada grupo foram omitidos e a <b>única</b> sequência contínua de grupos zerados foi substituída por "<b>::</b>" — usado no máximo uma vez por endereço.'},
+  ];
+  const list = document.getElementById('quizList');
+  quiz.forEach((item,i)=>{
+    const card = document.createElement('div');
+    card.className = 'qcard';
+    card.innerHTML = '<div class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">Q'+(i+1)+'.</b> '+item.q+'</span><span class="chev">＋</span></div>'+
+      '<div class="qbody"><div class="qanswer"><span class="pill on" style="margin-bottom:.5rem; display:inline-flex;">'+item.tag+'</span><br>'+item.a+'</div></div>';
+    card.querySelector('.qhead').addEventListener('click', ()=> card.classList.toggle('open'));
+    list.appendChild(card);
+  });
+})();
+
+/* ======================================================================
+   WIDGET 9 — Desafio de sub-rede (192.168.10.77/24), mesmo padrão do quiz
+   ====================================================================== */
+(function(){
+  const items = [
+    {tag:'Pergunta 1', q:'Qual é a Máscara de Sub-rede em formato decimal?', a:'<b>255.255.255.0</b> — porque /24 é a máscara padrão implícita quando nenhum outro prefixo é informado.'},
+    {tag:'Pergunta 2', q:'Qual é o Endereço de Rede (o primeiro IP)?', a:'<b>192.168.10.0</b> — todos os bits de host zerados.'},
+    {tag:'Pergunta 3', q:'Qual é o Endereço de Broadcast (o último IP)?', a:'<b>192.168.10.255</b> — todos os bits de host em 1.'},
+    {tag:'Pergunta 4', q:'O IP 192.168.10.150 está na mesma rede?', a:'<b>Sim.</b> Os três primeiros octetos (192.168.10) são idênticos — mesma rede /24.'},
+    {tag:'Pergunta 5', q:'O IP 192.168.11.20 está na mesma rede?', a:'<b>Não.</b> O terceiro octeto mudou (11 ≠ 10) — é uma rede /24 diferente.'},
+  ];
+  const list = document.getElementById('desafioList');
+  if(list){
+    items.forEach((item,i)=>{
+      const card = document.createElement('div');
+      card.className = 'qcard';
+      card.innerHTML = '<div class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">'+item.tag+'.</b> '+item.q+'</span><span class="chev">＋</span></div>'+
+        '<div class="qbody"><div class="qanswer">'+item.a+'</div></div>';
+      card.querySelector('.qhead').addEventListener('click', ()=> card.classList.toggle('open'));
+      list.appendChild(card);
+    });
+  }
+})();
+
+/* ======================================================================
+   WIDGET 10 — NAT: tradução automática (vários IPs privados → 1 público)
+   ====================================================================== */
+(function(){
+  const reducedMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const devices = [
+    {ic:'📱', ip:'192.168.1.1', port:'51342'},
+    {ic:'📟', ip:'192.168.1.2', port:'51890'},
+    {ic:'💻', ip:'192.168.1.3', port:'52011'},
+    {ic:'🖥️', ip:'192.168.1.4', port:'52233'},
+  ];
+  const wrap = document.getElementById('natRows');
+  if(!wrap) return;
+  const routerBox = document.getElementById('natRouterBox');
+  const replayBtn = document.getElementById('natReplay');
+  let timers = [];
+  function after(ms, fn){ timers.push(setTimeout(fn, ms)); }
+  function clearTimers(){ timers.forEach(t=>clearTimeout(t)); timers=[]; }
+
+  function build(){
+    wrap.innerHTML = '';
+    devices.forEach(d=>{
+      const row = document.createElement('div');
+      row.className = 'nat-row';
+      row.innerHTML = '<span class="dev">'+d.ic+' '+d.ip+'</span><span class="arrow-st">traduzindo…</span>';
+      wrap.appendChild(row);
+    });
+  }
+  function play(){
+    clearTimers();
+    build();
+    const rows = Array.from(wrap.children);
+    if(reducedMotion){
+      rows.forEach((row,i)=>{ row.classList.add('active'); row.querySelector('.arrow-st').textContent = '→ 82.129.80.111:'+devices[i].port; });
+      return;
+    }
+    rows.forEach((row,i)=>{
+      after(500 + i*650, ()=>{
+        row.classList.add('active');
+        routerBox.classList.add('pulse');
+        after(450, ()=>{
+          row.querySelector('.arrow-st').textContent = '→ 82.129.80.111:'+devices[i].port;
+          routerBox.classList.remove('pulse');
+        });
+      });
+    });
+  }
+  replayBtn.addEventListener('click', play);
+  const target = document.getElementById('s-nat-intro');
+  const once = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ play(); once.disconnect(); } });
+  }, {threshold:.6});
+  once.observe(target);
+  build();
+})();
+
+/* ======================================================================
+   WIDGET 11 — Identificação de sub-redes (exercício clicável, topologia Kurose)
+   ====================================================================== */
+(function(){
+  const zones = document.querySelectorAll('.si-zone');
+  const counter = document.getElementById('subidCount');
+  if(!zones.length) return;
+  function reveal(zone){
+    if(zone.classList.contains('found')) return;
+    zone.classList.add('found');
+    zone.textContent = zone.dataset.net;
+    counter.textContent = document.querySelectorAll('.si-zone.found').length;
+  }
+  zones.forEach(z => z.addEventListener('click', ()=> reveal(z)));
+  document.getElementById('subidReveal').addEventListener('click', ()=> zones.forEach(reveal));
+})();
+
+/* ======================================================================
+   WIDGET 12 — IPv6: compressão passo a passo (Regra 1 → Regra 2)
+   ====================================================================== */
+(function(){
+  const container = document.getElementById('v6CompGroups');
+  if(!container) return;
+  const caption = document.getElementById('v6CompCaption');
+  const original = ['2001','0DB8','0000','0000','130F','0000','0000','140B'];
+  let stage = 0; // 0=original, 1=regra1 aplicada, 2=regra2 aplicada
+  const messages = [
+    'Endereço original — ainda sem nenhuma compressão aplicada.',
+    '<b>Regra 1:</b> zeros à esquerda de cada grupo podem ser omitidos → 0DB8 vira db8, 0000 vira 0.',
+    '<b>Regra 2:</b> a única sequência contínua de grupos zerados (0:0) vira "::" → endereço final comprimido.',
+  ];
+  function render(){
+    container.innerHTML = '';
+    original.forEach((g, i)=>{
+      const el = document.createElement('div');
+      let text = g;
+      let cls = 'v6-grp';
+      if(stage >= 1){ text = String(parseInt(g,16)); if(text==='0') text='0'; }
+      const isZero = parseInt(g,16) === 0;
+      // zero run is groups 2,3 (index 2,3) and 5,6 (index 5,6) — compress only the longer run (index 2,3) per regra 2 (uma única vez)
+      if(stage >= 2 && (i===2 || i===3)){
+        if(i===2){ el.textContent = '::'; el.className = 'v6-grp zero-run'; container.appendChild(el); return; }
+        return; // skip index 3, merged into the :: above
+      }
+      if(stage >= 1 && isZero && (i===5 || i===6)) cls += ' dim';
+      el.textContent = text;
+      el.className = cls;
+      container.appendChild(el);
+    });
+    caption.innerHTML = messages[stage];
+  }
+  document.getElementById('v6CompNext').addEventListener('click', ()=>{ stage = Math.min(stage+1, 2); render(); });
+  document.getElementById('v6CompReset').addEventListener('click', ()=>{ stage = 0; render(); });
+  render();
+})();
+
+/* ======================================================================
+   WIDGET 13 — IPv6: revelar resposta do exercício de expansão
+   ====================================================================== */
+(function(){
+  const btn = document.getElementById('v6ExReveal');
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    document.getElementById('v6ExAnswer').style.display = 'block';
+    btn.textContent = 'Resposta revelada ✓';
+    btn.disabled = true;
+  });
+})();
+
+/* ======================================================================
+   WIDGET 14 — Mão na massa: gabaritos expansíveis (cards estáticos) + endereços privados
+   ====================================================================== */
+(function(){
+  document.querySelectorAll('.hands-on .qcard .qhead').forEach(hd=>{
+    hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open'));
+  });
+  // animação "dois mundos": respeita prefers-reduced-motion (quadro estático, com o bloqueio visível)
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.querySelectorAll('#privSvg animate, #privSvg animateMotion').forEach(el=>el.remove());
+    ['privX','privDropMsg'].forEach(id=>{ const e=document.getElementById(id); if(e) e.setAttribute('opacity','1'); });
+  }
+})();
+
+(function(){
+  // classifica um IPv4 (string) -> {kind:'priv'|'pub'|'esp', title, why}
+  function classify(str){
+    const m = /^\s*(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\s*$/.exec(str||'');
+    if(!m) return {kind:'err', title:'Formato inválido', why:'Use 4 números de 0 a 255 separados por ponto (ex: 192.168.1.10).'};
+    const o = m.slice(1).map(Number);
+    if(o.some(n=>n>255)) return {kind:'err', title:'Octeto fora do intervalo', why:'Cada octeto vai de 0 a 255 (8 bits).'};
+    const [a,b] = o;
+    if(a===10) return {kind:'priv', title:'PRIVADO · 10.0.0.0/8', why:'Primeiro octeto 10 → faixa privada de 16,7 milhões de IPs (RFC 1918).'};
+    if(a===172 && b>=16 && b<=31) return {kind:'priv', title:'PRIVADO · 172.16.0.0/12', why:'Segundo octeto entre 16 e 31 → faixa privada (RFC 1918).'};
+    if(a===192 && b===168) return {kind:'priv', title:'PRIVADO · 192.168.0.0/16', why:'192.168.x.x → a faixa do Wi-Fi de casa (RFC 1918).'};
+    if(a===127) return {kind:'esp', title:'ESPECIAL · Loopback', why:'127.0.0.0/8 aponta para a própria máquina (teste com ping 127.0.0.1).'};
+    if(a===169 && b===254) return {kind:'esp', title:'ESPECIAL · APIPA / link-local', why:'169.254.x.x é atribuído automaticamente quando o DHCP falha — sinal de problema na rede!'};
+    if(a===100 && b>=64 && b<=127) return {kind:'esp', title:'ESPECIAL · CGNAT (100.64.0.0/10)', why:'Faixa compartilhada usada por operadoras (NAT em escala). Não é RFC 1918, mas também não é público roteável.'};
+    if(a>=224 && a<=239) return {kind:'esp', title:'ESPECIAL · Multicast (Classe D)', why:'224–239: entrega a um grupo de hosts.'};
+    if(a>=240) return {kind:'esp', title:'ESPECIAL · Reservado / Broadcast', why:'240–255: reservado (255.255.255.255 é o broadcast limitado).'};
+    if(a===0) return {kind:'esp', title:'ESPECIAL · "Esta rede" (0.0.0.0/8)', why:'0.x.x.x é reservado; 0.0.0.0 significa "sem IP ainda" (lembra o DHCP Discover?).'};
+    let why = 'Fora de todas as faixas reservadas → roteável na Internet.';
+    if(a===172) why = 'Atenção: 172.'+b+' está <b>fora</b> de 172.16–172.31, então é público!';
+    if(a===192 && b!==168) why = 'Atenção: só 192.<b>168</b> é privado; 192.'+b+' é público!';
+    return {kind:'pub', title:'PÚBLICO', why};
+  }
+  const out = document.getElementById('privOut'), inp = document.getElementById('privIn');
+  if(!out) return;
+  function show(el, r){
+    el.className = 'verdict ' + ({priv:'priv',pub:'pub',esp:'esp'}[r.kind]||'');
+    el.innerHTML = '<b class="t">'+r.title+'</b><br>'+r.why;
+  }
+  function run(){ show(out, classify(inp.value)); }
+  document.getElementById('privBtn').addEventListener('click', run);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.stopPropagation(); run(); } else e.stopPropagation(); });
+  ['10.4.7.9','172.20.4.15','172.32.0.1','192.168.1.1','192.169.0.1','8.8.8.8','169.254.12.7','127.0.0.1','100.64.3.2'].forEach(ip=>{
+    const c = document.createElement('span'); c.className='chip'; c.textContent=ip;
+    c.addEventListener('click', ()=>{ inp.value=ip; run(); });
+    document.getElementById('privChips').appendChild(c);
+  });
+
+  // desafio relâmpago
+  const pool = ['10.20.30.40','192.168.0.254','172.16.5.9','172.31.255.1','10.0.0.1','192.168.100.7','8.8.8.8','172.32.0.5','192.169.1.1','11.0.0.1','200.17.1.50','172.15.255.255','1.1.1.1','189.4.20.3','172.24.8.8','192.168.255.1'];
+  let cur = null, ans = 0, ok = 0, tot = 0;
+  const ipEl = document.getElementById('drillIp'), fb = document.getElementById('drillFb'), sc = document.getElementById('drillScore');
+  function next(){
+    let n; do{ n = pool[Math.floor(Math.random()*pool.length)]; }while(n===cur);
+    cur = n; ans = 0; ipEl.textContent = cur;
+  }
+  function answer(sayPriv){
+    if(ans) return;                       // já respondeu este IP
+    ans = 1; tot++;
+    const r = classify(cur), isPriv = r.kind==='priv';
+    const right = (sayPriv===isPriv); if(right) ok++;
+    fb.className = 'verdict ' + (right?'priv':'esp');
+    fb.innerHTML = '<b class="t">'+(right?'✓ Acertou!':'✗ Quase!')+'</b><br>'+r.title+' — '+r.why+'<br><span class="code" style="cursor:pointer;" id="drillNext">próximo IP →</span>';
+    document.getElementById('drillNext').addEventListener('click', ()=>{ next(); fb.className='verdict'; fb.textContent='Clique em um dos botões para responder.'; });
+    sc.textContent = 'Acertos: '+ok+' / '+tot;
+  }
+  document.getElementById('drillPriv').addEventListener('click', ()=>answer(true));
+  document.getElementById('drillPub').addEventListener('click', ()=>answer(false));
+  next();
+})();
+</script>
+</body>
+</html>
