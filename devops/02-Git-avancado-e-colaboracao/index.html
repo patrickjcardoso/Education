@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DevOps Tools · Aula 02</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@600;700;800&display=swap">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — herdado da aula "Camada de Rede" (mesmo padrão visual
+   das aulas do Prof. Patrick). Deck vertical com scroll-snap, tema dark-tech.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12; --bg-2:#0c131d; --surface:#121b27; --surface-2:#182434;
+  --border:#223049; --border-soft:#1a2436;
+  --text:#eef3f8; --text-dim:#9fb0c3; --text-faint:#62768a;
+  --blue:#2fb0e8; --blue-dim:#12719e; --navy:#0b3556;
+  --gold:#f2a93b; --green:#36c58f; --red:#ef5b5b;
+  --mono:'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --disp:'Sora', 'Inter', sans-serif;
+  --radius:16px; --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+a{color:var(--blue);}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto; min-width:0;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); font-weight:600;
+  display:flex; align-items:center; gap:.6em; margin-bottom:.8rem; flex-wrap:wrap;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em; text-wrap:balance;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem; text-wrap:balance;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:70ch; line-height:1.55;}
+.subtitle b, .card p b, ol.steps b{color:var(--text);}
+.accent{color:var(--gold);} .accent-b{color:var(--blue);} .accent-g{color:var(--green);} .accent-r{color:var(--red);}
+
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease);}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;} .delay-4{transition-delay:.32s;}
+@media (prefers-reduced-motion: reduce){ .animate{opacity:1; transform:none; transition:none;} .deck{scroll-behavior:auto;} }
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem; min-width:0;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p, .card li{color:var(--text-dim); font-size:.84rem; line-height:1.5;}
+.card ul{padding-left:1.1rem; display:grid; gap:.25rem;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+.grid-5{display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+.icon-chip.g{background:rgba(242,169,59,.12); color:var(--gold);}
+
+.tbl-wrap{overflow-x:auto; min-width:0;}
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.1rem; cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn.gold{background:linear-gradient(180deg,var(--gold),#c98520);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue); white-space:nowrap;}
+
+/* ============================= CAPA ============================= */
+#s-capa{align-items:flex-start;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem; flex-wrap:wrap;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.16);
+  font-size:1rem; line-height:1.75; text-align:right; user-select:none; pointer-events:none; white-space:pre;}
+
+/* ============================= SUMÁRIO ============================= */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.76rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.82rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= CHECKLIST / AGENDA ============================= */
+.check-list{display:grid; gap:.5rem;}
+.check-item{display:flex; gap:.75rem; align-items:flex-start; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; cursor:pointer; transition:border-color .2s, background .2s;}
+.check-item input{appearance:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border); flex:none; margin-top:.1rem; display:grid; place-items:center; cursor:pointer; background:var(--surface-2);}
+.check-item input:checked{background:var(--green); border-color:var(--green);}
+.check-item input:checked::after{content:'✓'; color:#062014; font-weight:800; font-size:.8rem;}
+.check-item.done{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.05);}
+.check-item.done .ci-t{text-decoration:line-through; color:var(--text-faint);}
+.ci-t{font-size:.86rem; color:var(--text); font-weight:600;}
+.ci-d{font-size:.78rem; color:var(--text-dim); margin-top:.15rem; line-height:1.45;}
+.ci-time{margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--gold); flex:none; padding-top:.15rem;}
+.check-meter{display:flex; align-items:center; gap:.8rem; margin-top:.8rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);}
+.check-bar{flex:1; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.check-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--blue)); transition:width .4s var(--ease);}
+
+.agenda{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:1rem;}
+.ag{border-top:3px solid var(--blue); background:var(--surface); border-radius:0 0 12px 12px; padding:.75rem .9rem;}
+.ag .min{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.86rem;}
+.ag h4{font-family:var(--disp); font-size:.9rem; margin:.25rem 0; color:var(--text);}
+.ag p{font-size:.78rem; color:var(--text-dim); line-height:1.45;}
+.ag:nth-child(2){border-color:var(--gold);} .ag:nth-child(2) .min{color:var(--gold);}
+.ag:nth-child(3){border-color:var(--green);} .ag:nth-child(3) .min{color:var(--green);}
+.ag:nth-child(4){border-color:var(--text-faint);} .ag:nth-child(4) .min{color:var(--text-dim);}
+
+/* ============================= TIMELINE ============================= */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem; min-width:0;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.92rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item.hot{border-color:var(--red);} .tl-item.hot .yr{color:var(--red);}
+.tl-item.warn{border-color:var(--gold);} .tl-item.warn .yr{color:var(--gold);}
+.bignum-row{display:flex; gap:2.2rem; margin-top:1.2rem; flex-wrap:wrap;}
+.bignum .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); color:var(--red); line-height:1;}
+.bignum .l{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* ============================= MURO DA CONFUSÃO ============================= */
+.wall{display:grid; grid-template-columns:1fr 70px 1fr; gap:1rem; align-items:stretch; margin-top:1.1rem;}
+.wall .side{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1rem 1.1rem;}
+.wall .side h3{font-family:var(--disp); font-size:1rem; margin-bottom:.5rem;}
+.wall .side.dev h3{color:var(--blue);} .wall .side.ops h3{color:var(--gold);}
+.wall .side li{font-size:.84rem; color:var(--text-dim); line-height:1.5; margin-left:1rem;}
+.wall .brick{border-radius:10px; background:repeating-linear-gradient(0deg, var(--surface-2) 0 18px, var(--border) 18px 20px), var(--surface-2);
+  display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; font-family:var(--mono); font-size:.68rem; color:var(--text-dim); letter-spacing:.12em; text-transform:uppercase;}
+
+/* ============================= CALMS / 3 CAMINHOS ============================= */
+.calms .card .letter{font-family:var(--disp); font-weight:800; font-size:2rem; color:var(--blue); line-height:1;}
+.calms .card:nth-child(even) .letter{color:var(--gold);}
+.ways{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; margin-top:1rem;}
+.way svg{width:100%; height:70px; display:block; margin-bottom:.6rem;}
+.way .lbl{font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);}
+
+/* ============================= CICLO DEVOPS ============================= */
+.loop-wrap{display:grid; grid-template-columns:1.25fr 1fr; gap:1.4rem; align-items:center; margin-top:.8rem;}
+.loop-svg{width:100%; height:auto; display:block;}
+.loop-svg .seg{cursor:pointer;}
+.loop-svg .seg rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1; transition:all .25s;}
+.loop-svg .seg text{font-family:var(--mono); font-size:11px; fill:var(--text-dim); text-anchor:middle; pointer-events:none;}
+.loop-svg .seg:hover rect, .loop-svg .seg:focus rect{stroke:var(--blue);}
+.loop-svg .seg.dev.active rect{fill:rgba(47,176,232,.2); stroke:var(--blue);}
+.loop-svg .seg.ops.active rect{fill:rgba(242,169,59,.18); stroke:var(--gold);}
+.loop-svg .seg.active text{fill:var(--text); font-weight:700;}
+.loop-svg .path{fill:none; stroke:var(--border); stroke-width:2; stroke-dasharray:5 6;}
+.loop-svg .side-l{font-family:var(--mono); font-size:10px; letter-spacing:.12em; fill:var(--text-faint); text-anchor:middle;}
+.phase-panel{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.3rem; min-height:230px;}
+.phase-panel h4{font-family:var(--disp); color:var(--gold); font-size:1.05rem; margin-bottom:.1rem;}
+.phase-panel .tag{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:block; margin-bottom:.7rem;}
+.phase-panel p{font-size:.84rem; color:var(--text-dim); line-height:1.5;}
+.phase-panel .tools{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.7rem;}
+.phase-panel .tools span{font-family:var(--mono); font-size:.7rem; padding:.2rem .55rem; border-radius:99px; border:1px solid var(--border); color:var(--blue);}
+.phase-panel .week{margin-top:.8rem; font-size:.78rem; color:var(--green); font-family:var(--mono);}
+
+/* ============================= HANDS-ON ============================= */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.5rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+
+/* ============================= QUIZ / GABARITOS ============================= */
+.quiz-list{display:flex; flex-direction:column; gap:.5rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; cursor:pointer; gap:1rem; width:100%; background:none; border:none; text-align:left; color:inherit; font:inherit;}
+.qcard .qhead .qtext{font-size:.85rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.62rem; color:var(--text-faint); flex-shrink:0; margin-left:auto;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:280px;}
+.qcard .qanswer{padding:.6rem 1rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft);}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= DRILL: É DEVOPS? ============================= */
+.drill{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid rgba(242,169,59,.28); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+.drill-q{font-family:var(--disp); font-size:clamp(1rem,1.7vw,1.3rem); font-weight:700; color:var(--text); min-height:3.2em; line-height:1.35;}
+.drill-btns{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+.verdict{margin-top:.9rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.4em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.ok{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.ok b.t{color:var(--green);}
+.verdict.no{border-color:rgba(239,91,91,.5); background:rgba(239,91,91,.07);} .verdict.no b.t{color:var(--red);}
+.verdict.warn{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.warn b.t{color:var(--gold);}
+.drill-score{font-family:var(--mono); font-size:.76rem; color:var(--gold); margin-top:.6rem;}
+
+/* ============================= GIT 3 ÁREAS ============================= */
+.areas{display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-top:.9rem;}
+.area{background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:.8rem .9rem; min-height:150px; transition:box-shadow .3s;}
+.area h4{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.15rem;}
+.area .sub{font-size:.72rem; color:var(--text-faint); margin-bottom:.6rem;}
+.area.wd h4{color:var(--red);} .area.st h4{color:var(--gold);} .area.rp h4{color:var(--green);}
+.area.flash{box-shadow:0 0 0 3px rgba(47,176,232,.25);}
+.fchip{display:inline-flex; align-items:center; gap:.35em; font-family:var(--mono); font-size:.72rem; padding:.25rem .55rem; border-radius:7px; margin:0 .3rem .3rem 0; border:1px solid var(--border);}
+.fchip.m{color:var(--red); border-color:rgba(239,91,91,.45); background:rgba(239,91,91,.07);}
+.fchip.s{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.07);}
+.commit-row{font-family:var(--mono); font-size:.7rem; color:var(--text-dim); padding:.2rem 0; border-bottom:1px solid var(--border-soft);}
+.commit-row .h{color:var(--gold);}
+.empty{font-size:.74rem; color:var(--text-faint); font-style:italic;}
+.git-ctrl{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;}
+.term{margin-top:.8rem; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim); min-height:3.6em; white-space:pre-wrap; overflow-x:auto;}
+.term .p{color:var(--green);} .term .c{color:var(--text);} .term .e{color:var(--red);} .term .y{color:var(--gold);}
+
+/* ============================= CODE BLOCK ============================= */
+.codeblock{position:relative; background:#04070c; border:1px solid var(--border); border-radius:12px; min-width:0;}
+.codeblock pre{font-family:var(--mono); font-size:.74rem; line-height:1.6; color:var(--text); padding:.8rem 1rem; overflow:auto; max-height:52vh;}
+.codeblock pre .cm{color:var(--text-faint);}
+.codeblock .copy{position:absolute; top:.5rem; right:.5rem; font-family:var(--mono); font-size:.66rem; padding:.25rem .6rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer;}
+.codeblock .copy:hover{color:var(--blue); border-color:var(--blue);}
+.codeblock .cb-title{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); padding:.5rem 1rem 0; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ============================= COMMIT CHECKER ============================= */
+.ip-input{font-family:var(--mono); font-size:.88rem; padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.input-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;}
+.input-row .ip-input{flex:1; min-width:200px;}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+.types{display:grid; grid-template-columns:repeat(2,1fr); gap:.25rem .9rem; font-size:.78rem; color:var(--text-dim);}
+.types b{font-family:var(--mono); color:var(--blue); font-weight:600;}
+
+/* ============================= MISC ============================= */
+.warn-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.warn-box b{color:var(--gold);}
+.info-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(47,176,232,.07); border:1px solid rgba(47,176,232,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.info-box b{color:var(--blue);}
+.refs-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem 1rem; min-width:0;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.5rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.4rem;}
+.refs-box a, .refs-box span.ref{color:var(--text-dim); text-decoration:none; font-size:.8rem; display:flex; align-items:baseline; gap:.5em; line-height:1.4;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box .ext{color:var(--text-faint); font-family:var(--mono); font-size:.66rem; flex:none;}
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border); background:var(--surface); margin-top:1.4rem; flex-wrap:wrap;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+.deliver{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;}
+.deliver span{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid rgba(54,197,143,.4); background:rgba(54,197,143,.07); color:var(--green);}
+.tree{font-family:var(--mono); font-size:.76rem; line-height:1.6; color:var(--text-dim); white-space:pre; overflow-x:auto;}
+.tree b{color:var(--gold); font-weight:600;}
+
+/* ============================= RESPONSIVO ============================= */
+@media (max-width:860px){
+  html,body{overflow:auto;}
+  .deck{height:auto; overflow:visible; scroll-snap-type:none;}
+  .slide{height:auto; min-height:auto; padding:3.5rem 16px; overflow:visible;}
+  .grid-3,.grid-2,.grid-4,.grid-5,.ways,.loop-wrap,.areas,.agenda,.wall,.types{grid-template-columns:1fr;}
+  .wall .brick{writing-mode:horizontal-tb; padding:.5rem;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits,.hint,.slide-no{display:none;}
+  .timeline{flex-direction:column;}
+  .animate{opacity:1; transform:none;}
+}
+
+/* ============================= AULA 02 — componentes novos ============================= */
+.graph-wrap{margin-top:.9rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.6rem .8rem; overflow-x:auto;}
+.graph-wrap svg{display:block; height:190px;}
+.g-edge{fill:none; stroke:var(--border); stroke-width:2.5;}
+.g-edge.main{stroke:var(--blue);} .g-edge.feature{stroke:var(--gold);}
+.g-node{stroke-width:2.5;}
+.g-node.main{fill:var(--bg-2); stroke:var(--blue);} .g-node.feature{fill:var(--bg-2); stroke:var(--gold);}
+.g-node.merge{fill:var(--blue);} .g-node.new{animation:gPop .45s var(--ease);}
+@keyframes gPop{0%{r:2;} 60%{r:15;} 100%{r:12;}}
+.g-id{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim); text-anchor:middle;}
+.g-ref{font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700;}
+.g-ref-bg{rx:5;}
+.g-lane{font-family:'JetBrains Mono', monospace; font-size:9.5px; fill:var(--text-faint); letter-spacing:.08em;}
+@media (prefers-reduced-motion: reduce){ .g-node.new{animation:none;} }
+
+pre.conflict{font-family:var(--mono); font-size:.76rem; line-height:1.65; background:#04070c; border:1px solid var(--border); border-radius:10px; padding:.7rem .9rem; overflow-x:auto; color:var(--text); margin-top:.4rem; white-space:pre;}
+pre.conflict .mk{color:var(--red); font-weight:700;}
+pre.conflict .ours{color:var(--blue);} pre.conflict .theirs{color:var(--gold);}
+.cf-edit{margin-top:.4rem; font-size:.74rem; line-height:1.6; resize:vertical;}
+
+.flow{display:grid; grid-template-columns:repeat(6,1fr); gap:.6rem; margin-top:1rem; counter-reset:f;}
+.fstep{position:relative; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.75rem .8rem; min-width:0;}
+.fstep .fn{width:26px; height:26px; border-radius:50%; background:rgba(47,176,232,.15); color:var(--blue); font-family:var(--mono); font-weight:700; font-size:.78rem; display:grid; place-items:center; margin-bottom:.4rem;}
+.fstep:nth-child(5) .fn,.fstep:nth-child(6) .fn{background:rgba(242,169,59,.15); color:var(--gold);}
+.fstep h4{font-family:var(--disp); font-size:.88rem; margin-bottom:.2rem;}
+.fstep p{font-size:.74rem; color:var(--text-dim); line-height:1.45; overflow-wrap:anywhere;}
+.fstep p .code{white-space:normal;}
+.fstep:not(:last-child)::after{content:'→'; position:absolute; right:-.55rem; top:50%; transform:translateY(-50%); color:var(--text-faint); font-family:var(--mono); font-size:.8rem;}
+
+.strat .lbl{font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:.15rem;}
+.strat .tree{font-size:.68rem; margin:.5rem 0 .6rem; color:var(--blue);}
+@media (max-width:860px){ .flow{grid-template-columns:1fr;} .fstep::after{display:none;} }
+
+/* ============================= AUTOESTUDO (trilha, biblioteca, glossário, autoavaliação) ============================= */
+.slide.tall{justify-content:flex-start; overflow-y:auto; padding-top:6vh; padding-bottom:10vh;}
+table.trail td:nth-child(4){white-space:nowrap;}
+table.trail td{font-size:.8rem; line-height:1.45;}
+table.trail td:first-child{font-family:var(--mono); color:var(--text-faint); font-weight:600; width:2.2em;}
+table.trail td a{color:var(--blue); text-decoration:none;}
+table.trail td a:hover{text-decoration:underline;}
+table.trail .goal{color:var(--text);}
+.req{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; padding:.1rem .45rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); white-space:nowrap; margin-left:.3rem; vertical-align:1px;}
+.req.ob{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+.lib h4{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:.2rem 0 .45rem;}
+.lib ul{list-style:none; display:grid; gap:.45rem;}
+.lib li{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.lib li b{color:var(--text);}
+.lib li a{color:var(--blue); text-decoration:none;}
+.lib li a:hover{text-decoration:underline;}
+.lib .find{display:block; font-size:.74rem; color:var(--text-faint); margin-top:.1rem;}
+.gloss{display:grid; grid-template-columns:repeat(2,1fr); gap:.2rem 1.6rem; margin-top:.8rem;}
+.gloss div{border-bottom:1px solid var(--border-soft); padding:.4rem 0; min-width:0;}
+.gloss dt{font-family:var(--mono); color:var(--blue); font-size:.78rem; font-weight:600;}
+.gloss dd{font-size:.78rem; color:var(--text-dim); line-height:1.45; margin-top:.1rem;}
+.method{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem;}
+.method .card .icon-chip{font-size:.9rem;}
+.review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
+@media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">--</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> DEVOPS TOOLS · ADS 5º PERÍODO · AULA 02 · 21/10/2026</div>
+      <h1 class="title animate delay-1">Git avançado:<br><span class="accent-b">branches</span>, merge e <span class="accent">Pull Requests</span></h1>
+      <p class="subtitle animate delay-2" style="margin-top:1.1rem;">Como várias pessoas mexem no mesmo código ao mesmo tempo sem se atropelar, e como o time revisa cada mudança antes de ela chegar à branch principal.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas · UNIPAR</div>
+        <div><b>Semana 2 de 6</b><br>1 h síncrona + ~5h40 de autoestudo</div>
+        <div><b>Entrega</b><br>Checkpoint 2 até 27/10, 23h59</div>
+      </div>
+    </div>
+    <div class="capa-bits">* 4c1e9a2 (HEAD -> main) Merge
+|\
+| * 8b07f3d feat: filtro
+| * 1d2a6e0 test: filtro
+* | 63fa1c4 fix: rota
+|/
+* ff36291 chore: inicial</div>
+  </section>
+
+  <!-- ============================================================ SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
+      <div class="toc animate delay-2" style="margin-top:.8rem;">
+        <div>
+          <div class="toc-group">Antes de começar</div>
+          <a href="#s-prep"><span class="n">01</span><span class="t">Checklist antes do encontro</span></a>
+          <a href="#s-agenda"><span class="n">02</span><span class="t">Roteiro do encontro de hoje</span></a>
+          <a href="#s-revisao"><span class="n">03</span><span class="t">Revisão relâmpago da Aula 01</span></a>
+          <a href="#s-gancho"><span class="n">04</span><span class="t">"Merge hell": 2 dias de conflitos</span></a>
+          <div class="toc-group">Branches e merge</div>
+          <a href="#s-branch"><span class="n">05</span><span class="t">O que é uma branch</span></a>
+          <a href="#s-sim"><span class="n">06</span><span class="t">Simulador de branches</span></a>
+          <a href="#s-merge"><span class="n">07</span><span class="t">Fast-forward × merge commit</span></a>
+        </div>
+        <div>
+          <a href="#s-conflito"><span class="n">08</span><span class="t">🛠️ Resolva um conflito</span></a>
+          <a href="#s-rebase"><span class="n">09</span><span class="t">Rebase e a regra de ouro</span></a>
+          <a href="#s-mergerebase"><span class="n">10</span><span class="t">Merge × rebase</span></a>
+          <a href="#s-kit"><span class="n">11</span><span class="t">stash, cherry-pick e bisect</span></a>
+          <div class="toc-group">Estratégias e colaboração</div>
+          <a href="#s-estrategias"><span class="n">12</span><span class="t">GitFlow, GitHub Flow, trunk-based</span></a>
+          <a href="#s-mm-estrategia"><span class="n">13</span><span class="t">🛠️ Qual estratégia usar?</span></a>
+          <a href="#s-pr"><span class="n">14</span><span class="t">Pull Request passo a passo</span></a>
+          <a href="#s-review"><span class="n">15</span><span class="t">Code review que ajuda</span></a>
+        </div>
+        <div>
+          <a href="#s-protecao"><span class="n">16</span><span class="t">Proteja a branch main</span></a>
+          <a href="#s-fork"><span class="n">17</span><span class="t">Fork, collaborator e upstream</span></a>
+          <div class="toc-group">Autoestudo da semana</div>
+          <a href="#s-pbl"><span class="n">18</span><span class="t">Situação-problema: PagaFácil</span></a>
+          <a href="#s-lab"><span class="n">19</span><span class="t">Laboratório no Killercoda</span></a>
+          <a href="#s-projeto"><span class="n">20</span><span class="t">TaskFlow: checkpoint 2</span></a>
+          <a href="#s-plano"><span class="n">21</span><span class="t">Seu plano da semana</span></a>
+          <a href="#s-trilha"><span class="n">22</span><span class="t">Trilha de estudo da semana</span></a>
+          <a href="#s-fontes"><span class="n">23</span><span class="t">Biblioteca: livros e documentação</span></a>
+          <a href="#s-glossario"><span class="n">24</span><span class="t">Glossário da aula</span></a>
+          <a href="#s-autoavaliacao"><span class="n">25</span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n">26</span><span class="t">Quiz de fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 01 PREP -->
+  <section class="slide hands-on" id="s-prep">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Antes do encontro <span class="mm-badge">⏱ 20 min · faça antes de 21/10</span></div>
+      <h2 class="stitle animate delay-1">Chegue com o TaskFlow pronto para colaborar</h2>
+      <p class="subtitle animate delay-2">Hoje a dupla vai trabalhar no mesmo repositório ao mesmo tempo. Confira estes itens antes da aula (fica salvo neste navegador).</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="check-list" data-check="prep">
+          <label class="check-item"><input type="checkbox" id="p2a"><div><div class="ci-t">Checkpoint 1 entregue (tag v0.1)</div><div class="ci-d">Confira em <i>Releases/Tags</i> no GitHub se a tag aparece. Se não: <span class="code">git push --tags</span></div></div></label>
+          <label class="check-item"><input type="checkbox" id="p2b"><div><div class="ci-t">Colega adicionado como collaborator</div><div class="ci-d">No fork: <i>Settings → Collaborators → Add people</i>. O colega precisa aceitar o convite por e-mail.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p2c"><div><div class="ci-t">Os dois com o repositório clonado e atualizado</div><div class="ci-d">Cada integrante roda <span class="code">git pull</span> e confere que os testes passam: <span class="code">pytest</span></div></div></label>
+          <label class="check-item"><input type="checkbox" id="p2d"><div><div class="ci-t">Learn Git Branching: primeiros níveis</div><div class="ci-d">Faça <i>Introduction Sequence</i> em <a href="https://learngitbranching.js.org/?locale=pt_BR" target="_blank" rel="noopener">learngitbranching.js.org</a> (≈ 15 min). Ajuda muito a entender a aula.</div></div></label>
+        </div>
+        <div class="card">
+          <h3 class="accent">Repositório-modelo</h3>
+          <p>Ainda não fez o fork? O projeto está em <a href="https://github.com/patrickjcardoso/taskflow" target="_blank" rel="noopener">github.com/patrickjcardoso/taskflow</a>. Faça o fork, clone e siga o checkpoint 1 da Aula 01 antes de começar este.</p>
+          <div class="info-box"><b>Dica:</b> deixe o terminal com o TaskFlow aberto durante o encontro. Na demonstração vamos criar uma branch, gerar um conflito e abrir um Pull Request ao vivo.</div>
+          <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 AGENDA -->
+  <section class="slide" id="s-agenda">
+    <div class="slide-inner">
+      <div class="kicker animate">02 · Encontro síncrono · 21/10</div>
+      <h2 class="stitle animate delay-1">Como serão os 60 minutos de hoje</h2>
+      <div class="agenda animate delay-2">
+        <div class="ag"><div class="min">0–10 min</div><h4>Gancho</h4><p>"Merge hell": duas equipes, branches de 3 semanas e 2 dias só resolvendo conflitos. O que deu errado?</p></div>
+        <div class="ag"><div class="min">10–35 min</div><h4>Demonstração</h4><p>Criar <span class="code">feature/x</span>, gerar conflito proposital e resolver; <span class="code">rebase -i</span>; abrir PR com template, revisão e branch protegida.</p></div>
+        <div class="ag"><div class="min">35–50 min</div><h4>Discussão</h4><p>Quando usar GitFlow ou trunk-based? Por que branches curtas favorecem a integração contínua?</p></div>
+        <div class="ag"><div class="min">50–60 min</div><h4>Tarefa</h4><p>Checkpoint 2 em dupla: um abre o PR, o outro revisa.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pergunta para pensar antes da aula:</b> se você e seu colega editarem a <b>mesma linha</b> do README ao mesmo tempo, o que o Git deveria fazer? Escolher uma versão sozinho? Juntar as duas? Perguntar a alguém?</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 03 REVISÃO -->
+  <section class="slide" id="s-revisao">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">03 · Revisão da Aula 01</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas rápidas</h2>
+      <p class="subtitle animate delay-2">Responda de cabeça e clique para conferir. Se errar mais de uma, revise o material da Aula 01 antes do laboratório.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual a diferença entre <span class="code">git revert</span> e <span class="code">git reset --hard</span>?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>revert</b> cria um commit novo que desfaz outro, sem mexer no histórico: seguro em equipe. <b>reset --hard</b> move o histórico para trás e apaga commits: só em commits locais que ninguém recebeu.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Quais são as 3 áreas do Git?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Working directory</b> (sua pasta), <b>staging area</b> (o que vai no próximo commit, via <span class="code">git add</span>) e <b>repositório</b> (o histórico, via <span class="code">git commit</span>).</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">A mensagem <span class="code">ajustes</span> segue o Conventional Commits? Como melhorar?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Não.</b> Falta tipo e descrição útil. Ex.: <span class="code">fix(tasks): corrige status 404 ao atualizar</span>.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual dos Três Caminhos do DevOps fala de feedback rápido?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O <b>2º Caminho, Feedback</b>. Hoje vamos ver uma forma humana de feedback: o <b>code review</b> no Pull Request.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 GANCHO -->
+  <section class="slide" id="s-gancho">
+    <div class="slide-inner">
+      <div class="kicker animate">04 · Gancho do mundo real</div>
+      <h2 class="stitle animate delay-1">"Merge hell": 3 semanas separados, 2 dias para juntar</h2>
+      <p class="subtitle animate delay-2">Uma equipe de 6 devs dividiu um sistema de vendas em duas frentes: <b>checkout</b> e <b>catálogo</b>. Cada frente trabalhou numa branch própria por 3 semanas, sem integrar com a <span class="code">main</span>. Na véspera do lançamento, chegou a hora de juntar tudo.</p>
+      <div class="timeline animate delay-3">
+        <div class="tl-item"><div class="yr">Semana 1–3</div><p>Cada branch acumula dezenas de commits. Os dois times renomeiam a mesma classe <span class="code">Produto</span> de jeitos diferentes.</p></div>
+        <div class="tl-item warn"><div class="yr">Dia do merge</div><p>87 arquivos em conflito. Ninguém lembra mais por que mudou cada linha.</p></div>
+        <div class="tl-item hot"><div class="yr">+2 dias</div><p>Lançamento adiado. Bugs novos surgem da junção, não de nenhuma das duas frentes.</p></div>
+      </div>
+      <div class="info-box animate delay-4"><b>A lição:</b> o problema não é ter branches. É ficar <b>tempo demais</b> sem integrar. Quanto mais longa a branch, maior e mais caro o conflito. Branches curtas (horas ou poucos dias) e integração frequente são a base da <b>Integração Contínua</b>, tema da Semana 3.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 BRANCH -->
+  <section class="slide" id="s-branch">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Branches</div>
+      <h2 class="stitle animate delay-1">Uma branch é só um ponteiro para um commit</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent-b">Como o Git enxerga</h3>
+          <p>Cada commit aponta para o commit anterior (o <b>pai</b>). Uma <b>branch</b> é uma etiqueta móvel que aponta para o último commit de uma linha de trabalho. Criar uma branch é instantâneo: o Git só cria uma etiqueta nova, não copia arquivos.</p>
+          <p style="margin-top:.5rem;"><b>HEAD</b> é a etiqueta que diz "você está aqui": a branch atual. Ao fazer commit, a branch para onde o HEAD aponta avança.</p>
+          <div class="info-box"><b>Analogia:</b> o histórico é uma estrada de commits. Uma branch é um marcador "estou aqui" que avança sozinho a cada commit. Criar uma branch é abrir um desvio para trabalhar sem atrapalhar quem está na estrada principal.</div>
+        </div>
+        <div class="card">
+          <h3 class="accent">Comandos de branch</h3>
+          <div class="tbl-wrap"><table class="cmp">
+            <tr><th>Comando</th><th>O que faz</th></tr>
+            <tr><td><span class="code">git branch</span></td><td>Lista as branches; <span class="code">*</span> marca a atual.</td></tr>
+            <tr><td><span class="code">git switch -c feature/x</span></td><td>Cria a branch e muda para ela.</td></tr>
+            <tr><td><span class="code">git switch main</span></td><td>Volta para a main.</td></tr>
+            <tr><td><span class="code">git merge feature/x</span></td><td>Traz os commits da feature para a branch atual.</td></tr>
+            <tr><td><span class="code">git branch -d feature/x</span></td><td>Apaga a branch já integrada.</td></tr>
+            <tr><td><span class="code">git push -u origin feature/x</span></td><td>Publica a branch no GitHub.</td></tr>
+          </table></div>
+          <p style="margin-top:.6rem; font-size:.78rem;">Você vai ver <span class="code">git checkout</span> em tutoriais antigos. Ele também funciona, mas o <span class="code">git switch</span> (desde o Git 2.23) é mais claro.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 06 SIMULADOR -->
+  <section class="slide" id="s-sim">
+    <div class="slide-inner">
+      <div class="kicker animate">06 · Simulador de branches</div>
+      <h2 class="stitle animate delay-1">Crie commits, abra uma branch, faça merge ou rebase</h2>
+      <p class="subtitle animate delay-2">Experimente as duas situações: (1) crie a feature e faça merge <b>sem</b> commit novo na main; (2) recomece, faça commits nas duas branches e compare <b>merge</b> com <b>rebase</b>.</p>
+      <div class="graph-wrap animate delay-3"><svg id="gSvg" role="img" aria-label="Grafo de commits"></svg></div>
+      <div class="git-ctrl animate delay-3">
+        <button class="btn" data-b="commit">git commit</button>
+        <button class="btn ghost" data-b="branch">git switch -c feature</button>
+        <button class="btn ghost" data-b="toMain">git switch main</button>
+        <button class="btn ghost" data-b="toFeat">git switch feature</button>
+        <button class="btn gold" data-b="merge">git merge feature</button>
+        <button class="btn gold" data-b="rebase">git rebase main</button>
+        <button class="btn ghost" data-b="delete">git branch -d feature</button>
+        <button class="btn ghost" data-b="reset">↺ recomeçar</button>
+      </div>
+      <div class="term animate delay-4" id="bTerm" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 07 MERGE -->
+  <section class="slide" id="s-merge">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Merge</div>
+      <h2 class="stitle animate delay-1">Os dois tipos de merge</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem;">
+        <div class="card">
+          <h3 class="accent-g">Fast-forward</h3>
+          <p>A <span class="code">main</span> não andou desde que a feature foi criada. O Git só <b>avança o ponteiro</b> da main até o último commit da feature. Nenhum commit novo é criado.</p>
+          <div class="tree" style="margin-top:.6rem;">antes:  A ─ B            ← main
+              └─ C ─ D    ← feature
+depois: A ─ B ─ C ─ D   ← main, feature</div>
+        </div>
+        <div class="card">
+          <h3 class="accent">Merge commit (3-way)</h3>
+          <p>As duas branches andaram. O Git compara 3 versões (o ancestral comum e as duas pontas) e cria um <b>commit de merge</b> com dois pais.</p>
+          <div class="tree" style="margin-top:.6rem;">A ─ B ─ E ──────── <b>M</b>   ← main
+     └─ C ─ D ───┘       ← feature</div>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Quando dá conflito?</b> Só no merge 3-way, quando as duas branches mudaram <b>as mesmas linhas</b> do mesmo arquivo (ou uma apagou o que a outra editou). Mudanças em arquivos ou trechos diferentes o Git junta sozinho.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 08 CONFLITO -->
+  <section class="slide hands-on" id="s-conflito">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Interativo <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Resolva o conflito no README do TaskFlow</h2>
+      <p class="subtitle animate delay-2">Ana adicionou a rota de busca por id na <span class="code">main</span>. Bruno, na <span class="code">feature/filtro</span>, adicionou o filtro por status <b>na mesma linha</b> da tabela. Escolha como resolver e finalize o merge.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">README.md em conflito</h3>
+          <pre class="conflict" id="cfFile"></pre>
+          <textarea class="ip-input cf-edit" id="cfEdit" rows="6" hidden aria-label="Editar arquivo"></textarea>
+          <div class="git-ctrl">
+            <button class="btn ghost" data-cf="ours">Aceitar a main (HEAD)</button>
+            <button class="btn ghost" data-cf="theirs">Aceitar feature/filtro</button>
+            <button class="btn ghost" data-cf="both">Aceitar ambos</button>
+            <button class="btn ghost" data-cf="edit">Editar à mão</button>
+            <button class="btn ghost" data-cf="reset">↺</button>
+          </div>
+          <div class="git-ctrl"><button class="btn gold" id="cfCommit">git add README.md && git commit</button></div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Como ler os marcadores</h3>
+          <ul>
+            <li><span class="code">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span> começa a versão da branch onde você está (a main).</li>
+            <li><span class="code">=======</span> separa as duas versões.</li>
+            <li><span class="code">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/filtro</span> encerra a versão que está chegando.</li>
+          </ul>
+          <p style="margin-top:.5rem;">Resolver = deixar o arquivo como ele <b>deve</b> ficar e apagar os 3 marcadores. O Git não decide por você: só quem entende o código sabe.</p>
+          <div class="verdict" id="cfOut">Escolha uma forma de resolver e depois faça o commit.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 09 REBASE -->
+  <section class="slide" id="s-rebase">
+    <div class="slide-inner">
+      <div class="kicker animate">09 · Rebase</div>
+      <h2 class="stitle animate delay-1">Rebase: "reaplicar meus commits por cima da main"</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent-b">O que acontece</h3>
+          <p>Na sua feature, <span class="code">git rebase main</span> pega os commits que só existem na feature e os <b>recria</b>, um a um, depois do último commit da main. O resultado é um histórico em linha reta, como se você tivesse começado a feature agora.</p>
+          <div class="tree" style="margin-top:.6rem;">antes:  A ─ B ─ E          ← main
+             └─ C ─ D       ← feature
+depois: A ─ B ─ E ─ C' ─ D' ← feature</div>
+          <p style="margin-top:.5rem;">Repare no <b>'</b>: C' e D' são commits <b>novos</b>, com hashes diferentes de C e D. O rebase reescreve histórico.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent">Rebase interativo: arrume antes de abrir o PR</h3>
+          <p><span class="code">git rebase -i HEAD~3</span> abre um editor com os últimos 3 commits. Troque <span class="code">pick</span> por:</p>
+          <div class="tbl-wrap" style="margin-top:.4rem;"><table class="cmp">
+            <tr><td><span class="code">reword</span></td><td>muda só a mensagem</td></tr>
+            <tr><td><span class="code">squash</span></td><td>junta ao commit anterior</td></tr>
+            <tr><td><span class="code">drop</span></td><td>descarta o commit</td></tr>
+          </table></div>
+          <p style="margin-top:.5rem;">Uso típico: transformar "wip", "wip 2" e "agora vai" em um commit limpo <span class="code">feat: adiciona filtro por status</span>.</p>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Regra de ouro do rebase:</b> nunca faça rebase de commits que já estão em uma branch <b>compartilhada</b> (como a main ou uma branch que o colega também usa). Rebase só na sua branch local, antes de publicar ou antes do merge.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 10 MERGE x REBASE -->
+  <section class="slide" id="s-mergerebase">
+    <div class="slide-inner">
+      <div class="kicker animate">10 · Comparação</div>
+      <h2 class="stitle animate delay-1">Merge × rebase</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+        <table class="cmp">
+          <tr><th>Aspecto</th><th>Merge</th><th>Rebase</th></tr>
+          <tr><td>Histórico</td><td>Preserva tudo como aconteceu, com commits de merge</td><td>Linha reta, mais fácil de ler</td></tr>
+          <tr><td>Reescreve commits?</td><td>Não</td><td>Sim (hashes novos)</td></tr>
+          <tr><td>Seguro em branch compartilhada?</td><td class="accent-g">Sim</td><td class="accent-r">Não</td></tr>
+          <tr><td>Conflitos</td><td>Resolve uma vez, no commit de merge</td><td>Pode resolver commit a commit</td></tr>
+          <tr><td>Uso típico</td><td>Integrar uma feature na main (via PR)</td><td>Atualizar sua feature com a main antes do PR</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-3"><b>No GitHub</b>, o botão de merge do PR oferece 3 opções: <b>Create a merge commit</b>, <b>Squash and merge</b> (junta todos os commits do PR em um só) e <b>Rebase and merge</b>. Muitos times usam <b>squash</b> para manter a main limpa: cada PR vira um commit.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 11 KIT -->
+  <section class="slide" id="s-kit">
+    <div class="slide-inner">
+      <div class="kicker animate">11 · Caixa de ferramentas</div>
+      <h2 class="stitle animate delay-1">Três comandos que salvam o dia</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card">
+          <div class="icon-chip">📦</div><h3>git stash</h3>
+          <p>Guarda as mudanças não commitadas numa "gaveta" e limpa a pasta. Útil quando chega um bug urgente no meio de outra tarefa.</p>
+          <div class="tree" style="margin-top:.5rem;">git stash
+git switch main
+<span style="color:var(--text-faint)"># corrige o bug…</span>
+git switch feature/x
+git stash pop</div>
+        </div>
+        <div class="card">
+          <div class="icon-chip">🍒</div><h3>git cherry-pick</h3>
+          <p>Copia <b>um commit específico</b> de outra branch para a atual. Útil para levar só uma correção para uma versão antiga, sem trazer o resto.</p>
+          <div class="tree" style="margin-top:.5rem;">git switch release/1.0
+git cherry-pick 63fa1c4</div>
+        </div>
+        <div class="card">
+          <div class="icon-chip">🔎</div><h3>git bisect</h3>
+          <p>Busca binária no histórico: você marca um commit bom e um ruim, e o Git vai testando o meio até achar <b>o commit que quebrou</b>.</p>
+          <div class="tree" style="margin-top:.5rem;">git bisect start
+git bisect bad
+git bisect good v0.1
+<span style="color:var(--text-faint)"># teste e responda good/bad</span>
+git bisect reset</div>
+        </div>
+      </div>
+      <p class="subtitle animate delay-3" style="margin-top:1rem;">Com 100 commits entre o bom e o ruim, o <span class="code">bisect</span> encontra o culpado em no máximo <b>7 testes</b> (2⁷ = 128). Você vai usar os três no laboratório.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 12 ESTRATÉGIAS -->
+  <section class="slide" id="s-estrategias">
+    <div class="slide-inner">
+      <div class="kicker animate">12 · Estratégias de branching</div>
+      <h2 class="stitle animate delay-1">Três formas de organizar as branches do time</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card strat">
+          <div class="lbl">mais estruturado</div><h3>GitFlow</h3>
+          <div class="tree">main ────●──────────●
+develop ─●──●──●──●─
+feature    └─●─┘
+release        └●┘</div>
+          <p>Branches fixas <span class="code">main</span> e <span class="code">develop</span>, mais <span class="code">feature/*</span>, <span class="code">release/*</span> e <span class="code">hotfix/*</span>. Bom para versões numeradas e lançamentos agendados. Pesado para deploy contínuo.</p>
+        </div>
+        <div class="card strat">
+          <div class="lbl">equilíbrio</div><h3>GitHub Flow</h3>
+          <div class="tree">main ─●────●────●────●
+       └─●─┘  └─●─┘
+       feature   feature</div>
+          <p>Só a <span class="code">main</span> é permanente, sempre pronta para deploy. Cada mudança nasce numa branch curta, passa por <b>Pull Request</b> e revisão, e entra na main. <b>É o que usaremos no TaskFlow.</b></p>
+        </div>
+        <div class="card strat">
+          <div class="lbl">mais ágil</div><h3>Trunk-based</h3>
+          <div class="tree">main ─●─●─●─●─●─●─●─●
+      └●┘   └●┘
+     (horas)</div>
+          <p>Todos integram na <span class="code">main</span> (o "tronco") pelo menos uma vez por dia. Branches duram horas. Exige CI forte e <i>feature flags</i> para esconder o que não está pronto. Usado por times de alta performance.</p>
+        </div>
+      </div>
+      <p class="subtitle animate delay-3" style="margin-top:1rem;">Não existe estratégia "certa": existe a que combina com a frequência de entrega e a maturidade do time. O que todas compartilham: <b>branches curtas integram com menos dor</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 13 MM ESTRATÉGIA -->
+  <section class="slide hands-on" id="s-mm-estrategia">
+    <div class="slide-inner" style="max-width:900px;">
+      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Qual estratégia de branching você recomendaria?</h2>
+      <div class="drill animate delay-2" style="margin-top:1rem;">
+        <div class="kicker" style="margin-bottom:.4rem;" id="stCount">Cenário 1 de 5</div>
+        <div class="drill-q" id="stQ"></div>
+        <div class="drill-btns">
+          <button class="btn ghost" data-st="GitFlow">GitFlow</button>
+          <button class="btn ghost" data-st="GitHub Flow">GitHub Flow</button>
+          <button class="btn ghost" data-st="Trunk-based">Trunk-based</button>
+        </div>
+        <div class="verdict" id="stFb">Escolha uma estratégia.</div>
+        <div class="drill-score" id="stScore">Acertos: 0 / 0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 14 PR -->
+  <section class="slide" id="s-pr">
+    <div class="slide-inner">
+      <div class="kicker animate">14 · Pull Request</div>
+      <h2 class="stitle animate delay-1">O ciclo de um Pull Request no GitHub Flow</h2>
+      <p class="subtitle animate delay-2">Um <b>Pull Request (PR)</b> é um pedido: "revise minha branch e, se estiver ok, junte na main". No GitLab, o mesmo recurso se chama <b>Merge Request</b>.</p>
+      <div class="flow animate delay-3">
+        <div class="fstep"><div class="fn">1</div><h4>Branch</h4><p><span class="code">git switch -c feature/busca-id</span></p></div>
+        <div class="fstep"><div class="fn">2</div><h4>Commits</h4><p>Pequenos, no padrão Conventional Commits.</p></div>
+        <div class="fstep"><div class="fn">3</div><h4>Push</h4><p><span class="code">git push -u origin feature/busca-id</span></p></div>
+        <div class="fstep"><div class="fn">4</div><h4>Abrir PR</h4><p>Botão <i>Compare &amp; pull request</i>. Título, descrição, revisor.</p></div>
+        <div class="fstep"><div class="fn">5</div><h4>Revisão</h4><p>O colega comenta, pede ajustes ou aprova. Novos commits atualizam o PR.</p></div>
+        <div class="fstep"><div class="fn">6</div><h4>Merge</h4><p>Aprovado: <i>Squash and merge</i> e apagar a branch.</p></div>
+      </div>
+      <div class="info-box animate delay-4"><b>Depois do merge</b>, todo mundo atualiza a máquina local: <span class="code">git switch main</span> e <span class="code">git pull</span>. Só então crie a próxima branch, sempre a partir da main atualizada.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 15 REVIEW -->
+  <section class="slide" id="s-review">
+    <div class="slide-inner">
+      <div class="kicker animate">15 · Code review</div>
+      <h2 class="stitle animate delay-1">Um bom PR e uma boa revisão</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="codeblock">
+          <div class="cb-title">.github/pull_request_template.md</div>
+          <button class="copy">copiar</button>
+<pre>## O que muda
+&lt;!-- Uma ou duas frases. --&gt;
+
+## Por quê
+&lt;!-- Qual problema resolve? Link da issue, se houver. --&gt;
+
+## Como testar
+- [ ] `pytest` passa
+- [ ] Testei manualmente em /docs
+
+## Checklist
+- [ ] Commits no padrão Conventional Commits
+- [ ] README atualizado (se mudou endpoint)
+- [ ] Sem senhas, tokens ou arquivos .env</pre>
+        </div>
+        <div class="card">
+          <h3 class="accent">Como revisar o código do colega</h3>
+          <ul>
+            <li><b>Rode o código:</b> faça checkout da branch e execute os testes.</li>
+            <li><b>Comente a mudança, não a pessoa:</b> "esta função pode retornar None" e não "você esqueceu de novo".</li>
+            <li><b>Explique o porquê</b> e, se puder, sugira o código (botão <i>Add a suggestion</i>).</li>
+            <li><b>Diferencie o obrigatório do opcional:</b> prefixe com "nit:" sugestões pequenas de estilo.</li>
+            <li><b>Termine a revisão:</b> <i>Approve</i>, <i>Request changes</i> ou <i>Comment</i>.</li>
+          </ul>
+          <div class="info-box"><b>PR pequeno é PR revisado.</b> Um PR com 50 linhas é lido com atenção. Um com 1.500 linhas recebe um "LGTM" (<i>looks good to me</i>) sem ninguém ler.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 16 PROTEÇÃO -->
+  <section class="slide hands-on" id="s-protecao">
+    <div class="slide-inner">
+      <div class="kicker animate">16 · Configuração no GitHub <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Proteja a main: ninguém faz push direto</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo a passo (no seu fork)</h3>
+          <ol class="steps">
+            <li><span>Abra <i>Settings → Branches</i> e clique em <b>Add classic branch protection rule</b> (ou <i>Settings → Rules → Rulesets</i>, a versão nova).</span></li>
+            <li><span>Em <b>Branch name pattern</b>, digite <span class="code">main</span>.</span></li>
+            <li><span>Marque <b>Require a pull request before merging</b>.</span></li>
+            <li><span>Marque <b>Require approvals</b> e deixe <b>1</b>.</span></li>
+            <li><span>Deixe desmarcado <i>Allow force pushes</i> e <i>Allow deletions</i>. Salve.</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Teste a proteção</h3>
+          <p>Faça um commit direto na main e tente enviar:</p>
+          <div class="tree" style="margin:.5rem 0;">git push origin main
+<span style="color:var(--red)">remote: error: GH006: Protected branch update failed</span></div>
+          <p>Ótimo: a regra funciona. Desfaça o commit local com <span class="code">git reset --soft HEAD~1</span>, crie uma branch e faça do jeito certo, com PR.</p>
+          <div class="warn-box"><b>Repositório privado?</b> No plano gratuito, a proteção de branch só funciona em repositório <b>público</b>. O fork do TaskFlow é público, então funciona. Alunos têm GitHub Pro grátis pelo <a href="https://education.github.com/pack" target="_blank" rel="noopener">GitHub Student Developer Pack</a>.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 17 FORK -->
+  <section class="slide" id="s-fork">
+    <div class="slide-inner">
+      <div class="kicker animate">17 · Colaboração</div>
+      <h2 class="stitle animate delay-1">Fork, collaborator e upstream</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>Modelo</th><th>Como funciona</th><th>Quando usar</th></tr>
+          <tr><td>Collaborator</td><td>Todos têm permissão de escrita no mesmo repositório e criam branches nele.</td><td>Time pequeno de confiança. <b class="accent">A dupla no TaskFlow.</b></td></tr>
+          <tr><td>Fork</td><td>Cada pessoa tem uma cópia própria e envia PR do fork para o repositório original.</td><td>Open source: qualquer um contribui sem acesso de escrita.</td></tr>
+        </table>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="card">
+          <h3>Remotos: origin e upstream</h3>
+          <p><span class="code">origin</span> é o seu repositório no GitHub (o fork). <span class="code">upstream</span> é o original, de onde você fez o fork. Liste com <span class="code">git remote -v</span>.</p>
+          <div class="tree" style="margin-top:.5rem;">git remote add upstream https://github.com/patrickjcardoso/taskflow.git
+git fetch upstream
+git merge upstream/main</div>
+        </div>
+        <div class="card">
+          <h3>fetch × pull</h3>
+          <p><span class="code">git fetch</span> baixa os commits novos do remoto <b>sem mexer</b> nos seus arquivos. <span class="code">git pull</span> = fetch + merge na branch atual.</p>
+          <div class="info-box"><b>Atalho:</b> se o professor atualizar o repositório-modelo, use o botão <b>Sync fork</b> na página do seu fork no GitHub.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 18 PBL -->
+  <section class="slide hands-on" id="s-pbl">
+    <div class="slide-inner">
+      <div class="kicker animate">18 · Autoestudo · Situação-problema <span class="mm-badge">⏱ 30 min</span></div>
+      <h2 class="stitle animate delay-1">Caso PagaFácil: correção de segurança em horas, não em semanas</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">O cenário</h3>
+          <p>A fintech <b>PagaFácil</b> tem 12 desenvolvedores e usa <b>GitFlow</b>. As features ficam em branches por 2 a 4 semanas, vão para a <span class="code">develop</span> e uma <span class="code">release</span> sai <b>uma vez por mês</b>, depois de uma semana de testes manuais.</p>
+          <p style="margin-top:.5rem;">Na terça, um pesquisador avisou de uma <b>falha de segurança no login</b>. A correção tem 3 linhas, mas o processo diz que ela só chega à produção na próxima release, daqui a 3 semanas. O diretor quer a correção no ar <b>hoje</b>.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Sua tarefa</h3>
+          <ol class="steps">
+            <li><span><b>Emergência:</b> descreva, com comandos Git, como levar só a correção para produção hoje (pista: <span class="code">hotfix/*</span> e <span class="code">cherry-pick</span>).</span></li>
+            <li><span><b>Diagnóstico:</b> liste 3 problemas do processo atual. Ligue cada um a algo da aula (branches longas, lote grande, falta de PR…).</span></li>
+            <li><span><b>Proposta:</b> recomende uma estratégia (GitFlow ajustado, GitHub Flow ou trunk-based) e justifique em até 10 linhas.</span></li>
+            <li><span><b>Transição:</b> o que precisa existir antes de mudar? (pista: testes automáticos, Semana 3).</span></li>
+          </ol>
+          <div class="deliver"><span>Entrega: docs/pbl-semana2.md (via PR!)</span><span>Até 27/10, 23h59</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 19 LAB -->
+  <section class="slide hands-on" id="s-lab">
+    <div class="slide-inner">
+      <div class="kicker animate">19 · Autoestudo · Laboratório <span class="mm-badge">⏱ 1 h</span></div>
+      <h2 class="stitle animate delay-1">Laboratório: conflito, rebase, stash, cherry-pick e bisect</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.25fr 1fr;">
+        <div class="codeblock">
+          <div class="cb-title">Killercoda · Ubuntu Playground</div>
+          <button class="copy">copiar</button>
+<pre><span class="cm"># Parte 1 · preparar</span>
+git config --global user.name "Seu Nome"
+git config --global user.email "seu@email.com"
+git config --global init.defaultBranch main
+mkdir lab2 && cd lab2 && git init
+printf "linha 1\nversao: base\nlinha 3\n" > app.txt
+git add . && git commit -m "chore: versão base"
+
+<span class="cm"># Parte 2 · gerar e resolver um conflito</span>
+git switch -c feature/a
+sed -i 's/versao: base/versao: feature A/' app.txt
+git commit -am "feat: versão A"
+git switch main
+sed -i 's/versao: base/versao: main/' app.txt
+git commit -am "feat: versão main"
+git merge feature/a        <span class="cm"># CONFLICT!</span>
+cat app.txt                <span class="cm"># veja os marcadores</span>
+<span class="cm"># edite app.txt (nano app.txt), deixe a linha final e apague os marcadores</span>
+git add app.txt && git commit --no-edit
+
+<span class="cm"># Parte 3 · rebase deixa a história em linha reta</span>
+git switch -c feature/b
+echo "doc" > doc.txt && git add . && git commit -m "docs: adiciona doc"
+git switch main
+echo "x" > x.txt && git add . && git commit -m "chore: adiciona x"
+git switch feature/b && git rebase main
+git log --graph --oneline --all
+
+<span class="cm"># Parte 4 · stash e cherry-pick</span>
+echo "rascunho" >> doc.txt && git stash
+git switch main && git cherry-pick feature/b
+git switch feature/b && git stash pop
+
+<span class="cm"># Parte 5 · bisect: ache o commit que quebrou</span>
+git switch main && git tag bom
+for i in 1 2 3 4 5 6; do echo "passo $i" >> log.txt; [ $i = 4 ] && echo "ERRO" >> log.txt; git add . && git commit -qm "chore: passo $i"; done
+git bisect start HEAD bom
+git bisect run sh -c '! grep -q ERRO log.txt'
+git bisect reset</pre>
+        </div>
+        <div class="card">
+          <h3 class="accent">Roteiro e perguntas</h3>
+          <ol class="steps">
+            <li><span>Abra o <a href="https://killercoda.com/playgrounds" target="_blank" rel="noopener">Ubuntu Playground</a> e rode <b>uma parte por vez</b>.</span></li>
+            <li><span>Na parte 2, edite o arquivo com <span class="code">nano app.txt</span> (salvar: <span class="code">Ctrl+O</span>, sair: <span class="code">Ctrl+X</span>).</span></li>
+            <li><span>Tire print do <span class="code">git log --graph --oneline --all</span> da parte 3 e do resultado do bisect.</span></li>
+          </ol>
+          <div class="quiz-list static" style="margin-top:.8rem;">
+            <div class="qcard"><button class="qhead"><span class="qtext">Por que o merge da parte 2 deu conflito e o da parte 3 não daria?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Na parte 2, as duas branches mudaram <b>a mesma linha</b> do mesmo arquivo. Na parte 3, cada branch criou um <b>arquivo diferente</b>: o Git junta sozinho.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">Qual commit o bisect apontou? Por que ele não precisou testar os 6?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>"chore: passo 4"</b>, o primeiro com ERRO. A busca binária divide o intervalo ao meio a cada teste: com 6 commits, bastam cerca de 3 testes.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">O hash do commit "docs: adiciona doc" mudou depois do rebase?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Sim.</b> O rebase recria os commits em cima da main, gerando hashes novos. É por isso que não se faz rebase em branch compartilhada.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 20 PROJETO -->
+  <section class="slide hands-on" id="s-projeto">
+    <div class="slide-inner">
+      <div class="kicker animate">20 · Projeto evolutivo <span class="mm-badge">⏱ 1h20 · em dupla</span></div>
+      <h2 class="stitle animate delay-1">TaskFlow · Checkpoint 2 (tag v0.2): colaboração</h2>
+      <p class="subtitle animate delay-2">A partir de agora, <b>nada entra na main sem Pull Request revisado</b>. Cada integrante entrega uma funcionalidade nova em sua própria branch.</p>
+      <div class="grid-3 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Integrante A</h3>
+          <p>Branch <span class="code">feature/busca-id</span></p>
+          <ul style="margin-top:.4rem;">
+            <li>Rota <span class="code">GET /tasks/{id}</span>: retorna a tarefa ou 404.</li>
+            <li>2 testes: encontra e não encontra.</li>
+            <li>Linha nova na tabela de endpoints do README.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent">Integrante B</h3>
+          <p>Branch <span class="code">feature/filtro-status</span></p>
+          <ul style="margin-top:.4rem;">
+            <li>Filtro <span class="code">GET /tasks?done=true</span> (ou <span class="code">false</span>); sem parâmetro, lista tudo.</li>
+            <li>2 testes: com e sem filtro.</li>
+            <li>Linha nova na tabela de endpoints do README.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Os dois juntos</h3>
+          <ul>
+            <li>Proteção da main ativa (seção 16).</li>
+            <li><span class="code">.github/pull_request_template.md</span> (seção 15).</li>
+            <li>Cada um abre <b>1 PR</b> e revisa o do colega, com pelo menos 1 comentário.</li>
+            <li>O README vai dar <b>conflito</b> de propósito: resolva e conte como foi em <span class="code">docs/conflito.md</span>.</li>
+            <li>Links dos PRs no README e tag <span class="code">v0.2</span>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="deliver animate delay-4"><span>Prazo: terça, 27/10/2026, 23h59</span><span>Entregar no AVA: link do repositório</span><span>Vale nota de atividades do 1º bimestre</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 21 PLANO -->
+  <section class="slide" id="s-plano">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">21 · Autoestudo</div>
+      <h2 class="stitle animate delay-1">Seu plano da Semana 2 (≈ 5h40)</h2>
+      <p class="subtitle animate delay-2">Sugestão de ordem. Combine com a dupla os horários do projeto. Marque o que concluir (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="week" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="w2a"><div><div class="ci-t">Revisar este material</div><div class="ci-d">Refaça o simulador de branches e o resolvedor de conflito.</div></div><span class="ci-time">15 min</span></label>
+        <label class="check-item"><input type="checkbox" id="w2b"><div><div class="ci-t">Trilha de estudo: itens 1 a 6</div><div class="ci-d">Pro Git, GitHub Docs e Jornada DevOps, na ordem da seção 22.</div></div><span class="ci-time">1h50</span></label>
+        <label class="check-item"><input type="checkbox" id="w2c"><div><div class="ci-t">Learn Git Branching</div><div class="ci-d">Sequências <i>Ramping Up</i> e <i>Moving Work Around</i>.</div></div><span class="ci-time">25 min</span></label>
+        <label class="check-item"><input type="checkbox" id="w2d"><div><div class="ci-t">Laboratório no Killercoda</div><div class="ci-d">Partes 1 a 5 da seção 19 + prints.</div></div><span class="ci-time">1 h</span></label>
+        <label class="check-item"><input type="checkbox" id="w2e"><div><div class="ci-t">Situação-problema PagaFácil</div><div class="ci-d">docs/pbl-semana2.md, entregue via PR.</div></div><span class="ci-time">30 min</span></label>
+        <label class="check-item"><input type="checkbox" id="w2f"><div><div class="ci-t">Projeto TaskFlow: checkpoint 2</div><div class="ci-d">Features, PRs revisados, conflito resolvido e tag v0.2.</div></div><span class="ci-time">1h20</span></label>
+        <label class="check-item"><input type="checkbox" id="w2g"><div><div class="ci-t">GitHub Skills: Review pull requests</div><div class="ci-d">Curso curto e interativo, dentro do próprio GitHub.</div></div><span class="ci-time">20 min</span></label>
+      </div>
+      <div class="check-meter" id="weekMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 22 TRILHA DE LEITURA -->
+  <section class="slide tall" id="s-trilha">
+    <div class="slide-inner">
+      <div class="kicker animate">22 · Trilha de estudo da semana</div>
+      <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova e o checkpoint; os <span class="req">complementar</span> aprofundam e ficam fora das ~5h40 da semana. A última coluna diz o que você deve saber explicar ao terminar.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp trail">
+          <tr><th>#</th><th>Estude</th><th>Onde</th><th>Tempo</th><th>Ao terminar, você sabe…</th></tr>
+          <tr><td>1</td><td>Branches e merge básico <span class="req ob">obrigatório</span></td><td><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Branches-em-Poucas-Palavras" target="_blank" rel="noopener">Pro Git 3.1</a> e <a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Ramifica%c3%a7%c3%a3o-Branching-e-Mesclagem-Merging-B%c3%a1sicas" target="_blank" rel="noopener">3.2</a></td><td>25 min</td><td class="goal">explicar ponteiro, HEAD, fast-forward e resolver um conflito</td></tr>
+          <tr><td>2</td><td>Gerenciar branches e fluxos <span class="req ob">obrigatório</span></td><td><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Gerenciamento-de-Branches" target="_blank" rel="noopener">Pro Git 3.3</a> e <a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Fluxos-de-Trabalho-de-Branches-Branching-Workflows" target="_blank" rel="noopener">3.4</a></td><td>15 min</td><td class="goal">listar, apagar branches e descrever branches de longa e curta duração</td></tr>
+          <tr><td>3</td><td>Branches remotos e rebase <span class="req ob">obrigatório</span></td><td><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Branches-Remotos-Remote-Branches" target="_blank" rel="noopener">Pro Git 3.5</a> e <a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Rebase-Rebasing" target="_blank" rel="noopener">3.6</a></td><td>25 min</td><td class="goal">diferenciar fetch, pull, merge e rebase, e citar o perigo do rebase</td></tr>
+          <tr><td>4</td><td>Fork e Pull Request <span class="req ob">obrigatório</span></td><td><a href="https://git-scm.com/book/pt-br/v2/GitHub-Contribuindo-para-um-Projeto" target="_blank" rel="noopener">Pro Git 6.2</a> + <a href="https://docs.github.com/pt/pull-requests" target="_blank" rel="noopener">GitHub Docs: pull requests</a></td><td>20 min</td><td class="goal">abrir, revisar e fazer merge de um PR</td></tr>
+          <tr><td>5</td><td>GitHub Flow <span class="req ob">obrigatório</span></td><td><a href="https://docs.github.com/pt/get-started/using-github/github-flow" target="_blank" rel="noopener">GitHub Docs: GitHub flow</a></td><td>10 min</td><td class="goal">descrever os 6 passos do fluxo usado no TaskFlow</td></tr>
+          <tr><td>6</td><td>Estratégias de branching <span class="req ob">obrigatório</span></td><td>MUNIZ et al. <i>Jornada DevOps</i>: capítulos sobre versionamento e integração + <a href="https://trunkbaseddevelopment.com/" target="_blank" rel="noopener">trunkbaseddevelopment.com</a> (página inicial)</td><td>15 min</td><td class="goal">comparar GitFlow, GitHub Flow e trunk-based</td></tr>
+          <tr><td>7</td><td>stash, bisect e reescrita de histórico <span class="req">complementar</span></td><td><a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Fazendo-Stash-e-Limpando" target="_blank" rel="noopener">Pro Git 7.3</a>, <a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Depurando-com-Git" target="_blank" rel="noopener">7.10</a> e <a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Reescrevendo-o-Hist%c3%b3rico" target="_blank" rel="noopener">7.6</a></td><td>30 min</td><td class="goal">usar stash, bisect e rebase -i no laboratório</td></tr>
+          <tr><td>8</td><td>Padrões de branching (aprofundamento) <span class="req">complementar</span></td><td>FOWLER, M. <a href="https://martinfowler.com/articles/branching-patterns.html" target="_blank" rel="noopener">Patterns for Managing Source Code Branches</a> (em inglês; use o tradutor)</td><td>40 min</td><td class="goal">explicar por que integração frequente reduz conflitos</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Livros da bibliografia:</b> estão on-line nas bibliotecas virtuais da UNIPAR (portal do aluno). Abra o <b>sumário</b> e procure pelo tema indicado.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 23 BIBLIOTECA -->
+  <section class="slide tall" id="s-fontes">
+    <div class="slide-inner">
+      <div class="kicker animate">23 · Biblioteca da semana</div>
+      <h2 class="stitle animate delay-1">Livros, documentação oficial e cursos</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card lib">
+          <h4>📚 Livros da bibliografia</h4>
+          <ul>
+            <li><b>CHACON, S.; STRAUB, B.</b> <i><a href="https://git-scm.com/book/pt-br/v2" target="_blank" rel="noopener">Pro Git</a>.</i> 2. ed. Gratuito, em português. <span class="find">Capítulos 3 (branches), 6 (GitHub) e 7 (ferramentas).</span></li>
+            <li><b>MUNIZ, A. et al.</b> <i>Jornada DevOps.</i> Brasport (on-line). <span class="find">Procure: controle de versão, estratégias de branch, integração.</span></li>
+            <li><b>MONTEIRO, E. R. et al.</b> <i>DevOps.</i> SAGAH (on-line). <span class="find">Procure: controle de versão e Git.</span></li>
+            <li><b>MUNIZ, A. et al.</b> <i>Jornada Azure DevOps.</i> Brasport (on-line). <span class="find">Complementar. Procure: repositórios, branch policies e pull requests (os conceitos valem para o GitHub).</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>📘 Documentação oficial</h4>
+          <ul>
+            <li><a href="https://docs.github.com/pt/get-started/using-github/github-flow" target="_blank" rel="noopener">GitHub flow</a></li>
+            <li><a href="https://docs.github.com/pt/pull-requests" target="_blank" rel="noopener">Pull requests: criar, revisar, fazer merge</a></li>
+            <li><a href="https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener">Sobre branches protegidos</a> <span class="find">Base da configuração da seção 16.</span></li>
+            <li><a href="https://git-scm.com/docs/git-switch" target="_blank" rel="noopener">git switch</a>, <a href="https://git-scm.com/docs/git-merge" target="_blank" rel="noopener">git merge</a>, <a href="https://git-scm.com/docs/git-rebase" target="_blank" rel="noopener">git rebase</a> <span class="find">Referência completa de cada comando.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>🎓 Cursos e prática extra</h4>
+          <ul>
+            <li><a href="https://learngitbranching.js.org/?locale=pt_BR" target="_blank" rel="noopener">Learn Git Branching</a> <span class="find">Sequências Ramping Up e Moving Work Around. A melhor forma de "ver" branches.</span></li>
+            <li><a href="https://github.com/skills/review-pull-requests" target="_blank" rel="noopener">GitHub Skills: Review pull requests</a></li>
+            <li><a href="https://github.com/skills/resolve-merge-conflicts" target="_blank" rel="noopener">GitHub Skills: Resolve merge conflicts</a></li>
+            <li><a href="https://training.linuxfoundation.org/training/introduction-to-devops-and-site-reliability-engineering-lfs162/" target="_blank" rel="noopener"><b>LFS162</b> (Linux Foundation)</a> <span class="find">Gratuito, com badge digital. Nesta semana: módulo 2.</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Travou num conflito ou num rebase?</b> <span class="code">git merge --abort</span> ou <span class="code">git rebase --abort</span> voltam tudo ao estado anterior. Depois releia a seção 08 e tente de novo com calma.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 24 GLOSSÁRIO -->
+  <section class="slide tall" id="s-glossario">
+    <div class="slide-inner">
+      <div class="kicker animate">24 · Glossário da aula</div>
+      <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
+      <dl class="gloss animate delay-2">
+        <div><dt>Branch</dt><dd>Ponteiro móvel para um commit. Representa uma linha de trabalho.</dd></div>
+        <div><dt>HEAD</dt><dd>Indica a branch (ou commit) em que você está agora.</dd></div>
+        <div><dt>Merge</dt><dd>Junta o histórico de uma branch em outra.</dd></div>
+        <div><dt>Fast-forward</dt><dd>Merge sem commit novo: a branch de destino só avança o ponteiro.</dd></div>
+        <div><dt>Merge commit</dt><dd>Commit com dois pais, criado quando as duas branches andaram.</dd></div>
+        <div><dt>Conflito</dt><dd>As duas branches mudaram as mesmas linhas. Uma pessoa precisa decidir o resultado.</dd></div>
+        <div><dt>Rebase</dt><dd>Recria seus commits por cima de outra branch, gerando hashes novos e histórico linear.</dd></div>
+        <div><dt>Squash</dt><dd>Juntar vários commits em um só (no rebase -i ou no merge do PR).</dd></div>
+        <div><dt>Stash</dt><dd>Gaveta temporária para mudanças ainda não commitadas.</dd></div>
+        <div><dt>Cherry-pick</dt><dd>Copia um commit específico para a branch atual.</dd></div>
+        <div><dt>Bisect</dt><dd>Busca binária no histórico para achar o commit que introduziu um erro.</dd></div>
+        <div><dt>Pull Request (PR)</dt><dd>Pedido para revisar e integrar uma branch. No GitLab: Merge Request.</dd></div>
+        <div><dt>Code review</dt><dd>Revisão do código por outra pessoa antes do merge.</dd></div>
+        <div><dt>Fork</dt><dd>Cópia de um repositório na sua conta, independente do original (upstream).</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================================================ 25 AUTOAVALIAÇÃO -->
+  <section class="slide" id="s-autoavaliacao">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">25 · Autoavaliação</div>
+      <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
+      <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pela seção indicada (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="au2a"><div><div class="ci-t">Explicar o que é uma branch e o que é o HEAD</div></div><span class="review-hint">seção 05</span></label>
+        <label class="check-item"><input type="checkbox" id="au2b"><div><div class="ci-t">Prever se um merge será fast-forward ou merge commit</div></div><span class="review-hint">seções 06–07</span></label>
+        <label class="check-item"><input type="checkbox" id="au2c"><div><div class="ci-t">Resolver um conflito e finalizar o merge</div></div><span class="review-hint">seção 08</span></label>
+        <label class="check-item"><input type="checkbox" id="au2d"><div><div class="ci-t">Dizer quando usar rebase e quando nunca usar</div></div><span class="review-hint">seções 09–10</span></label>
+        <label class="check-item"><input type="checkbox" id="au2e"><div><div class="ci-t">Usar stash, cherry-pick e bisect numa situação real</div></div><span class="review-hint">seção 11</span></label>
+        <label class="check-item"><input type="checkbox" id="au2f"><div><div class="ci-t">Recomendar GitFlow, GitHub Flow ou trunk-based para um cenário</div></div><span class="review-hint">seções 12–13</span></label>
+        <label class="check-item"><input type="checkbox" id="au2g"><div><div class="ci-t">Abrir, revisar e fazer merge de um PR com a main protegida</div></div><span class="review-hint">seções 14–16</span></label>
+      </div>
+      <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 26 QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate">26 · Fixação</div>
+      <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
+      <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Hoje o código aprendeu a <span class="accent-b">trabalhar em equipe</span>.<br>Na próxima aula, ele passa a <span class="accent">se testar sozinho</span>.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Vimos branches, merge fast-forward e 3-way, conflitos, rebase, stash, cherry-pick, bisect, as estratégias GitFlow, GitHub Flow e trunk-based, Pull Requests, code review e proteção de branch.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula · <b style="color:var(--text)">28/10 · Integração Contínua com GitHub Actions e testes automatizados</b></span><span class="arrow">→</span></div>
+      <div class="grid-2 animate delay-4" style="margin-top:1.2rem; max-width:820px;">
+        <div class="card"><h3 class="accent">Até terça, 27/10, 23h59</h3><p>Checkpoint 2 (tag <span class="code">v0.2</span>) + <span class="code">docs/pbl-semana2.md</span>, com o link do repositório no AVA.</p></div>
+        <div class="card"><h3 class="accent-b">Atenção: prova do 1º bimestre</h3><p>Conteúdo das Semanas 1 a 3. Confira a data no Calendário Acadêmico.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const progress = document.getElementById('progress');
+document.getElementById('totalNo').textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('in-view'); }
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.2,.55,1]});
+slides.forEach(s=>io.observe(s));
+slides[0].classList.add('in-view');
+
+document.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const curr = Math.max(0, dots.findIndex(d=>d.classList.contains('active')));
+  if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ===== Gabaritos expansíveis (cards estáticos) ===== */
+function bindQ(root){ root.querySelectorAll('.qcard .qhead').forEach(hd=>{ hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open')); }); }
+document.querySelectorAll('.quiz-list.static').forEach(bindQ);
+
+/* ===== Botões copiar ===== */
+document.querySelectorAll('.codeblock .copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const pre = btn.parentElement.querySelector('pre');
+    const txt = pre.innerText;
+    const done = ()=>{ btn.textContent='copiado ✓'; setTimeout(()=>btn.textContent='copiar',1600); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent='selecionado: Ctrl+C'; setTimeout(()=>btn.textContent='copiar',2200); };
+    try{ navigator.clipboard.writeText(txt).then(done, fallback); }catch(e){ fallback(); }
+  });
+});
+
+/* ===== Checklists com localStorage ===== */
+document.querySelectorAll('.check-list[data-check]').forEach(list=>{
+  const key = 'devops-aula02-'+list.dataset.check;
+  const meter = document.getElementById(list.dataset.check+'Meter');
+  const boxes = Array.from(list.querySelectorAll('input[type=checkbox]'));
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  function render(){
+    let n=0; boxes.forEach(b=>{ b.closest('.check-item').classList.toggle('done', b.checked); if(b.checked) n++; });
+    meter.querySelector('span').textContent = n+'/'+boxes.length;
+    meter.querySelector('.check-bar span').style.width = (n/boxes.length*100)+'%';
+  }
+  boxes.forEach(b=>{
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', ()=>{ saved[b.id]=b.checked; try{ localStorage.setItem(key, JSON.stringify(saved)); }catch(e){} render(); });
+  });
+  render();
+});
+
+
+/* ===== Simulador de branches ===== */
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.getElementById('gSvg'), term=document.getElementById('bTerm');
+  let commits, refs, head, n, m;
+  function init(){
+    commits=[{id:'C1', lane:'main', parents:[], merge:false, hidden:false}];
+    refs={main:'C1', feature:null}; head='main'; n=1; m=0;
+    out('git log --oneline','C1 (HEAD -> main) commit inicial');
+  }
+  const byId=id=>commits.find(c=>c.id===id);
+  function anc(id){ const s=new Set(), st=[id]; while(st.length){ const x=st.pop(); if(!x||s.has(x)) continue; s.add(x); byId(x).parents.forEach(p=>st.push(p)); } return s; }
+  function out(cmd, txt, cls){ term.innerHTML='<span class="p">$</span> <span class="c">'+cmd+'</span>\n'+(cls?'<span class="'+cls+'">'+txt+'</span>':txt); }
+  function el(tag, attrs, text){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(text!=null) e.textContent=text; return e; }
+  let lastNew=null;
+  function render(){
+    const W=Math.max(640, 60+commits.length*72+80), H=200, Y={main:62, feature:138};
+    svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width',W); svg.innerHTML='';
+    const pos={}; commits.forEach((c,i)=>{ pos[c.id]={x:44+i*72, y:Y[c.lane]}; });
+    commits.forEach(c=>c.parents.forEach(p=>{
+      const a=pos[p], b=pos[c.id];
+      const d = a.y===b.y ? 'M'+a.x+' '+a.y+' L'+b.x+' '+b.y : 'M'+a.x+' '+a.y+' C'+(a.x+40)+' '+a.y+' '+(b.x-40)+' '+b.y+' '+b.x+' '+b.y;
+      const lane = (c.merge && byId(p).lane==='feature') ? 'feature' : c.lane;
+      svg.appendChild(el('path',{d, class:'g-edge '+lane, opacity:(c.hidden||byId(p).hidden&&c.hidden)?'.2':'1', 'stroke-dasharray':c.hidden?'4 5':'none'}));
+    }));
+    commits.forEach(c=>{
+      const p=pos[c.id];
+      svg.appendChild(el('circle',{cx:p.x, cy:p.y, r:12, class:'g-node '+c.lane+(c.merge?' merge':'')+(c.id===lastNew?' new':''), opacity:c.hidden?'.25':'1'}));
+      svg.appendChild(el('text',{x:p.x, y:p.y+4, class:'g-id', opacity:c.hidden?'.35':'1', fill:c.merge?'#04070c':''}, c.id));
+    });
+    const labels={};
+    ['main','feature'].forEach(r=>{ if(refs[r]) (labels[refs[r]]=labels[refs[r]]||[]).push(r); });
+    Object.entries(labels).forEach(([id,names])=>{
+      const p=pos[id], up=byId(id).lane==='main';
+      names.forEach((nm,k)=>{
+        const txt=(head===nm?'HEAD → ':'')+nm, w=txt.length*6.6+12;
+        const y= up ? p.y-26-k*18 : p.y+28+k*18;
+        const col= nm==='main' ? 'var(--blue)' : 'var(--gold)';
+        svg.appendChild(el('rect',{x:p.x-w/2, y:y-11, width:w, height:15, rx:5, fill:'var(--bg-2)', stroke:col}));
+        svg.appendChild(el('text',{x:p.x, y:y, 'text-anchor':'middle', class:'g-ref', fill:col}, txt));
+      });
+    });
+    lastNew=null;
+    const wrap=svg.parentElement; wrap.scrollLeft=wrap.scrollWidth;
+  }
+  function act(a){
+    if(a==='reset'){ init(); render(); return; }
+    if(a==='commit'){
+      const id='C'+(++n); commits.push({id, lane:head, parents:[refs[head]], merge:false, hidden:false}); refs[head]=id; lastNew=id;
+      out('git commit -m "…"','['+head+' '+id+'] nova mudança registrada em '+head);
+    } else if(a==='branch'){
+      if(refs.feature){ out('git switch -c feature','fatal: a branch named \'feature\' already exists','e'); return; }
+      refs.feature=refs[head]; head='feature';
+      out('git switch -c feature',"Switched to a new branch 'feature'\n<span class=\"y\">A branch é só uma etiqueta nova no mesmo commit. Faça commits para vê-la avançar.</span>");
+    } else if(a==='toMain'){ head='main'; out('git switch main',"Switched to branch 'main'");
+    } else if(a==='toFeat'){
+      if(!refs.feature){ out('git switch feature',"fatal: invalid reference: feature\n<span class=\"y\">Crie a branch antes com git switch -c feature.</span>",'e'); return; }
+      head='feature'; out('git switch feature',"Switched to branch 'feature'");
+    } else if(a==='merge'){
+      if(!refs.feature){ out('git merge feature','merge: feature - not something we can merge','e'); return; }
+      if(head!=='main'){ out('git merge feature','<span class="y">Você está na feature. Para levar a feature para a main, rode antes: git switch main</span>'); return; }
+      const fa=anc(refs.feature);
+      if(anc(refs.main).has(refs.feature)){ out('git merge feature','Already up to date.'); return; }
+      if(fa.has(refs.main)){
+        const from=refs.main; refs.main=refs.feature;
+        out('git merge feature','Updating '+from+'..'+refs.main+'\nFast-forward\n<span class="y">A main não tinha commits novos: o Git só avançou o ponteiro. Nenhum commit foi criado.</span>');
+      } else {
+        const id='M'+(++m); commits.push({id, lane:'main', parents:[refs.main, refs.feature], merge:true, hidden:false}); refs.main=id; lastNew=id;
+        out('git merge feature',"Merge made by the 'ort' strategy.\n<span class=\"y\">As duas branches andaram: o Git criou o commit de merge "+id+", com dois pais.</span>");
+      }
+    } else if(a==='rebase'){
+      if(!refs.feature){ out('git rebase main','fatal: crie a branch feature primeiro','e'); return; }
+      if(head!=='feature'){ out('git rebase main','<span class="y">O rebase reaplica a branch atual. Rode antes: git switch feature</span>'); return; }
+      const ma=anc(refs.main), fa=anc(refs.feature);
+      if(fa.has(refs.main)){ out('git rebase main','Current branch feature is up to date.'); return; }
+      const only=commits.filter(c=>fa.has(c.id) && !ma.has(c.id) && !c.hidden);
+      let base=refs.main;
+      only.forEach(c=>{ c.hidden=true; const id=c.id+"'"; commits.push({id, lane:'feature', parents:[base], merge:false, hidden:false}); base=id; lastNew=id; });
+      refs.feature=base;
+      out('git rebase main',"Successfully rebased and updated refs/heads/feature.\n<span class=\"y\">Os commits apagados (transparentes) foram recriados com hashes novos ("+only.map(c=>c.id+"'").join(', ')+"). Agora um merge na main será fast-forward.</span>");
+    } else if(a==='delete'){
+      if(!refs.feature){ out('git branch -d feature',"error: branch 'feature' not found",'e'); return; }
+      if(head==='feature'){ out('git branch -d feature',"error: cannot delete branch 'feature' used by worktree\n<span class=\"y\">Saia da branch antes: git switch main</span>",'e'); return; }
+      if(!anc(refs.main).has(refs.feature)){ out('git branch -d feature',"error: the branch 'feature' is not fully merged\n<span class=\"y\">Faça o merge antes, ou perderá esses commits.</span>",'e'); return; }
+      refs.feature=null; out('git branch -d feature','Deleted branch feature.\n<span class="y">Os commits continuam no histórico da main; só a etiqueta sumiu.</span>');
+    }
+    render();
+  }
+  document.querySelectorAll('[data-b]').forEach(b=>b.addEventListener('click',()=>act(b.dataset.b)));
+  init(); render();
+})();
+
+/* ===== Resolvedor de conflito ===== */
+(function(){
+  const TOP=['| Método | Rota | O que faz |','| --- | --- | --- |','| GET | `/tasks` | Lista todas as tarefas |'];
+  const OURS='| GET | `/tasks/{id}` | Busca uma tarefa pelo id |';
+  const THEIRS='| GET | `/tasks?done=true` | Filtra tarefas por status |';
+  const BOT=['| POST | `/tasks` | Cria uma tarefa |'];
+  const CONFLICT=[...TOP,'<<<<<<< HEAD',OURS,'=======',THEIRS,'>>>>>>> feature/filtro',...BOT].join('\n');
+  const pre=document.getElementById('cfFile'), ta=document.getElementById('cfEdit'), outEl=document.getElementById('cfOut');
+  let text=CONFLICT, editing=false, done=false;
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function show(){
+    let side=null;
+    pre.innerHTML=text.split('\n').map(l=>{
+      if(l.startsWith('<<<<<<<')){ side='ours'; return '<span class="mk">'+esc(l)+'</span>'; }
+      if(l.startsWith('=======')){ side='theirs'; return '<span class="mk">'+esc(l)+'</span>'; }
+      if(l.startsWith('>>>>>>>')){ side=null; return '<span class="mk">'+esc(l)+'</span>'; }
+      return side ? '<span class="'+side+'">'+esc(l)+'</span>' : esc(l);
+    }).join('\n');
+    pre.hidden=editing; ta.hidden=!editing;
+  }
+  function set(kind){
+    done=false;
+    if(kind==='reset'){ text=CONFLICT; editing=false; outEl.className='verdict'; outEl.textContent='Escolha uma forma de resolver e depois faça o commit.'; show(); return; }
+    if(kind==='edit'){ editing=true; ta.value=text; show(); ta.focus(); outEl.className='verdict warn'; outEl.innerHTML='<b class="t">Modo edição</b><br>Edite o texto: deixe as linhas certas e apague os 3 marcadores. Depois faça o commit.'; return; }
+    editing=false;
+    const mid = kind==='ours'?[OURS] : kind==='theirs'?[THEIRS] : [OURS,THEIRS];
+    text=[...TOP,...mid,...BOT].join('\n'); show();
+    outEl.className='verdict'; outEl.innerHTML='Arquivo alterado. Confira o resultado e faça o commit.';
+  }
+  function commit(){
+    const t = editing ? ta.value : text;
+    if(/^(<{7}|={7}|>{7})/m.test(t)){
+      outEl.className='verdict no'; outEl.innerHTML='<b class="t">Ainda há marcadores de conflito no arquivo</b><br>O Git aceitaria o commit, mas o README ficaria quebrado. Apague as linhas <span class="code">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span>, <span class="code">=======</span> e <span class="code">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>.'; return;
+    }
+    const hasO=t.includes('/tasks/{id}'), hasT=t.includes('done=true');
+    if(hasO && hasT){ outEl.className='verdict ok'; outEl.innerHTML='<b class="t">✓ [main 4c1e9a2] Merge branch \'feature/filtro\'</b><br>Resolvido certo: as duas mudanças eram válidas e independentes, então a tabela precisa das <b>duas rotas</b>. Conflito não quer dizer que um dos dois está errado.'; }
+    else if(hasO || hasT){ outEl.className='verdict warn'; outEl.innerHTML='<b class="t">Commit feito, mas você perdeu trabalho</b><br>A linha '+(hasO?'do filtro por status (Bruno)':'da busca por id (Ana)')+' sumiu do README. A rota existe no código, mas não está mais documentada. Neste caso, as duas linhas deveriam ficar.'; }
+    else { outEl.className='verdict no'; outEl.innerHTML='<b class="t">As duas rotas sumiram</b><br>Você apagou as duas mudanças. Recomece (↺) e tente de novo.'; }
+    done=true;
+  }
+  document.querySelectorAll('[data-cf]').forEach(b=>b.addEventListener('click',()=>set(b.dataset.cf)));
+  document.getElementById('cfCommit').addEventListener('click', commit);
+  ta.addEventListener('keydown', e=>e.stopPropagation());
+  show();
+})();
+
+/* ===== Qual estratégia? ===== */
+(function(){
+  const items=[
+    {q:'Startup com 5 devs que faz deploy várias vezes ao dia. Tem testes automáticos fortes e usa feature flags para esconder o que não está pronto.', a:'Trunk-based', why:'Integração diária no tronco, CI forte e feature flags são exatamente os pré-requisitos do trunk-based.'},
+    {q:'App de banco para celular, publicado nas lojas a cada 2 meses com número de versão. Duas versões antigas ainda recebem correções.', a:'GitFlow', why:'Lançamentos agendados e várias versões em suporte pedem branches de release e hotfix, o forte do GitFlow.'},
+    {q:'Sistema web de uma agência. Cada mudança passa por revisão de outro dev e vai para produção logo depois do merge na main.', a:'GitHub Flow', why:'Main sempre pronta, branch curta por mudança e PR com revisão: é a definição do GitHub Flow.'},
+    {q:'A dupla do TaskFlow: duas pessoas, cada funcionalidade numa branch, revisão obrigatória antes de entrar na main.', a:'GitHub Flow', why:'Simples o bastante para 2 pessoas e já traz a disciplina de PR e revisão. É o que usaremos na disciplina.'},
+    {q:'Time maduro de 30 devs com pipeline que roda 2.000 testes em 8 minutos. Querem eliminar branches longas e integrar no mínimo uma vez por dia.', a:'Trunk-based', why:'O objetivo de integrar todo dia e o pipeline rápido indicam trunk-based, adotado por times de alta performance.'}
+  ];
+  let i=0, ok=0, tot=0, answered=false;
+  const q=document.getElementById('stQ'), fb=document.getElementById('stFb'), sc=document.getElementById('stScore'), ct=document.getElementById('stCount');
+  const btns=Array.from(document.querySelectorAll('[data-st]'));
+  function load(){ answered=false; q.textContent=items[i].q; ct.textContent='Cenário '+(i+1)+' de '+items.length; fb.className='verdict'; fb.textContent='Escolha uma estratégia.'; btns.forEach(b=>b.disabled=false); }
+  function answer(v){
+    if(answered) return; answered=true; tot++;
+    const it=items[i], right=v===it.a; if(right) ok++;
+    const last=i===items.length-1;
+    fb.className='verdict '+(right?'ok':'no');
+    fb.innerHTML='<b class="t">'+(right?'✓ Boa escolha!':'✗ A melhor opção aqui é '+it.a+'.')+'</b> '+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;" id="stNext">'+(last?'recomeçar ↺':'próximo cenário →')+'</button>';
+    document.getElementById('stNext').addEventListener('click',()=>{ if(last){ i=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else i++; load(); });
+    sc.textContent='Acertos: '+ok+' / '+tot; btns.forEach(b=>b.disabled=true);
+  }
+  btns.forEach(b=>b.addEventListener('click',()=>answer(b.dataset.st)));
+  load();
+})();
+
+/* ===== Quiz de fixação ===== */
+(function(){
+  const quiz=[
+    {tag:'Branches', q:'Criar uma branch nova copia os arquivos do projeto? Por que isso é rápido?', a:'<b>Não copia nada.</b> Uma branch é só um ponteiro para um commit. Criar uma branch é criar uma etiqueta: instantâneo, mesmo em projetos enormes.'},
+    {tag:'Merge', q:'Você fez 3 commits na feature e ninguém mexeu na main. Que tipo de merge acontece?', a:'<b>Fast-forward:</b> o Git só avança o ponteiro da main até o último commit da feature. Nenhum commit de merge é criado.'},
+    {tag:'Conflito', q:'Em que situação o Git não consegue juntar duas branches sozinho?', a:'Quando as duas mudaram <b>as mesmas linhas</b> do mesmo arquivo (ou uma apagou o que a outra editou). Aí ele marca o conflito e espera uma pessoa decidir.'},
+    {tag:'Conflito', q:'Depois de resolver um conflito, quais dois comandos finalizam o merge?', a:'<span class="code">git add &lt;arquivo&gt;</span> para marcar como resolvido e <span class="code">git commit</span> para registrar o merge.'},
+    {tag:'Rebase', q:'Por que nunca fazer rebase na main compartilhada?', a:'O rebase <b>recria os commits com hashes novos</b>. Quem já tinha os antigos fica com um histórico divergente e o repositório da equipe quebra.'},
+    {tag:'Ferramentas', q:'Você está no meio de uma feature e precisa corrigir um bug urgente na main. Qual comando guarda seu trabalho sem commitar?', a:'<span class="code">git stash</span>. Depois de corrigir o bug, volte para a feature e rode <span class="code">git stash pop</span>.'},
+    {tag:'Estratégias', q:'Qual a principal diferença entre GitHub Flow e GitFlow?', a:'O <b>GitHub Flow</b> tem só a main permanente e branches curtas com PR. O <b>GitFlow</b> mantém main e develop, mais branches de release e hotfix, pensado para versões agendadas.'},
+    {tag:'Pull Request', q:'Por que ativar "Require a pull request before merging" na main?', a:'Garante que <b>toda mudança é revisada</b> antes de entrar na main: ninguém faz push direto. É feedback humano (2º Caminho) e prepara a main para receber verificação automática na Semana 3.'}
+  ];
+  const list=document.getElementById('quizList');
+  quiz.forEach((it,k)=>{
+    const c=document.createElement('div'); c.className='qcard';
+    c.innerHTML='<button class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">Q'+(k+1)+'.</b> '+it.q+'</span><span class="qtag">'+it.tag+'</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">'+it.a+'</div></div>';
+    list.appendChild(c);
+  });
+  bindQ(list);
+})();
+</script>
+
+</body>
+</html>
