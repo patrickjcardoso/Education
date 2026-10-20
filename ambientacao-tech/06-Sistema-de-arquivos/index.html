@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Ambientação Tech · Aula 06: sistema de arquivos. Metadados, permissões, FAT32, exFAT, NTFS, ext4, APFS, fragmentação e estratégias de alocação.">
+<title>Ambientação Tech · Aula 06</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@600;700;800&display=swap">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — herdado das aulas do Prof. Patrick (mesmo padrão visual
+   de Redes e DevOps Tools). Deck vertical com scroll-snap, tema dark-tech.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12; --bg-2:#0c131d; --surface:#121b27; --surface-2:#182434;
+  --border:#223049; --border-soft:#1a2436;
+  --text:#eef3f8; --text-dim:#9fb0c3; --text-faint:#62768a;
+  --blue:#2fb0e8; --blue-dim:#12719e; --navy:#0b3556;
+  --gold:#f2a93b; --green:#36c58f; --red:#ef5b5b;
+  --mono:'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --disp:'Sora', 'Inter', sans-serif;
+  --radius:16px; --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+a{color:var(--blue);}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto; min-width:0;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); font-weight:600;
+  display:flex; align-items:center; gap:.6em; margin-bottom:.8rem; flex-wrap:wrap;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em; text-wrap:balance;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem; text-wrap:balance;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:70ch; line-height:1.55;}
+.subtitle b, .card p b, ol.steps b{color:var(--text);}
+.accent{color:var(--gold);} .accent-b{color:var(--blue);} .accent-g{color:var(--green);} .accent-r{color:var(--red);}
+
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease);}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;} .delay-4{transition-delay:.32s;}
+@media (prefers-reduced-motion: reduce){ .animate{opacity:1; transform:none; transition:none;} .deck{scroll-behavior:auto;} }
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem; min-width:0;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p, .card li{color:var(--text-dim); font-size:.84rem; line-height:1.5;}
+.card ul{padding-left:1.1rem; display:grid; gap:.25rem;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+.grid-5{display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+.icon-chip.g{background:rgba(242,169,59,.12); color:var(--gold);}
+
+.tbl-wrap{overflow-x:auto; min-width:0;}
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.1rem; cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn.gold{background:linear-gradient(180deg,var(--gold),#c98520);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue); white-space:nowrap;}
+
+/* ============================= CAPA ============================= */
+#s-capa{align-items:flex-start;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem; flex-wrap:wrap;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.16);
+  font-size:1rem; line-height:1.75; text-align:right; user-select:none; pointer-events:none; white-space:pre;}
+
+/* ============================= SUMÁRIO ============================= */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.76rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.82rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= CHECKLIST / AGENDA ============================= */
+.check-list{display:grid; gap:.5rem;}
+.check-item{display:flex; gap:.75rem; align-items:flex-start; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; cursor:pointer; transition:border-color .2s, background .2s;}
+.check-item input{appearance:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border); flex:none; margin-top:.1rem; display:grid; place-items:center; cursor:pointer; background:var(--surface-2);}
+.check-item input:checked{background:var(--green); border-color:var(--green);}
+.check-item input:checked::after{content:'✓'; color:#062014; font-weight:800; font-size:.8rem;}
+.check-item.done{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.05);}
+.check-item.done .ci-t{text-decoration:line-through; color:var(--text-faint);}
+.ci-t{font-size:.86rem; color:var(--text); font-weight:600;}
+.ci-d{font-size:.78rem; color:var(--text-dim); margin-top:.15rem; line-height:1.45;}
+.ci-time{margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--gold); flex:none; padding-top:.15rem;}
+.check-meter{display:flex; align-items:center; gap:.8rem; margin-top:.8rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);}
+.check-bar{flex:1; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.check-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--blue)); transition:width .4s var(--ease);}
+
+.agenda{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:1rem;}
+.ag{border-top:3px solid var(--blue); background:var(--surface); border-radius:0 0 12px 12px; padding:.75rem .9rem;}
+.ag .min{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.86rem;}
+.ag h4{font-family:var(--disp); font-size:.9rem; margin:.25rem 0; color:var(--text);}
+.ag p{font-size:.78rem; color:var(--text-dim); line-height:1.45;}
+.ag:nth-child(2){border-color:var(--gold);} .ag:nth-child(2) .min{color:var(--gold);}
+.ag:nth-child(3){border-color:var(--green);} .ag:nth-child(3) .min{color:var(--green);}
+.ag:nth-child(4){border-color:var(--text-faint);} .ag:nth-child(4) .min{color:var(--text-dim);}
+
+/* ============================= TIMELINE ============================= */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem; min-width:0;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.92rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item.hot{border-color:var(--red);} .tl-item.hot .yr{color:var(--red);}
+.tl-item.warn{border-color:var(--gold);} .tl-item.warn .yr{color:var(--gold);}
+.bignum-row{display:flex; gap:2.2rem; margin-top:1.2rem; flex-wrap:wrap;}
+.bignum .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); color:var(--red); line-height:1;}
+.bignum .l{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* ============================= MURO DA CONFUSÃO ============================= */
+.wall{display:grid; grid-template-columns:1fr 70px 1fr; gap:1rem; align-items:stretch; margin-top:1.1rem;}
+.wall .side{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1rem 1.1rem;}
+.wall .side h3{font-family:var(--disp); font-size:1rem; margin-bottom:.5rem;}
+.wall .side.dev h3{color:var(--blue);} .wall .side.ops h3{color:var(--gold);}
+.wall .side li{font-size:.84rem; color:var(--text-dim); line-height:1.5; margin-left:1rem;}
+.wall .brick{border-radius:10px; background:repeating-linear-gradient(0deg, var(--surface-2) 0 18px, var(--border) 18px 20px), var(--surface-2);
+  display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; font-family:var(--mono); font-size:.68rem; color:var(--text-dim); letter-spacing:.12em; text-transform:uppercase;}
+
+/* ============================= CALMS / 3 CAMINHOS ============================= */
+.calms .card .letter{font-family:var(--disp); font-weight:800; font-size:2rem; color:var(--blue); line-height:1;}
+.calms .card:nth-child(even) .letter{color:var(--gold);}
+.ways{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; margin-top:1rem;}
+.way svg{width:100%; height:70px; display:block; margin-bottom:.6rem;}
+.way .lbl{font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);}
+
+/* ============================= CICLO DEVOPS ============================= */
+.loop-wrap{display:grid; grid-template-columns:1.25fr 1fr; gap:1.4rem; align-items:center; margin-top:.8rem;}
+.loop-svg{width:100%; height:auto; display:block;}
+.loop-svg .seg{cursor:pointer;}
+.loop-svg .seg rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1; transition:all .25s;}
+.loop-svg .seg text{font-family:var(--mono); font-size:11px; fill:var(--text-dim); text-anchor:middle; pointer-events:none;}
+.loop-svg .seg:hover rect, .loop-svg .seg:focus rect{stroke:var(--blue);}
+.loop-svg .seg.dev.active rect{fill:rgba(47,176,232,.2); stroke:var(--blue);}
+.loop-svg .seg.ops.active rect{fill:rgba(242,169,59,.18); stroke:var(--gold);}
+.loop-svg .seg.active text{fill:var(--text); font-weight:700;}
+.loop-svg .path{fill:none; stroke:var(--border); stroke-width:2; stroke-dasharray:5 6;}
+.loop-svg .side-l{font-family:var(--mono); font-size:10px; letter-spacing:.12em; fill:var(--text-faint); text-anchor:middle;}
+.phase-panel{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.3rem; min-height:230px;}
+.phase-panel h4{font-family:var(--disp); color:var(--gold); font-size:1.05rem; margin-bottom:.1rem;}
+.phase-panel .tag{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:block; margin-bottom:.7rem;}
+.phase-panel p{font-size:.84rem; color:var(--text-dim); line-height:1.5;}
+.phase-panel .tools{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.7rem;}
+.phase-panel .tools span{font-family:var(--mono); font-size:.7rem; padding:.2rem .55rem; border-radius:99px; border:1px solid var(--border); color:var(--blue);}
+.phase-panel .week{margin-top:.8rem; font-size:.78rem; color:var(--green); font-family:var(--mono);}
+
+/* ============================= HANDS-ON ============================= */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.5rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+
+/* ============================= QUIZ / GABARITOS ============================= */
+.quiz-list{display:flex; flex-direction:column; gap:.5rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; cursor:pointer; gap:1rem; width:100%; background:none; border:none; text-align:left; color:inherit; font:inherit;}
+.qcard .qhead .qtext{font-size:.85rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.62rem; color:var(--text-faint); flex-shrink:0; margin-left:auto;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:280px;}
+.qcard .qanswer{padding:.6rem 1rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft);}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= DRILL: É DEVOPS? ============================= */
+.drill{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid rgba(242,169,59,.28); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+.drill-q{font-family:var(--disp); font-size:clamp(1rem,1.7vw,1.3rem); font-weight:700; color:var(--text); min-height:3.2em; line-height:1.35;}
+.drill-btns{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+.verdict{margin-top:.9rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.4em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.ok{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.ok b.t{color:var(--green);}
+.verdict.no{border-color:rgba(239,91,91,.5); background:rgba(239,91,91,.07);} .verdict.no b.t{color:var(--red);}
+.verdict.warn{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.warn b.t{color:var(--gold);}
+.drill-score{font-family:var(--mono); font-size:.76rem; color:var(--gold); margin-top:.6rem;}
+
+/* ============================= GIT 3 ÁREAS ============================= */
+.areas{display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-top:.9rem;}
+.area{background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:.8rem .9rem; min-height:150px; transition:box-shadow .3s;}
+.area h4{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.15rem;}
+.area .sub{font-size:.72rem; color:var(--text-faint); margin-bottom:.6rem;}
+.area.wd h4{color:var(--red);} .area.st h4{color:var(--gold);} .area.rp h4{color:var(--green);}
+.area.flash{box-shadow:0 0 0 3px rgba(47,176,232,.25);}
+.fchip{display:inline-flex; align-items:center; gap:.35em; font-family:var(--mono); font-size:.72rem; padding:.25rem .55rem; border-radius:7px; margin:0 .3rem .3rem 0; border:1px solid var(--border);}
+.fchip.m{color:var(--red); border-color:rgba(239,91,91,.45); background:rgba(239,91,91,.07);}
+.fchip.s{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.07);}
+.commit-row{font-family:var(--mono); font-size:.7rem; color:var(--text-dim); padding:.2rem 0; border-bottom:1px solid var(--border-soft);}
+.commit-row .h{color:var(--gold);}
+.empty{font-size:.74rem; color:var(--text-faint); font-style:italic;}
+.git-ctrl{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;}
+.term{margin-top:.8rem; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim); min-height:3.6em; white-space:pre-wrap; overflow-x:auto;}
+.term .p{color:var(--green);} .term .c{color:var(--text);} .term .e{color:var(--red);} .term .y{color:var(--gold);}
+
+/* ============================= CODE BLOCK ============================= */
+.codeblock{position:relative; background:#04070c; border:1px solid var(--border); border-radius:12px; min-width:0;}
+.codeblock pre{font-family:var(--mono); font-size:.74rem; line-height:1.6; color:var(--text); padding:.8rem 1rem; overflow:auto; max-height:52vh;}
+.codeblock pre .cm{color:var(--text-faint);}
+.codeblock .copy{position:absolute; top:.5rem; right:.5rem; font-family:var(--mono); font-size:.66rem; padding:.25rem .6rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer;}
+.codeblock .copy:hover{color:var(--blue); border-color:var(--blue);}
+.codeblock .cb-title{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); padding:.5rem 1rem 0; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ============================= COMMIT CHECKER ============================= */
+.ip-input{font-family:var(--mono); font-size:.88rem; padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.input-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;}
+.input-row .ip-input{flex:1; min-width:200px;}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+.types{display:grid; grid-template-columns:repeat(2,1fr); gap:.25rem .9rem; font-size:.78rem; color:var(--text-dim);}
+.types b{font-family:var(--mono); color:var(--blue); font-weight:600;}
+
+/* ============================= MISC ============================= */
+.warn-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.warn-box b{color:var(--gold);}
+.info-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(47,176,232,.07); border:1px solid rgba(47,176,232,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.info-box b{color:var(--blue);}
+.refs-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem 1rem; min-width:0;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.5rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.4rem;}
+.refs-box a, .refs-box span.ref{color:var(--text-dim); text-decoration:none; font-size:.8rem; display:flex; align-items:baseline; gap:.5em; line-height:1.4;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box .ext{color:var(--text-faint); font-family:var(--mono); font-size:.66rem; flex:none;}
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border); background:var(--surface); margin-top:1.4rem; flex-wrap:wrap;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+.deliver{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;}
+.deliver span{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid rgba(54,197,143,.4); background:rgba(54,197,143,.07); color:var(--green);}
+.tree{font-family:var(--mono); font-size:.76rem; line-height:1.6; color:var(--text-dim); white-space:pre; overflow-x:auto;}
+.tree b{color:var(--gold); font-weight:600;}
+
+/* ============================= RESPONSIVO ============================= */
+@media (max-width:860px){
+  html,body{overflow:auto;}
+  .deck{height:auto; overflow:visible; scroll-snap-type:none;}
+  .slide{height:auto; min-height:auto; padding:3.5rem 16px; overflow:visible;}
+  .grid-3,.grid-2,.grid-4,.grid-5,.ways,.loop-wrap,.areas,.agenda,.wall,.types{grid-template-columns:1fr;}
+  .wall .brick{writing-mode:horizontal-tb; padding:.5rem;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits,.hint,.slide-no{display:none;}
+  .timeline{flex-direction:column;}
+  .animate{opacity:1; transform:none;}
+}
+
+
+/* ============================= AUTOESTUDO (trilha, biblioteca, glossário, autoavaliação) ============================= */
+.slide.tall{justify-content:flex-start; overflow-y:auto; padding-top:6vh; padding-bottom:10vh;}
+table.trail td:nth-child(4){white-space:nowrap;}
+table.trail td{font-size:.8rem; line-height:1.45;}
+table.trail td:first-child{font-family:var(--mono); color:var(--text-faint); font-weight:600; width:2.2em;}
+table.trail td a{color:var(--blue); text-decoration:none;}
+table.trail td a:hover{text-decoration:underline;}
+table.trail .goal{color:var(--text);}
+.req{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; padding:.1rem .45rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); white-space:nowrap; margin-left:.3rem; vertical-align:1px;}
+.req.ob{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+.lib h4{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:.2rem 0 .45rem;}
+.lib ul{list-style:none; display:grid; gap:.45rem;}
+.lib li{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.lib li b{color:var(--text);}
+.lib li a{color:var(--blue); text-decoration:none;}
+.lib li a:hover{text-decoration:underline;}
+.lib .find{display:block; font-size:.74rem; color:var(--text-faint); margin-top:.1rem;}
+.gloss{display:grid; grid-template-columns:repeat(2,1fr); gap:.2rem 1.6rem; margin-top:.8rem;}
+.gloss div{border-bottom:1px solid var(--border-soft); padding:.4rem 0; min-width:0;}
+.gloss dt{font-family:var(--mono); color:var(--blue); font-size:.78rem; font-weight:600;}
+.gloss dd{font-size:.78rem; color:var(--text-dim); line-height:1.45; margin-top:.1rem;}
+.method{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem;}
+.method .card .icon-chip{font-size:.9rem;}
+.review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
+@media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+
+/* ============================= AMBIENTAÇÃO TECH · AULA 06 — componentes novos ============================= */
+.agenda.six{grid-template-columns:repeat(3,1fr);}
+.agenda.six .ag:nth-child(3){border-color:var(--text-faint);} .agenda.six .ag:nth-child(3) .min{color:var(--text-dim);}
+.agenda.six .ag:nth-child(4){border-color:var(--green);} .agenda.six .ag:nth-child(4) .min{color:var(--green);}
+.agenda.six .ag:nth-child(5){border-color:var(--gold);} .agenda.six .ag:nth-child(5) .min{color:var(--gold);}
+table.cmp td.accent-r{color:var(--red);} table.cmp td.accent-g{color:var(--green);}
+.agenda.six .ag:nth-child(6){border-color:var(--blue);} .agenda.six .ag:nth-child(6) .min{color:var(--blue);}
+.agenda.six .ag.pause{opacity:.7;}
+
+/* permissões rwx ↔ octal */
+.perm{width:100%; border-collapse:collapse; font-size:.82rem;}
+.perm th{font-family:var(--mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.35rem .5rem; text-align:center; border-bottom:1px solid var(--border);}
+.perm th:first-child{text-align:left;}
+.perm td{padding:.45rem .5rem; text-align:center; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+.perm td:first-child{text-align:left; color:var(--text); font-weight:600;}
+.perm td.oct{font-family:var(--mono); color:var(--gold); font-weight:700;}
+.perm input{appearance:none; width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border); background:var(--surface-2); cursor:pointer; display:inline-grid; place-items:center; vertical-align:middle;}
+.perm input:checked{background:var(--blue); border-color:var(--blue);}
+.perm input:checked::after{content:'✓'; color:#04121b; font-weight:800; font-size:.8rem;}
+.perm-out{display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-end; margin-top:.8rem;}
+.perm-out .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); line-height:1; color:var(--gold);}
+.perm-out .n.sym{font-family:var(--mono); font-size:clamp(1.1rem,2vw,1.5rem); color:var(--blue);}
+.perm-out .l{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* saída anotada do stat */
+pre.stat{font-family:var(--mono); font-size:.74rem; line-height:1.7; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; color:var(--text-dim); overflow-x:auto; white-space:pre;}
+pre.stat .hl{color:var(--text); background:rgba(47,176,232,.14); border-radius:4px; padding:0 .2rem;}
+pre.stat .hg{color:var(--text); background:rgba(242,169,59,.16); border-radius:4px; padding:0 .2rem;}
+pre.stat .hr{color:var(--text); background:rgba(239,91,91,.16); border-radius:4px; padding:0 .2rem;}
+.legend{display:grid; gap:.45rem;}
+.legend div{font-size:.8rem; color:var(--text-dim); line-height:1.45; padding-left:.7rem; border-left:3px solid var(--blue);}
+.legend div.g{border-color:var(--gold);} .legend div.r{border-color:var(--red);}
+.legend b{color:var(--text);}
+
+/* calculadora de blocos */
+.calc-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem;}
+.calc-row label{font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:.3rem;}
+select.ip-input{cursor:pointer;}
+.calc-out{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:.9rem;}
+.calc-out .bignum{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .8rem; min-width:0;}
+.calc-out .bignum .n{color:var(--blue); font-size:clamp(1.1rem,2vw,1.6rem); overflow-wrap:anywhere;}
+.calc-out .bignum.w .n{color:var(--red);} .calc-out .bignum.ok .n{color:var(--green);}
+.blocks-bar{display:flex; flex-wrap:wrap; gap:4px; margin-top:.8rem;}
+.blocks-bar span{position:relative; width:46px; height:22px; border-radius:5px; border:1px solid var(--border); background:var(--surface-2); overflow:hidden;}
+.blocks-bar span i{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,var(--blue),var(--blue-dim));}
+.blocks-bar .more{width:auto; border:none; background:none; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); padding:.2rem;}
+
+/* simulador de alocação */
+.disk{display:grid; grid-template-columns:repeat(8,1fr); gap:5px; margin-top:.2rem;}
+.blk{position:relative; aspect-ratio:1.7/1; border-radius:7px; border:1px solid var(--border-soft); background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--mono); min-width:0; transition:background .25s, border-color .25s;}
+.blk .ix{position:absolute; top:2px; left:5px; font-size:.56rem; color:var(--text-faint);}
+.blk .lb{font-size:.74rem; font-weight:700; color:var(--text);}
+.blk .pt{font-size:.58rem; color:var(--text-dim);}
+.blk.busy{background:repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--border-soft) 6px 12px); border-color:var(--border);}
+.blk.busy .lb{color:var(--text-faint); font-weight:400; font-size:.6rem;}
+.blk.file{background:rgba(47,176,232,.18); border-color:var(--blue);}
+.blk.idx{background:rgba(242,169,59,.2); border-color:var(--gold);}
+.blk.newb{background:rgba(54,197,143,.2); border-color:var(--green);}
+.blk.fail{border-color:var(--red); box-shadow:0 0 0 2px rgba(239,91,91,.35);}
+.blk.read{box-shadow:0 0 0 3px rgba(242,169,59,.55);}
+.disk-legend{display:flex; gap:1rem; flex-wrap:wrap; margin-top:.6rem; font-family:var(--mono); font-size:.66rem; color:var(--text-faint);}
+.disk-legend i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:.3rem; border:1px solid var(--border);}
+
+.fs-card .lbl{font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:.15rem;}
+.fs-card .big{font-family:var(--disp); font-weight:800; font-size:1.5rem; line-height:1.1; margin-bottom:.4rem;}
+.fs-card ul{margin-top:.4rem;}
+.new-tag{display:inline-block; font-family:var(--mono); font-size:.58rem; letter-spacing:.04em; padding:.08rem .4rem; border-radius:99px; border:1px solid rgba(54,197,143,.45); color:var(--green); background:rgba(54,197,143,.08); vertical-align:2px; margin-left:.3rem;}
+
+@media (max-width:860px){
+  .agenda.six,.calc-row,.calc-out{grid-template-columns:1fr;}
+  .disk{grid-template-columns:repeat(4,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">--</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> AMBIENTAÇÃO TECH · ADS 5º PERÍODO · AULA 06 · 2026/2</div>
+      <h1 class="title animate delay-1">Sistema de arquivos:<br>como o SO <span class="accent-b">organiza</span>, <span class="accent">nomeia</span> e <span class="accent-g">recupera</span> seus dados</h1>
+      <p class="subtitle animate delay-2" style="margin-top:1.1rem;">Sem um sistema de arquivos, o disco é só uma sequência de bytes. Hoje você vai investigar o do seu próprio computador, comparar FAT32, exFAT, NTFS, ext4 e APFS e calcular quanto espaço se perde em cada bloco.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas · UNIPAR</div>
+        <div><b>Unidade II · Sistemas operacionais</b><br>3 h presenciais · metodologia ativa</div>
+        <div><b>Traga</b><br>notebook carregado e terminal funcionando</div>
+      </div>
+    </div>
+    <div class="capa-bits">$ ls -l
+-rw-r--r-- aluno  notas.txt
+-rwx------ aluno  backup.sh
+drwxr-xr-x aluno  projeto/
+
+$ stat notas.txt
+Size: 10000  Blocks: 24
+Inode: 1835263</div>
+  </section>
+
+  <!-- ============================================================ SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
+      <div class="toc animate delay-2" style="margin-top:.8rem;">
+        <div>
+          <div class="toc-group">Antes de começar</div>
+          <a href="#s-prep"><span class="n">01</span><span class="t">Checklist antes da aula</span></a>
+          <a href="#s-agenda"><span class="n">02</span><span class="t">Roteiro da noite</span></a>
+          <a href="#s-metodo"><span class="n">03</span><span class="t">Como vamos trabalhar hoje</span></a>
+          <a href="#s-revisao"><span class="n">04</span><span class="t">Revisão relâmpago da Aula 05</span></a>
+          <a href="#s-gancho"><span class="n">05</span><span class="t">O vídeo que não cabe no pendrive</span></a>
+          <div class="toc-group">Abertura · mini-aula</div>
+          <a href="#s-conceitos"><span class="n">06</span><span class="t">3 ideias essenciais</span></a>
+          <a href="#s-metadados"><span class="n">07</span><span class="t">Dados, metadados e timestamps</span></a>
+          <a href="#s-sondagem"><span class="n">08</span><span class="t">🛠️ Sondagem técnica</span></a>
+        </div>
+        <div>
+          <div class="toc-group">Bloco 1 · Auditoria técnica</div>
+          <a href="#s-comandos"><span class="n">09</span><span class="t">Comandos por sistema operacional</span></a>
+          <a href="#s-stat"><span class="n">10</span><span class="t">Lendo a saída do stat</span></a>
+          <a href="#s-permissoes"><span class="n">11</span><span class="t">Permissões: rwx ↔ octal</span></a>
+          <a href="#s-auditoria"><span class="n">12</span><span class="t">🛠️ Auditoria do seu arquivo</span></a>
+          <a href="#s-discussao1"><span class="n">13</span><span class="t">Discussão técnica coletiva</span></a>
+          <div class="toc-group">Bloco 2 · Análise comparativa</div>
+          <a href="#s-fs"><span class="n">14</span><span class="t">FAT32, NTFS, ext4 e APFS</span></a>
+          <a href="#s-comparativo"><span class="n">15</span><span class="t">Tabela comparativa (+ exFAT)</span></a>
+          <a href="#s-ficha"><span class="n">16</span><span class="t">🛠️ Ficha técnica e apresentação</span></a>
+          <a href="#s-escolha"><span class="n">17</span><span class="t">🛠️ Qual sistema escolher?</span></a>
+        </div>
+        <div>
+          <div class="toc-group">Bloco 3 · Alocação de espaço</div>
+          <a href="#s-calculo"><span class="n">18</span><span class="t">🛠️ Cálculo de fragmentação</span></a>
+          <a href="#s-calc"><span class="n">19</span><span class="t">Calculadora de blocos</span></a>
+          <a href="#s-alocacao"><span class="n">20</span><span class="t">Simulador de alocação</span></a>
+          <a href="#s-debate3"><span class="n">21</span><span class="t">Debate técnico do Bloco 3</span></a>
+          <div class="toc-group">Bloco 4 · Síntese e depois da aula</div>
+          <a href="#s-sintese"><span class="n">22</span><span class="t">O que vimos e o que vem</span></a>
+          <a href="#s-avaliacao"><span class="n">23</span><span class="t">🛠️ Quiz técnico e exit ticket</span></a>
+          <a href="#s-tarefa"><span class="n">24</span><span class="t">Tarefa de fixação</span></a>
+          <a href="#s-trilha"><span class="n">25</span><span class="t">Trilha de estudo</span></a>
+          <a href="#s-fontes"><span class="n">26</span><span class="t">Biblioteca</span></a>
+          <a href="#s-glossario"><span class="n">27</span><span class="t">Glossário</span></a>
+          <a href="#s-autoavaliacao"><span class="n">28</span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n">29</span><span class="t">Quiz de fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 01 PREP -->
+  <section class="slide hands-on" id="s-prep">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Antes da aula <span class="mm-badge">⏱ 30 min · sala de aula invertida</span></div>
+      <h2 class="stitle animate delay-1">Chegue com o terminal pronto para investigar</h2>
+      <p class="subtitle animate delay-2">A aula é quase toda prática, no seu próprio computador. Confira estes itens antes de chegar (fica salvo neste navegador).</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="check-list" data-check="prep">
+          <label class="check-item"><input type="checkbox" id="p6a"><div><div class="ci-t">Assistir ao Crash Course CS #20</div><div class="ci-d"><a href="https://www.youtube.com/watch?v=KN8YgJnShPM" target="_blank" rel="noopener">Files &amp; File Systems</a> (≈ 12 min). Ative as legendas em português.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p6b"><div><div class="ci-t">Rever a Aula 05</div><div class="ci-d">Funções do SO, modo usuário × kernel e chamadas de sistema. Hoje aprofundamos a função "gerenciar arquivos".</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p6c"><div><div class="ci-t">Saber abrir o terminal</div><div class="ci-d">Windows: <b>PowerShell</b> (e, se possível, como administrador). Linux/macOS: app <b>Terminal</b>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p6d"><div><div class="ci-t">Notebook carregado</div><div class="ci-d">Sem notebook? Use o computador do laboratório ou o terminal do celular (Termux, no Android).</div></div></label>
+        </div>
+        <div class="card">
+          <h3 class="accent">Teste rápido em casa</h3>
+          <p>Abra o terminal e rode o comando do seu sistema. Se aparecer o tipo do sistema de arquivos (NTFS, ext4, APFS…), você está pronto.</p>
+          <div class="tbl-wrap" style="margin-top:.5rem;"><table class="cmp">
+            <tr><td>Windows</td><td><span class="code">Get-Volume</span></td></tr>
+            <tr><td>Linux</td><td><span class="code">df -Th</span></td></tr>
+            <tr><td>macOS</td><td><span class="code">diskutil info /</span></td></tr>
+          </table></div>
+          <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 AGENDA -->
+  <section class="slide" id="s-agenda">
+    <div class="slide-inner">
+      <div class="kicker animate">02 · Encontro presencial · 3 h</div>
+      <h2 class="stitle animate delay-1">Como serão as 3 horas de hoje</h2>
+      <div class="agenda six animate delay-2">
+        <div class="ag"><div class="min">20 min</div><h4>Abertura</h4><p>Mini-aula com 3 ideias essenciais (15 min) e sondagem técnica com a turma (5 min).</p></div>
+        <div class="ag"><div class="min">35 min</div><h4>Bloco 1 · Auditoria</h4><p>Cada um investiga, pelo terminal, o sistema de arquivos e os metadados de um arquivo do próprio computador.</p></div>
+        <div class="ag pause"><div class="min">10 min</div><h4>Intervalo</h4><p>Hidratem-se, alonguem-se e voltem prontos para o Bloco 2.</p></div>
+        <div class="ag"><div class="min">50 min</div><h4>Bloco 2 · Comparativo</h4><p>Pesquisa individual (FAT32, NTFS, ext4 ou APFS), apresentação à turma e debate "qual sistema escolher?".</p></div>
+        <div class="ag"><div class="min">35 min</div><h4>Bloco 3 · Alocação</h4><p>Cálculo individual de fragmentação e simulação física de alocação contígua, encadeada e indexada.</p></div>
+        <div class="ag"><div class="min">20 min</div><h4>Bloco 4 · Síntese</h4><p>Síntese coletiva, quiz técnico no Classroom e exit ticket.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pergunta para pensar antes da aula:</b> seu pendrive tem 50 GB livres, mas o Windows se recusa a copiar um vídeo de 6 GB. O problema está no pendrive, no arquivo ou em outra coisa?</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 03 MÉTODO -->
+  <section class="slide" id="s-metodo">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Metodologia ativa</div>
+      <h2 class="stitle animate delay-1">Como vamos trabalhar hoje</h2>
+      <div class="method animate delay-2">
+        <div class="card"><div class="icon-chip">01</div><h3>Mini-aula direta</h3><p>Só o essencial, em 15 minutos. O resto do tempo é análise técnica e aplicação.</p></div>
+        <div class="card"><div class="icon-chip g">02</div><h3>Investigação individual</h3><p>Cada atividade é resolvida por você, com instrumentos reais: linha de comando, cálculo e pesquisa documentada.</p></div>
+        <div class="card"><div class="icon-chip">03</div><h3>Discussão coletiva</h3><p>Os resultados individuais alimentam debates mediados pelo professor. É ali que o conhecimento é confrontado e consolidado.</p></div>
+        <div class="card"><div class="icon-chip g">04</div><h3>Avaliação contínua</h3><p>Contam os registros técnicos individuais, a qualidade das contribuições no debate e o quiz final. Não há prova teórica nesta aula.</p></div>
+      </div>
+      <div class="info-box animate delay-3"><b>Use este material de dois jeitos:</b> durante a aula, como roteiro das atividades; depois da aula, como guia de estudo. Os gabaritos ficam escondidos: responda antes de clicar.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 REVISÃO -->
+  <section class="slide" id="s-revisao">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">04 · Revisão da Aula 05</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas rápidas</h2>
+      <p class="subtitle animate delay-2">Responda de cabeça e clique para conferir. Se errar mais de uma, revise o material da Aula 05.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">O que é um sistema operacional e por que ele é necessário?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">É o software que <b>gerencia o hardware</b> e oferece <b>abstrações</b> aos programas. "Arquivo" é uma dessas abstrações: o programa pede "salve <i>notas.txt</i>" e o SO decide em quais blocos do disco gravar.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Quais são as 4 funções principais de um SO vistas na Aula 05?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Gerenciar <b>processos</b>, <b>memória</b>, <b>arquivos</b> e <b>dispositivos de E/S</b>. Hoje aprofundamos a terceira.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual a diferença entre modo usuário e modo kernel?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">No <b>modo kernel</b> o código tem acesso total ao hardware. Programas comuns rodam em <b>modo usuário</b> e precisam pedir ao kernel para acessar o disco, a rede etc.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Quando seu programa salva um arquivo, quem de fato escreve no disco?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O <b>kernel</b>. O programa faz uma <b>chamada de sistema</b> (como <span class="code">open</span> e <span class="code">write</span>); o kernel repassa ao <b>sistema de arquivos</b>, que decide os blocos, e ao driver do dispositivo, que grava.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 GANCHO -->
+  <section class="slide" id="s-gancho">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Gancho do mundo real</div>
+      <h2 class="stitle animate delay-1">50 GB livres, e o vídeo de 6 GB não copia</h2>
+      <p class="subtitle animate delay-2">Uma colega precisa levar a gravação de uma palestra para a TV da sala de reuniões. Ela arrasta o vídeo para um pendrive novo de 64 GB, quase vazio, e recebe um erro.</p>
+      <div class="timeline animate delay-3">
+        <div class="tl-item"><div class="yr">Tentativa</div><p>Arrastar <span class="code">palestra.mp4</span> (6 GB) para o pendrive com 50 GB livres.</p></div>
+        <div class="tl-item warn"><div class="yr">Erro</div><p>"O arquivo é muito grande para o sistema de arquivos de destino."</p></div>
+        <div class="tl-item hot"><div class="yr">Diagnóstico</div><p>O pendrive veio formatado em <b>FAT32</b>, que não aceita arquivos com 4 GiB ou mais, não importa o espaço livre.</p></div>
+      </div>
+      <div class="bignum-row animate delay-3">
+        <div class="bignum"><div class="n">4 GiB</div><div class="l">limite por arquivo no FAT32</div></div>
+        <div class="bignum"><div class="n" style="color:var(--green)">50 GB</div><div class="l">livres no pendrive</div></div>
+        <div class="bignum"><div class="n" style="color:var(--gold)">6 GB</div><div class="l">tamanho do vídeo</div></div>
+      </div>
+      <div class="info-box animate delay-4"><b>A lição:</b> espaço livre não é a única regra. Cada <b>sistema de arquivos</b> tem sua estrutura e seus limites. Saber qual está em uso, e por que, é o que separa o "deu erro" do diagnóstico técnico. Ao fim do Bloco 2 você vai saber a solução.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 06 CONCEITOS -->
+  <section class="slide" id="s-conceitos">
+    <div class="slide-inner">
+      <div class="kicker animate">06 · Mini-aula · 15 min</div>
+      <h2 class="stitle animate delay-1">O mínimo para começar: 3 ideias</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>O que é um sistema de arquivos</h3><p>O componente do SO que <b>organiza, nomeia, indexa e recupera</b> dados num dispositivo de armazenamento. Ele divide o disco em <b>blocos</b> (no Windows, <i>clusters</i>) e registra quais blocos pertencem a qual arquivo.</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Hierarquia e metadados</h3><p>Arquivos ficam numa <b>árvore de diretórios</b>. Cada arquivo carrega <b>metadados</b>: nome, tamanho, datas, permissões, dono e a localização dos seus blocos.</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Implementações diferentes</h3><p>FAT32, NTFS, ext4 e APFS resolvem o mesmo problema com estruturas distintas: <b>tabela de alocação</b>, <b>MFT</b>, <b>inodes</b> e <b>B-trees</b>. Cada escolha tem impacto em desempenho, limites e confiabilidade.</p></div>
+      </div>
+      <div class="tree animate delay-3" style="margin-top:1rem;">programa ──(write)──▶ kernel ──▶ <b>sistema de arquivos</b> ──▶ driver ──▶ disco (setores/blocos)
+                                    "quais blocos estão livres?"
+                                    "onde estão os blocos de notas.txt?"</div>
+      <p class="subtitle animate delay-4" style="margin-top:.8rem;">Para aprofundar: DEITEL, <i>Sistemas Operacionais</i>, e TANENBAUM, <i>Sistemas Operacionais Modernos</i>, capítulos sobre sistemas de arquivos (seção 25).</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 07 METADADOS -->
+  <section class="slide" id="s-metadados">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Metadados</div>
+      <h2 class="stitle animate delay-1">O arquivo tem dados. O sistema de arquivos guarda os dados sobre os dados.</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.3fr;">
+        <div class="card">
+          <h3 class="accent-b">Dados × metadados</h3>
+          <p><b>Dados:</b> o conteúdo (o texto, os pixels da foto).</p>
+          <p style="margin-top:.4rem;"><b>Metadados:</b> tudo o que o SO sabe <i>sobre</i> o arquivo:</p>
+          <ul style="margin-top:.3rem;">
+            <li>tamanho lógico e blocos alocados</li>
+            <li>identificador único: <b>inode</b> (Linux/macOS) ou <b>File ID</b> (NTFS)</li>
+            <li>dono, grupo e permissões (ou ACL)</li>
+            <li>datas (timestamps)</li>
+            <li>onde estão os blocos no disco</li>
+          </ul>
+          <p style="margin-top:.4rem;">No Linux, o <b>nome</b> não fica no inode: fica no <b>diretório</b>, que é uma lista "nome → inode".</p>
+        </div>
+        <div class="card">
+          <h3 class="accent">Os timestamps, sem confusão</h3>
+          <div class="tbl-wrap"><table class="cmp">
+            <tr><th>Linux / macOS</th><th>Significa</th><th>Windows</th></tr>
+            <tr><td>atime (Access)</td><td>último acesso (leitura)</td><td>LastAccessTime</td></tr>
+            <tr><td>mtime (Modify)</td><td>última alteração do <b>conteúdo</b></td><td>LastWriteTime</td></tr>
+            <tr><td>ctime (Change)</td><td>última alteração dos <b>metadados</b> (permissão, dono, nome)</td><td>(sem equivalente direto)</td></tr>
+            <tr><td>Birth (crtime)</td><td>criação</td><td>CreationTime</td></tr>
+          </table></div>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pegadinha clássica:</b> no Linux, <b>ctime não é a data de criação</b>. Um <span class="code">chmod</span> muda o ctime. A data de criação aparece como <b>Birth</b> no <span class="code">stat</span> (ext4 e kernels recentes). E o <b>atime</b> nem sempre muda a cada leitura: a opção <span class="code">relatime</span>, padrão no Linux, reduz essas gravações para poupar o disco.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 08 SONDAGEM -->
+  <section class="slide hands-on" id="s-sondagem">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">🛠️ Sondagem técnica · turma toda <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Conectando com a prática</h2>
+      <p class="subtitle animate delay-2">Discussão oral com a turma toda, mediada pelo professor. Não há resposta certa ainda: o objetivo é levantar hipóteses que o Bloco 1 vai testar.</p>
+      <div class="card animate delay-3" style="margin-top:1rem;">
+        <ol class="steps">
+          <li><span>Das 3 ideias da mini-aula, qual é a mais difícil de visualizar <b>sem ferramentas</b>? Por quê?</span></li>
+          <li><span>Alguém já viveu um problema real de <b>incompatibilidade</b> de sistema de arquivos, <b>corrupção</b> de dados ou <b>fragmentação</b>? O que aconteceu?</span></li>
+          <li><span>Que <b>evidência técnica</b> (não só visual) comprovaria qual sistema de arquivos está em uso num disco?</span></li>
+        </ol>
+      </div>
+      <div class="info-box animate delay-4"><b>Próximo passo:</b> Bloco 1. Você vai responder à pergunta 3 com o terminal.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 09 COMANDOS -->
+  <section class="slide" id="s-comandos">
+    <div class="slide-inner">
+      <div class="kicker animate">09 · Bloco 1 · Instrumental técnico</div>
+      <h2 class="stitle animate delay-1">Comandos por sistema operacional</h2>
+      <p class="subtitle animate delay-2">Use a coluna do seu sistema. Troque <span class="code">arquivo</span> pelo nome de um arquivo seu (de preferência sem espaços no nome).</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>O que descobrir</th><th>Linux</th><th>macOS</th><th>Windows (PowerShell)</th></tr>
+          <tr><td>Tipo do sistema de arquivos</td><td><span class="code">df -Th</span> ou <span class="code">lsblk -f</span></td><td><span class="code">diskutil info /</span> (linha <i>File System Personality</i>)</td><td><span class="code">Get-Volume</span> (coluna <i>FileSystemType</i>)</td></tr>
+          <tr><td>Tamanho do bloco</td><td><span class="code">stat -f /</span> (<i>Block size</i>)</td><td><span class="code">diskutil info /</span> (<i>Allocation Block Size</i>)</td><td><span class="code">fsutil fsinfo ntfsinfo C:</span> (<i>Bytes Per Cluster</i>) ¹</td></tr>
+          <tr><td>Metadados completos</td><td><span class="code">stat arquivo</span></td><td><span class="code">stat -x arquivo</span></td><td><span class="code">Get-Item .\arquivo | Format-List *</span></td></tr>
+          <tr><td>Identificador único</td><td><span class="code">ls -i arquivo</span> (inode)</td><td><span class="code">ls -i arquivo</span> (inode)</td><td><span class="code">fsutil file queryfileid .\arquivo</span> ¹</td></tr>
+          <tr><td>Tamanho lógico × em disco</td><td><span class="code">stat</span>: <i>Size</i> × <i>Blocks</i></td><td><span class="code">stat -x</span>: <i>Size</i> × <i>Blocks</i></td><td>Explorador → Propriedades: <i>Tamanho</i> × <i>Tamanho em disco</i></td></tr>
+          <tr><td>Permissões</td><td><span class="code">ls -l arquivo</span> e <span class="code">stat -c '%a %A' arquivo</span></td><td><span class="code">ls -le arquivo</span> (inclui ACL)</td><td><span class="code">icacls .\arquivo</span> (ACL)</td></tr>
+        </table>
+      </div>
+      <div class="warn-box animate delay-4"><b>Atenção, macOS:</b> lá, <span class="code">df -T</span> <b>não mostra</b> o tipo: ele filtra por tipo. Use <span class="code">diskutil info /</span> ou <span class="code">mount</span>. &nbsp;¹ <b>Windows:</b> os comandos <span class="code">fsutil</span> podem exigir o PowerShell aberto <b>como administrador</b>.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 10 STAT -->
+  <section class="slide" id="s-stat">
+    <div class="slide-inner">
+      <div class="kicker animate">10 · Bloco 1 · Lendo evidências</div>
+      <h2 class="stitle animate delay-1">Como ler a saída do <span class="accent-b">stat</span> (Linux)</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.25fr 1fr;">
+<pre class="stat">$ stat relatorio.txt
+  File: relatorio.txt
+  <span class="hl">Size: 10000</span>      <span class="hl">Blocks: 24</span>      <span class="hl">IO Block: 4096</span>  regular file
+Device: 259,2   <span class="hg">Inode: 1835263</span>   Links: 1
+Access: <span class="hg">(0644/-rw-r--r--)</span>  Uid: ( 1000/ aluno)  Gid: ( 1000/ aluno)
+Access: 2026-10-20 19:05:12 -0300
+Modify: 2026-10-18 21:40:03 -0300
+<span class="hr">Change: 2026-10-18 21:40:03 -0300</span>
+ <span class="hr">Birth: 2026-10-18 21:40:03 -0300</span></pre>
+        <div class="legend">
+          <div><b>Size: 10000</b> é o tamanho <b>lógico</b>: o conteúdo tem 10.000 bytes.</div>
+          <div><b>Blocks: 24</b> conta unidades de <b>512 bytes</b>, não blocos do sistema de arquivos: 24 × 512 = <b>12.288 bytes</b> alocados = 3 blocos de 4.096.</div>
+          <div class="g"><b>Inode</b> é o "RG" do arquivo. <b>0644</b> é a permissão em octal (seção 11).</div>
+          <div class="r"><b>Change ≠ criação.</b> A criação é o <b>Birth</b>. Se aparecer <i>Birth: -</i>, o sistema não registrou a criação.</div>
+        </div>
+      </div>
+      <div class="info-box animate delay-3"><b>Repare:</b> 12.288 − 10.000 = <b>2.288 bytes</b> alocados e não usados. Isso tem nome, <b>fragmentação interna</b>, e é o assunto do Bloco 3. Guarde esse número.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 11 PERMISSÕES -->
+  <section class="slide" id="s-permissoes">
+    <div class="slide-inner">
+      <div class="kicker animate">11 · Bloco 1 · Interativo</div>
+      <h2 class="stitle animate delay-1">Permissões: de <span class="accent-b">rwx</span> para <span class="accent">octal</span> (e de volta)</h2>
+      <p class="subtitle animate delay-2">Cada grupo de 3 bits vira um dígito octal: <b>r = 4</b> (100), <b>w = 2</b> (010), <b>x = 1</b> (001). É o binário da Aula 02 em uso real. Marque as caixas ou digite um número.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <table class="perm" id="permTbl">
+            <tr><th>Quem</th><th>r (4)</th><th>w (2)</th><th>x (1)</th><th>octal</th></tr>
+            <tr data-who="u"><td>Dono (u)</td><td><input type="checkbox" data-v="4" aria-label="dono leitura"></td><td><input type="checkbox" data-v="2" aria-label="dono escrita"></td><td><input type="checkbox" data-v="1" aria-label="dono execução"></td><td class="oct">0</td></tr>
+            <tr data-who="g"><td>Grupo (g)</td><td><input type="checkbox" data-v="4" aria-label="grupo leitura"></td><td><input type="checkbox" data-v="2" aria-label="grupo escrita"></td><td><input type="checkbox" data-v="1" aria-label="grupo execução"></td><td class="oct">0</td></tr>
+            <tr data-who="o"><td>Outros (o)</td><td><input type="checkbox" data-v="4" aria-label="outros leitura"></td><td><input type="checkbox" data-v="2" aria-label="outros escrita"></td><td><input type="checkbox" data-v="1" aria-label="outros execução"></td><td class="oct">0</td></tr>
+          </table>
+          <div class="input-row" style="margin-top:.8rem;">
+            <input class="ip-input" id="permIn" inputmode="numeric" maxlength="3" placeholder="Digite 3 dígitos, ex.: 754" aria-label="Permissão em octal">
+          </div>
+          <div class="chips" id="permChips">
+            <span class="chip" data-p="644">644</span><span class="chip" data-p="755">755</span><span class="chip" data-p="600">600</span><span class="chip" data-p="700">700</span><span class="chip" data-p="777">777</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="perm-out">
+            <div><div class="n" id="permOct">000</div><div class="l">octal</div></div>
+            <div><div class="n sym" id="permSym">---------</div><div class="l">simbólico (ls -l)</div></div>
+          </div>
+          <div class="term" id="permTerm" aria-live="polite"></div>
+          <div class="verdict" id="permFb" style="margin-top:.7rem;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 12 AUDITORIA -->
+  <section class="slide hands-on" id="s-auditoria">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 20 min</span></div>
+      <h2 class="stitle animate delay-1">Auditoria técnica de um arquivo seu</h2>
+      <p class="subtitle animate delay-2">No seu notebook, com os comandos da seção 09. Cada aluno usa o próprio computador e sistema operacional: as diferenças entre vocês serão o material do debate.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.15fr;">
+        <div class="card">
+          <h3 class="accent">Roteiro</h3>
+          <ol class="steps">
+            <li><span>Identifique o <b>tipo do sistema de arquivos</b> do volume principal e o <b>tamanho do bloco</b>.</span></li>
+            <li><span>Escolha um <b>arquivo pessoal</b> (não de sistema) e extraia seus <b>metadados completos</b> pelo terminal.</span></li>
+            <li><span>Converta as permissões para <b>octal</b> e explique o que cada uma concede. No Windows, descreva as entradas da <b>ACL</b> mostradas pelo <span class="code">icacls</span>.</span></li>
+            <li><span>Compare <b>tamanho lógico</b> e <b>tamanho alocado</b>. A diferença bate com o tamanho do bloco?</span></li>
+            <li><span>Registre tudo na tabela ao lado, <b>com o comando usado</b> em cada linha.</span></li>
+          </ol>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Tabela técnica · copie para suas anotações</div>
+          <button class="copy">copiar</button>
+<pre>| Campo                          | Valor | Comando usado |
+| ------------------------------ | ----- | ------------- |
+| Sistema operacional            |       |               |
+| Sistema de arquivos do volume  |       |               |
+| Tamanho do bloco / cluster     |       |               |
+| Nome do arquivo                |       |               |
+| Tamanho lógico (bytes)         |       |               |
+| Tamanho alocado em disco       |       |               |
+| Inode / File ID                |       |               |
+| Criação (Birth/CreationTime)   |       |               |
+| Última modificação             |       |               |
+| Último acesso                  |       |               |
+| Dono                           |       |               |
+| Permissões (octal ou ACL)      |       |               |</pre>
+        </div>
+      </div>
+      <div class="deliver animate delay-4"><span>Registro individual: tabela técnica preenchida</span><span>Base para a discussão coletiva</span><span>Conta na avaliação contínua</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 13 DISCUSSÃO 1 -->
+  <section class="slide" id="s-discussao1">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">13 · Bloco 1 · Discussão técnica coletiva</div>
+      <h2 class="stitle animate delay-1">Comparando os resultados da turma</h2>
+      <p class="subtitle animate delay-2">Discuta primeiro com os dados que você coletou. Os pontos-chave ficam escondidos para revisão depois da aula.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Há diferenças estruturais entre os sistemas de arquivos usados pela turma (Windows, Linux, macOS)? Quais?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Provavelmente apareceram <b>NTFS</b> (Windows), <b>ext4</b> (Linux) e <b>APFS</b> (macOS). O NTFS registra cada arquivo numa tabela central, a <b>MFT</b>; o ext4 usa <b>inodes</b> e <b>extents</b>; o APFS usa <b>B-trees</b> e <i>copy-on-write</i>. Mesma função, estruturas diferentes. Pendrives costumam vir em <b>FAT32</b> ou <b>exFAT</b>.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">O comando mostrou o tamanho lógico, o alocado, ou ambos? Por que eles diferem?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O disco só aloca <b>blocos inteiros</b>. O último bloco quase sempre fica parcialmente vazio, então o alocado é maior que o lógico: é a <b>fragmentação interna</b>. Às vezes o alocado é <b>menor</b>: arquivos compactados, arquivos esparsos, ou arquivos muito pequenos guardados <b>dentro da própria MFT</b> no NTFS (tamanho em disco = 0).</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Que riscos as permissões encontradas trariam num servidor compartilhado por vários usuários?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><span class="code">644</span> deixa <b>qualquer usuário ler</b>: ruim para notas, senhas ou chaves (use <span class="code">600</span>). <span class="code">777</span> deixa qualquer um alterar e executar. A regra é o <b>princípio do menor privilégio</b>: cada um recebe só a permissão de que precisa.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Como o journaling (NTFS, ext4) protegeria esse arquivo se a energia caísse no meio de uma gravação?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Antes de alterar a estrutura, o sistema anota a operação num <b>diário (journal)</b>. Ao religar, ele refaz ou descarta as operações incompletas e a estrutura volta a ficar <b>consistente</b>, sem precisar varrer o disco inteiro. Mas, por padrão, o journal protege os <b>metadados</b>: o conteúdo pode voltar à versão anterior. Journaling não substitui <b>backup</b>.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 14 FS -->
+  <section class="slide" id="s-fs">
+    <div class="slide-inner">
+      <div class="kicker animate">14 · Bloco 2 · Análise comparativa</div>
+      <h2 class="stitle animate delay-1">Quatro sistemas de arquivos, um mesmo problema</h2>
+      <p class="subtitle animate delay-2">Cada aluno recebe um destes para pesquisar. Use estes resumos só como ponto de partida.</p>
+      <div class="grid-4 animate delay-3" style="margin-top:.9rem;">
+        <div class="card fs-card"><div class="lbl">1977 · 1996 (versão 32)</div><div class="big accent-r">FAT32</div><p>Uma <b>tabela de alocação</b> (FAT) encadeia os clusters de cada arquivo.</p><ul><li>Limite de <b>4 GiB</b> por arquivo</li><li>Sem journaling e sem permissões</li><li>Compatibilidade quase universal</li></ul></div>
+        <div class="card fs-card"><div class="lbl">Windows · desde 1993</div><div class="big accent-b">NTFS</div><p>Cada arquivo é um registro na <b>Master File Table</b> (MFT).</p><ul><li>Permissões por <b>ACL</b> e criptografia (EFS)</li><li>Journaling de metadados</li><li>Arquivos e volumes muito grandes</li></ul></div>
+        <div class="card fs-card"><div class="lbl">Linux · desde 2008</div><div class="big accent-g">ext4</div><p><b>Inodes</b> apontam para <b>extents</b>: faixas de blocos contíguos.</p><ul><li>Journaling (modo padrão <i>ordered</i>)</li><li>Permissões Unix (dono, grupo, outros)</li><li>Padrão em distribuições e servidores</li></ul></div>
+        <div class="card fs-card"><div class="lbl">Apple · desde 2017</div><div class="big accent">APFS</div><p><b>B-trees</b> e <b>copy-on-write</b>: nunca sobrescreve no lugar.</p><ul><li>Clones e snapshots instantâneos</li><li>Criptografia nativa</li><li>Otimizado para SSD, padrão no macOS e iOS</li></ul></div>
+      </div>
+      <div class="info-box animate delay-4"><b>Copy-on-write (APFS):</b> em vez de sobrescrever um bloco, grava a versão nova em outro lugar e só então troca o ponteiro. Se a energia cair no meio, a versão antiga continua íntegra. É outra forma de obter a confiabilidade que o journaling oferece.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 15 COMPARATIVO -->
+  <section class="slide" id="s-comparativo">
+    <div class="slide-inner">
+      <div class="kicker animate">15 · Bloco 2 · Comparação</div>
+      <h2 class="stitle animate delay-1">Tabela comparativa (e o quinto elemento: <span class="accent-g">exFAT</span>)</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+        <table class="cmp">
+          <tr><th>Aspecto</th><th>FAT32</th><th>exFAT <span class="new-tag">novo</span></th><th>NTFS</th><th>ext4</th><th>APFS</th></tr>
+          <tr><td>Estrutura</td><td>Tabela FAT (encadeada)</td><td>Tabela FAT + bitmap</td><td>MFT</td><td>Inodes + extents</td><td>B-trees + copy-on-write</td></tr>
+          <tr><td>Maior arquivo</td><td class="accent-r">4 GiB</td><td>16 EiB (na prática, sem limite)</td><td>16 TB (cluster 4 KB) a 256 TB</td><td>16 TiB (bloco 4 KB)</td><td>8 EiB</td></tr>
+          <tr><td>Recuperação de falha</td><td class="accent-r">Nenhuma (chkdsk)</td><td class="accent-r">Nenhuma</td><td class="accent-g">Journaling</td><td class="accent-g">Journaling</td><td class="accent-g">Copy-on-write</td></tr>
+          <tr><td>Permissões</td><td>Não</td><td>Não</td><td>ACL</td><td>Unix (rwx)</td><td>Unix + ACL</td></tr>
+          <tr><td>Lê e grava em</td><td>Praticamente tudo</td><td>Windows, macOS, Linux recentes, TVs e consoles atuais</td><td>Windows (macOS só lê)</td><td>Linux</td><td>macOS / iOS</td></tr>
+          <tr><td>Uso típico</td><td>Pendrives e aparelhos antigos</td><td>Pendrives, cartões SD e HDs externos</td><td>Disco do Windows</td><td>Disco do Linux e servidores</td><td>Disco do Mac</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-3"><b>Solução do gancho:</b> reformatar o pendrive em <b>exFAT</b>. Ele mantém a compatibilidade com TVs e computadores atuais e não tem o limite de 4 GiB. (Reformatar apaga tudo: copie os arquivos antes.)</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 16 FICHA -->
+  <section class="slide hands-on" id="s-ficha">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual → turma <span class="mm-badge">⏱ 15 + 15 min</span></div>
+      <h2 class="stitle animate delay-1">Pesquisa técnica, ficha e apresentação</h2>
+      <p class="subtitle animate delay-2">Pesquise o sistema que você recebeu em <b>fontes confiáveis</b> (documentação oficial e bibliografia, seção 26) e preencha a ficha. Ela é a base da apresentação.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo 1 · Ficha técnica (15 min, individual)</h3>
+          <ol class="steps">
+            <li><span><b>Estrutura interna de alocação:</b> tabela, MFT, inodes, extents, B-tree ou copy-on-write.</span></li>
+            <li><span><b>Limites técnicos:</b> maior arquivo e maior volume.</span></li>
+            <li><span><b>Confiabilidade:</b> tem journaling? Copy-on-write? Como se recupera de uma falha?</span></li>
+            <li><span><b>Dois cenários:</b> um em que ele é claramente a melhor escolha e um em que seria uma escolha ruim.</span></li>
+            <li><span><b>Fontes</b> consultadas, com link.</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Passo 2 · Apresentação (15 min, turma)</h3>
+          <ul>
+            <li><b>Confronto (3 min):</b> quem pesquisou o mesmo sistema compara as fichas e corrige divergências.</li>
+            <li><b>Apresentação (até 3 min por sistema):</b> um representante sorteado de cada sistema apresenta à turma.</li>
+            <li>Explique a estrutura <b>com suas palavras</b>: demonstre compreensão, não leia a definição.</li>
+            <li>Mostre o cenário ideal e o cenário ruim.</li>
+            <li>Responda a pelo menos <b>1 pergunta técnica</b> da turma ou do professor.</li>
+          </ul>
+          <div class="warn-box"><b>Por que sorteio?</b> Todos precisam estar prontos para apresentar, e a apresentação cabe no tempo da aula.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 17 ESCOLHA -->
+  <section class="slide hands-on" id="s-escolha">
+    <div class="slide-inner" style="max-width:920px;">
+      <div class="kicker animate">🛠️ Mão na Massa · Debate coletivo <span class="mm-badge">⏱ 20 min</span></div>
+      <h2 class="stitle animate delay-1">Qual sistema de arquivos você escolheria?</h2>
+      <p class="subtitle animate delay-2">Com as fichas apresentadas, a turma decide cada cenário <b>com justificativa técnica</b>. Depois, use este treino para revisar.</p>
+      <div class="drill animate delay-3" style="margin-top:1rem;">
+        <div class="kicker" style="margin-bottom:.4rem;" id="fsCount">Cenário 1 de 6</div>
+        <div class="drill-q" id="fsQ"></div>
+        <div class="drill-btns">
+          <button class="btn ghost" data-fs="FAT32">FAT32</button>
+          <button class="btn ghost" data-fs="exFAT">exFAT</button>
+          <button class="btn ghost" data-fs="NTFS">NTFS</button>
+          <button class="btn ghost" data-fs="ext4">ext4</button>
+          <button class="btn ghost" data-fs="APFS">APFS</button>
+        </div>
+        <div class="verdict" id="fsFb">Escolha um sistema de arquivos.</div>
+        <div class="drill-score" id="fsScore">Acertos: 0 / 0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 18 CÁLCULO -->
+  <section class="slide hands-on" id="s-calculo">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual e em silêncio <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">Bloco 3 · Quanto espaço se perde em cada arquivo?</h2>
+      <p class="subtitle animate delay-2">Resolva <b>por escrito, sozinho</b>, antes de qualquer discussão. Um sistema de arquivos usa blocos de <b>4.096 bytes</b>. Um arquivo sempre ocupa um número <b>inteiro</b> de blocos.</p>
+      <div class="card animate delay-3" style="margin-top:.9rem;">
+        <ol class="steps">
+          <li><span>Um arquivo de <b>10.000 bytes</b> é salvo. Quantos blocos serão alocados?</span></li>
+          <li><span>Quantos bytes serão desperdiçados por <b>fragmentação interna</b>? Mostre o cálculo.</span></li>
+          <li><span>Repita para <b>4.096 bytes</b> e para <b>4.097 bytes</b>. O que o contraste revela sobre o tamanho do bloco quando há <b>muitos arquivos pequenos</b>?</span></li>
+        </ol>
+      </div>
+      <div class="quiz-list static animate delay-4" style="margin-top:.8rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Gabarito 1 e 2 · só abra depois de resolver</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">10.000 ÷ 4.096 = 2,44 → arredonda <b>para cima</b>: <b>3 blocos</b> = 12.288 bytes. Desperdício: 12.288 − 10.000 = <b>2.288 bytes</b> (o mesmo número do <span class="code">stat</span> da seção 10).</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Gabarito 3 · só abra depois de resolver</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>4.096 B</b> → 1 bloco, desperdício <b>0</b>. <b>4.097 B</b> → 2 blocos, desperdício <b>4.095 B</b> (quase um bloco inteiro por causa de 1 byte!). Com milhares de arquivos pequenos, blocos grandes desperdiçam muito espaço; blocos pequenos desperdiçam menos, mas exigem mais metadados para controlar.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 19 CALCULADORA -->
+  <section class="slide" id="s-calc">
+    <div class="slide-inner">
+      <div class="kicker animate">19 · Bloco 3 · Interativo</div>
+      <h2 class="stitle animate delay-1">Calculadora de blocos: confira e explore</h2>
+      <p class="subtitle animate delay-2">Confira suas respostas e teste outros casos. Experimente o atalho dos <b>1.000 arquivos pequenos</b>: é onde o tamanho do bloco mais pesa.</p>
+      <div class="card animate delay-3" style="margin-top:.9rem;">
+        <div class="calc-row">
+          <div><label for="cBs">Tamanho do bloco</label>
+            <select class="ip-input" id="cBs">
+              <option value="512">512 B</option><option value="1024">1 KiB (1.024 B)</option><option value="4096" selected>4 KiB (4.096 B)</option><option value="32768">32 KiB</option><option value="131072">128 KiB (comum em exFAT de cartões)</option>
+            </select></div>
+          <div><label for="cSz">Tamanho do arquivo (bytes)</label><input class="ip-input" id="cSz" type="number" min="0" value="10000"></div>
+          <div><label for="cQt">Quantidade de arquivos</label><input class="ip-input" id="cQt" type="number" min="1" value="1"></div>
+        </div>
+        <div class="chips" id="cChips">
+          <span class="chip" data-c="4096,10000,1">10.000 B</span>
+          <span class="chip" data-c="4096,4096,1">4.096 B</span>
+          <span class="chip" data-c="4096,4097,1">4.097 B</span>
+          <span class="chip" data-c="4096,1,1">1 byte</span>
+          <span class="chip" data-c="4096,2000,1000">1.000 arquivos de 2 KB · bloco 4 KiB</span>
+          <span class="chip" data-c="131072,2000,1000">1.000 arquivos de 2 KB · bloco 128 KiB</span>
+        </div>
+        <div class="calc-out">
+          <div class="bignum"><div class="n" id="cBlk">3</div><div class="l">blocos por arquivo</div></div>
+          <div class="bignum"><div class="n" id="cAlloc">12.288 B</div><div class="l">alocado (total)</div></div>
+          <div class="bignum w"><div class="n" id="cWaste">2.288 B</div><div class="l">desperdiçado (total)</div></div>
+          <div class="bignum ok"><div class="n" id="cUse">81,4%</div><div class="l">aproveitamento</div></div>
+        </div>
+        <div class="blocks-bar" id="cBar" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 20 ALOCAÇÃO -->
+  <section class="slide" id="s-alocacao">
+    <div class="slide-inner">
+      <div class="kicker animate">20 · Bloco 3 · Simulação · ⏱ 20 min</div>
+      <h2 class="stitle animate delay-1">Contígua, encadeada ou indexada?</h2>
+      <p class="subtitle animate delay-2">Em sala, simulamos com <b>cartões numerados</b> na mesa. Aqui, o mesmo disco de 32 blocos. Grave o arquivo <b>A</b> (5 blocos) com cada estratégia, depois tente <b>ler o último bloco</b> e <b>crescer +2 blocos</b>.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1.2fr 1fr;">
+        <div class="card">
+          <div class="disk" id="disk"></div>
+          <div class="disk-legend"><span><i style="background:var(--surface)"></i>livre</span><span><i style="background:var(--surface-2)"></i>outros arquivos</span><span><i style="background:rgba(47,176,232,.35)"></i>arquivo A</span><span><i style="background:rgba(242,169,59,.4)"></i>bloco índice</span><span><i style="background:rgba(54,197,143,.4)"></i>crescimento</span></div>
+        </div>
+        <div class="card">
+          <div class="git-ctrl" style="margin-top:0;">
+            <button class="btn" data-al="contig">Contígua</button>
+            <button class="btn" data-al="linked">Encadeada</button>
+            <button class="btn" data-al="indexed">Indexada</button>
+          </div>
+          <div class="git-ctrl">
+            <button class="btn gold" data-al="read">Ler o último bloco</button>
+            <button class="btn gold" data-al="grow">Crescer +2 blocos</button>
+            <button class="btn ghost" data-al="reset">↺</button>
+          </div>
+          <div class="term" id="alTerm" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="info-box animate delay-4"><b>No mundo real:</b> o FAT32 é uma alocação <b>encadeada</b> (a tabela guarda o "próximo bloco"); o ext4 e o NTFS são <b>indexados</b> e agrupam blocos vizinhos em <b>extents</b> (ou <i>runs</i>), unindo o melhor dos dois mundos.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 21 DEBATE 3 -->
+  <section class="slide" id="s-debate3">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">21 · Bloco 3 · Debate técnico coletivo</div>
+      <h2 class="stitle animate delay-1">Fechando o Bloco 3</h2>
+      <div class="quiz-list static animate delay-2" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Que estratégia de alocação você recomendaria para um sistema que recebe muitos arquivos pequenos e temporários? Por quê?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">A <b>indexada</b> (ou por extents). A contígua sofre com <b>fragmentação externa</b>: arquivos criados e apagados o tempo todo deixam buracos que não comportam arquivos novos. A encadeada aproveita os buracos, mas o acesso a uma posição qualquer é lento. Combine com <b>blocos pequenos</b> para reduzir a fragmentação interna.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Por que SSDs sofrem muito menos com fragmentação externa do que HDs?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O HD tem <b>cabeça de leitura e disco girando</b>: blocos espalhados custam movimentos mecânicos (busca e rotação). O SSD é eletrônico: acessar qualquer endereço leva praticamente o mesmo tempo. Por isso <b>não se desfragmenta SSD</b> (só gastaria ciclos de escrita); o SO usa o comando <b>TRIM</b> para avisar ao SSD quais blocos ficaram livres.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Revisitando o cálculo: como a fragmentação interna se relaciona com a escolha do tamanho de bloco?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">É um <b>trade-off</b>. Blocos <b>grandes</b>: menos metadados e leitura mais rápida de arquivos grandes, mas muito desperdício com arquivos pequenos. Blocos <b>pequenos</b>: pouco desperdício, mas mais blocos para controlar. Por isso 4 KiB é o padrão de NTFS e ext4, e cartões de câmera, cheios de fotos e vídeos grandes, usam clusters maiores.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 22 SÍNTESE -->
+  <section class="slide" id="s-sintese">
+    <div class="slide-inner">
+      <div class="kicker animate">22 · Bloco 4 · Síntese</div>
+      <h2 class="stitle animate delay-1">O que vimos e o que vem a seguir</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>Hoje</h3><p>Auditamos sistemas de arquivos reais pelo terminal, lemos metadados e permissões, comparamos FAT32, exFAT, NTFS, ext4 e APFS e calculamos e simulamos alocação e fragmentação.</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Próxima aula</h3><p>Criação e gerenciamento de <b>máquinas virtuais</b>: instalação e uso de sistemas operacionais. A VM terá o próprio disco virtual, formatado com um sistema de arquivos.</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Para ir além</h3><p>TANENBAUM, <i>Sistemas Operacionais Modernos</i>, capítulo de sistemas de arquivos, e os desafios de terminal do <a href="https://overthewire.org/wargames/bandit/" target="_blank" rel="noopener">OverTheWire: Bandit</a>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 23 AVALIAÇÃO -->
+  <section class="slide hands-on" id="s-avaliacao">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Bloco 4 · Avaliação formativa <span class="mm-badge">⏱ 10 + 5 min</span></div>
+      <h2 class="stitle animate delay-1">Quiz técnico e exit ticket no Google Classroom</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Quiz técnico individual (10 min)</h3>
+          <ul>
+            <li>Pelo celular ou notebook, no <b>Google Classroom</b> (Forms com autocorreção).</li>
+            <li><b>5 questões</b> de múltipla escolha e cálculo, cobrindo os 3 blocos.</li>
+            <li>Quando todos terminarem, o gabarito é discutido com foco nas questões com <b>mais erros</b>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Exit ticket (5 min, sem nota)</h3>
+          <ol class="steps">
+            <li><span><b>Participei ativamente</b> das atividades e da discussão? (concordo totalmente, em parte, não concordo)</span></li>
+            <li><span><b>Argumentei tecnicamente</b> na apresentação e no debate do Bloco 2?</span></li>
+            <li><span><b>O que ainda não ficou claro?</b> Escreva em 1 ou 2 frases o que quer revisar.</span></li>
+          </ol>
+          <p style="margin-top:.5rem;">Serve só para calibrar o ritmo da próxima aula.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 24 TAREFA -->
+  <section class="slide hands-on" id="s-tarefa">
+    <div class="slide-inner">
+      <div class="kicker animate">24 · Depois da aula · Tarefa de fixação <span class="mm-badge">⏱ 40 min · individual</span></div>
+      <h2 class="stitle animate delay-1">Um cenário novo para você decidir e justificar</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">O cenário</h3>
+          <p>Um estúdio de fotografia comprou um <b>HD externo de 2 TB</b>. Ele será ligado a um <b>MacBook</b> (edição) e a um <b>PC com Windows</b> (backup). Vai guardar milhares de fotos RAW de ~50 MB e vídeos de até <b>12 GB</b>. O HD fica desligado no fim do dia.</p>
+          <div class="info-box"><b>Dica:</b> releia a tabela da seção 15 e pense em compatibilidade, limite de arquivo e o que acontece se alguém puxar o cabo no meio de uma cópia.</div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">O que entregar</h3>
+          <ol class="steps">
+            <li><span>O sistema de arquivos escolhido e <b>por que os outros quatro foram descartados</b>.</span></li>
+            <li><span>Um <b>risco</b> da sua escolha e como mitigá-lo.</span></li>
+            <li><span>O <b>desperdício estimado</b> de 1.000 fotos de 50.000.123 bytes com clusters de 128 KiB (use a calculadora da seção 19 e mostre a conta).</span></li>
+            <li><span>Pelo menos <b>2 fontes</b> confiáveis (seção 26).</span></li>
+          </ol>
+        </div>
+      </div>
+      <div class="deliver animate delay-3"><span>Prazo: 1 semana após a aula</span><span>Entrega no Google Classroom</span><span>Conta na nota de trabalhos</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 25 TRILHA -->
+  <section class="slide tall" id="s-trilha">
+    <div class="slide-inner">
+      <div class="kicker animate">25 · Trilha de estudo</div>
+      <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova e a tarefa; os <span class="req">complementar</span> aprofundam. A última coluna diz o que você deve saber explicar ao terminar.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp trail">
+          <tr><th>#</th><th>Estude</th><th>Onde</th><th>Tempo</th><th>Ao terminar, você sabe…</th></tr>
+          <tr><td>1</td><td>Arquivos e sistemas de arquivos <span class="req ob">obrigatório</span></td><td><a href="https://www.youtube.com/watch?v=KN8YgJnShPM" target="_blank" rel="noopener">Crash Course CS #20</a> (legendas em PT)</td><td>12 min</td><td class="goal">explicar arquivo, diretório, metadados e blocos</td></tr>
+          <tr><td>2</td><td>Sistemas de arquivos <span class="req ob">obrigatório</span></td><td>DEITEL, <i>Sistemas Operacionais</i>: capítulo de sistemas de arquivos</td><td>40 min</td><td class="goal">descrever organização, metadados e estratégias de alocação</td></tr>
+          <tr><td>3</td><td>Implementação de sistemas de arquivos <span class="req ob">obrigatório</span></td><td>TANENBAUM, <i>Sistemas Operacionais Modernos</i>: capítulo de sistemas de arquivos (alocação contígua, encadeada, i-nodes, journaling)</td><td>40 min</td><td class="goal">comparar as 3 estratégias e explicar journaling</td></tr>
+          <tr><td>4</td><td>Limites de FAT32, exFAT e NTFS <span class="req ob">obrigatório</span></td><td><a href="https://learn.microsoft.com/pt-br/windows/win32/fileio/filesystem-functionality-comparison" target="_blank" rel="noopener">Microsoft Learn: comparação de sistemas de arquivos</a></td><td>10 min</td><td class="goal">citar o maior arquivo e o recurso de cada um</td></tr>
+          <tr><td>5</td><td>Formatos do macOS <span class="req">complementar</span></td><td><a href="https://support.apple.com/pt-br/guide/disk-utility/dsku19ed921c/mac" target="_blank" rel="noopener">Apple: formatos no Utilitário de Disco</a></td><td>10 min</td><td class="goal">quando usar APFS, Mac OS Expandido ou exFAT</td></tr>
+          <tr><td>6</td><td>Permissões e sistema de arquivos no Linux <span class="req">complementar</span></td><td>NEMETH et al., <i>Manual Completo do Linux</i>: sistema de arquivos e controle de acesso</td><td>30 min</td><td class="goal">usar <span class="code">ls -l</span>, <span class="code">chmod</span> e <span class="code">stat</span> com segurança</td></tr>
+          <tr><td>7</td><td>ext4 por dentro <span class="req">complementar</span></td><td><a href="https://docs.kernel.org/filesystems/ext4/index.html" target="_blank" rel="noopener">kernel.org: documentação do ext4</a> (em inglês; use o tradutor), seção <i>High Level Design</i></td><td>30 min</td><td class="goal">explicar inodes, extents e o journal do ext4</td></tr>
+          <tr><td>8</td><td>Prática de terminal <span class="req">complementar</span></td><td><a href="https://overthewire.org/wargames/bandit/" target="_blank" rel="noopener">OverTheWire: Bandit</a>, níveis 0 a 5</td><td>40 min</td><td class="goal">navegar e inspecionar arquivos só pelo terminal</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Livros da bibliografia:</b> estão on-line nas bibliotecas virtuais da UNIPAR (portal do aluno). Abra o <b>sumário</b> e procure pelo tema indicado.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 26 BIBLIOTECA -->
+  <section class="slide tall" id="s-fontes">
+    <div class="slide-inner">
+      <div class="kicker animate">26 · Biblioteca da aula</div>
+      <h2 class="stitle animate delay-1">Livros, documentação oficial e prática</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card lib">
+          <h4>📚 Livros da bibliografia</h4>
+          <ul>
+            <li><b>DEITEL, H. M.</b> <i>Sistemas Operacionais.</i> Pearson (on-line). <span class="find">Bibliografia básica. Procure: sistemas de arquivos.</span></li>
+            <li><b>TANENBAUM, A. S.</b> <i>Sistemas Operacionais Modernos.</i> Pearson (on-line). <span class="find">Procure: sistemas de arquivos, i-nodes, journaling.</span></li>
+            <li><b>NEMETH, E. et al.</b> <i>Manual Completo do Linux: guia do administrador.</i> Pearson (on-line). <span class="find">Procure: sistema de arquivos e permissões.</span></li>
+            <li><b>STALLINGS, W.</b> <i>Arquitetura e Organização de Computadores.</i> Pearson (on-line). <span class="find">Apoio de hardware. Procure: memória externa (discos magnéticos e SSD).</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>📘 Documentação oficial</h4>
+          <ul>
+            <li><a href="https://learn.microsoft.com/pt-br/windows/win32/fileio/filesystem-functionality-comparison" target="_blank" rel="noopener">Microsoft Learn: comparação de funcionalidades</a> <span class="find">NTFS, exFAT, FAT32 e UDF lado a lado.</span></li>
+            <li><a href="https://support.apple.com/pt-br/guide/disk-utility/dsku19ed921c/mac" target="_blank" rel="noopener">Apple: formatos de sistemas de arquivos</a> <span class="find">APFS e compatibilidade com Windows.</span></li>
+            <li><a href="https://docs.kernel.org/filesystems/ext4/index.html" target="_blank" rel="noopener">kernel.org: ext4 Data Structures and Algorithms</a></li>
+            <li><a href="https://man7.org/linux/man-pages/man1/stat.1.html" target="_blank" rel="noopener">man stat</a> e <a href="https://man7.org/linux/man-pages/man1/chmod.1.html" target="_blank" rel="noopener">man chmod</a> <span class="find">Referência dos comandos do Bloco 1.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>🎓 Vídeos e prática extra</h4>
+          <ul>
+            <li><a href="https://www.youtube.com/watch?v=KN8YgJnShPM" target="_blank" rel="noopener">Crash Course CS #20: Files &amp; File Systems</a> <span class="find">A pré-aula. Legendas em português.</span></li>
+            <li><a href="https://overthewire.org/wargames/bandit/" target="_blank" rel="noopener">OverTheWire: Bandit</a> <span class="find">Desafios de terminal em formato de jogo.</span></li>
+            <li><a href="https://www.virtualbox.org/" target="_blank" rel="noopener">VirtualBox</a> <span class="find">Instale antes da próxima aula (máquinas virtuais).</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Antes de formatar qualquer disco:</b> formatar apaga o índice do sistema de arquivos e, na prática, os dados. Faça cópia de tudo e confira <b>duas vezes</b> qual disco está selecionado.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 27 GLOSSÁRIO -->
+  <section class="slide tall" id="s-glossario">
+    <div class="slide-inner">
+      <div class="kicker animate">27 · Glossário da aula</div>
+      <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
+      <dl class="gloss animate delay-2">
+        <div><dt>Sistema de arquivos</dt><dd>Parte do SO que organiza, nomeia, indexa e recupera dados no armazenamento.</dd></div>
+        <div><dt>Bloco / cluster</dt><dd>Menor unidade que o sistema de arquivos aloca. Padrão comum: 4 KiB.</dd></div>
+        <div><dt>Metadados</dt><dd>Dados sobre o arquivo: tamanho, datas, dono, permissões e localização dos blocos.</dd></div>
+        <div><dt>Inode</dt><dd>Estrutura do Linux/macOS com os metadados de um arquivo, identificada por um número.</dd></div>
+        <div><dt>MFT</dt><dd>Master File Table: tabela do NTFS com um registro por arquivo.</dd></div>
+        <div><dt>FAT</dt><dd>File Allocation Table: tabela que encadeia os clusters de cada arquivo.</dd></div>
+        <div><dt>Extent</dt><dd>Faixa de blocos contíguos descrita por "início + quantidade" (ext4).</dd></div>
+        <div><dt>Journaling</dt><dd>Registro das operações antes de executá-las, para recuperar a consistência após falhas.</dd></div>
+        <div><dt>Copy-on-write</dt><dd>Grava a versão nova em outro lugar e só depois troca o ponteiro (APFS).</dd></div>
+        <div><dt>Fragmentação interna</dt><dd>Espaço desperdiçado dentro do último bloco de um arquivo.</dd></div>
+        <div><dt>Fragmentação externa</dt><dd>Espaço livre picado em buracos pequenos demais para uso contíguo.</dd></div>
+        <div><dt>atime / mtime / ctime</dt><dd>Último acesso, última mudança do conteúdo e última mudança dos metadados.</dd></div>
+        <div><dt>Birth (crtime)</dt><dd>Data de criação do arquivo no Linux/macOS.</dd></div>
+        <div><dt>Permissão octal</dt><dd>rwx de dono, grupo e outros em 3 dígitos (r=4, w=2, x=1). Ex.: 644.</dd></div>
+        <div><dt>ACL</dt><dd>Lista de controle de acesso: permissões por usuário ou grupo (NTFS, APFS).</dd></div>
+        <div><dt>TRIM</dt><dd>Comando com que o SO avisa ao SSD quais blocos ficaram livres.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================================================ 28 AUTOAVALIAÇÃO -->
+  <section class="slide" id="s-autoavaliacao">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">28 · Autoavaliação</div>
+      <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
+      <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pela seção indicada (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="au6a"><div><div class="ci-t">Explicar o que um sistema de arquivos faz e o que são metadados</div></div><span class="review-hint">seções 06–07</span></label>
+        <label class="check-item"><input type="checkbox" id="au6b"><div><div class="ci-t">Descobrir pelo terminal o sistema de arquivos e o tamanho do bloco do meu computador</div></div><span class="review-hint">seção 09</span></label>
+        <label class="check-item"><input type="checkbox" id="au6c"><div><div class="ci-t">Ler a saída do stat e diferenciar tamanho lógico de alocado</div></div><span class="review-hint">seção 10</span></label>
+        <label class="check-item"><input type="checkbox" id="au6d"><div><div class="ci-t">Converter permissões entre rwx e octal</div></div><span class="review-hint">seção 11</span></label>
+        <label class="check-item"><input type="checkbox" id="au6e"><div><div class="ci-t">Escolher entre FAT32, exFAT, NTFS, ext4 e APFS e justificar</div></div><span class="review-hint">seções 14–17</span></label>
+        <label class="check-item"><input type="checkbox" id="au6f"><div><div class="ci-t">Calcular blocos alocados e fragmentação interna</div></div><span class="review-hint">seções 18–19</span></label>
+        <label class="check-item"><input type="checkbox" id="au6g"><div><div class="ci-t">Comparar alocação contígua, encadeada e indexada</div></div><span class="review-hint">seções 20–21</span></label>
+      </div>
+      <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 29 QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate">29 · Fixação</div>
+      <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
+      <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Hoje você viu <span class="accent-b">como o disco é organizado</span>.<br>Na próxima aula, vai criar <span class="accent">um computador dentro do computador</span>.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Vimos metadados e timestamps, comandos de auditoria em Linux, macOS e Windows, permissões em octal, FAT32, exFAT, NTFS, ext4 e APFS, journaling e copy-on-write, fragmentação interna e externa e alocação contígua, encadeada e indexada.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula · <b style="color:var(--text)">Máquinas virtuais: criação, gerenciamento e instalação de sistemas operacionais</b></span><span class="arrow">→</span></div>
+      <div class="grid-2 animate delay-4" style="margin-top:1.2rem; max-width:820px;">
+        <div class="card"><h3 class="accent">Em até 1 semana</h3><p>Tarefa de fixação (seção 24) entregue no Google Classroom.</p></div>
+        <div class="card"><h3 class="accent-b">Para a próxima aula</h3><p>Instale o <a href="https://www.virtualbox.org/" target="_blank" rel="noopener">VirtualBox</a> e confira se a virtualização está ativada no seu computador.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const progress = document.getElementById('progress');
+document.getElementById('totalNo').textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('in-view'); }
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.2,.55,1]});
+slides.forEach(s=>io.observe(s));
+slides[0].classList.add('in-view');
+
+document.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const curr = Math.max(0, dots.findIndex(d=>d.classList.contains('active')));
+  if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ===== Gabaritos expansíveis (cards estáticos) ===== */
+function bindQ(root){ root.querySelectorAll('.qcard .qhead').forEach(hd=>{ hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open')); }); }
+document.querySelectorAll('.quiz-list.static').forEach(bindQ);
+
+/* ===== Botões copiar ===== */
+document.querySelectorAll('.codeblock .copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const pre = btn.parentElement.querySelector('pre');
+    const txt = pre.innerText;
+    const done = ()=>{ btn.textContent='copiado ✓'; setTimeout(()=>btn.textContent='copiar',1600); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent='selecionado: Ctrl+C'; setTimeout(()=>btn.textContent='copiar',2200); };
+    try{ navigator.clipboard.writeText(txt).then(done, fallback); }catch(e){ fallback(); }
+  });
+});
+
+/* ===== Checklists com localStorage ===== */
+document.querySelectorAll('.check-list[data-check]').forEach(list=>{
+  const key = 'ambtech-aula06-'+list.dataset.check;
+  const meter = document.getElementById(list.dataset.check+'Meter');
+  const boxes = Array.from(list.querySelectorAll('input[type=checkbox]'));
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  function render(){
+    let n=0; boxes.forEach(b=>{ b.closest('.check-item').classList.toggle('done', b.checked); if(b.checked) n++; });
+    meter.querySelector('span').textContent = n+'/'+boxes.length;
+    meter.querySelector('.check-bar span').style.width = (n/boxes.length*100)+'%';
+  }
+  boxes.forEach(b=>{
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', ()=>{ saved[b.id]=b.checked; try{ localStorage.setItem(key, JSON.stringify(saved)); }catch(e){} render(); });
+  });
+  render();
+});
+
+
+/* ===== Permissões rwx ↔ octal ===== */
+(function(){
+  const rows=Array.from(document.querySelectorAll('#permTbl tr[data-who]'));
+  const inp=document.getElementById('permIn'), oct=document.getElementById('permOct'), sym=document.getElementById('permSym');
+  const term=document.getElementById('permTerm'), fb=document.getElementById('permFb');
+  const names={u:'Dono',g:'Grupo',o:'Outros'};
+  function digit(r){ return Array.from(r.querySelectorAll('input')).reduce((s,b)=>s+(b.checked?+b.dataset.v:0),0); }
+  function symOf(d){ return (d&4?'r':'-')+(d&2?'w':'-')+(d&1?'x':'-'); }
+  function verbs(d){ const v=[]; if(d&4) v.push('ler'); if(d&2) v.push('alterar'); if(d&1) v.push('executar'); return v.length? v.join(', ') : 'nada'; }
+  function render(fromInput){
+    const ds=rows.map(digit);
+    rows.forEach((r,i)=>{ r.querySelector('.oct').textContent=ds[i]; });
+    const o=ds.join(''); oct.textContent=o; sym.textContent=ds.map(symOf).join('');
+    if(!fromInput) inp.value=o;
+    term.innerHTML='<span class="p">$</span> <span class="c">chmod '+o+' notas.txt</span>\n<span class="p">$</span> <span class="c">ls -l notas.txt</span>\n-'+ds.map(symOf).join('')+' 1 aluno aluno 10000 out 18 21:40 notas.txt';
+    let msg=rows.map((r,i)=>'<b>'+names[r.dataset.who]+'</b> pode '+verbs(ds[i])).join(' · ');
+    if(ds[2]&2){ fb.className='verdict no'; fb.innerHTML='<b class="t">⚠ Qualquer usuário pode alterar este arquivo.</b><br>'+msg; }
+    else if(ds[2]&4 || ds[1]&4){ fb.className='verdict warn'; fb.innerHTML='<b class="t">Outras pessoas conseguem ler.</b> Ok para arquivos públicos; ruim para senhas, chaves e notas.<br>'+msg; }
+    else { fb.className='verdict ok'; fb.innerHTML='<b class="t">Só o dono tem acesso.</b> Bom para arquivos sensíveis (ex.: 600 para chaves SSH).<br>'+msg; }
+  }
+  function setOct(s){ if(!/^[0-7]{3}$/.test(s)) return false; rows.forEach((r,i)=>{ const d=+s[i]; r.querySelectorAll('input').forEach(b=>b.checked=!!(d&+b.dataset.v)); }); return true; }
+  rows.forEach(r=>r.querySelectorAll('input').forEach(b=>b.addEventListener('change',()=>render(false))));
+  inp.addEventListener('input',()=>{ inp.value=inp.value.replace(/[^0-7]/g,'').slice(0,3); if(setOct(inp.value)) render(true); });
+  inp.addEventListener('keydown',e=>e.stopPropagation());
+  document.querySelectorAll('#permChips .chip').forEach(c=>c.addEventListener('click',()=>{ setOct(c.dataset.p); render(false); }));
+  setOct('644'); render(false);
+})();
+
+/* ===== Qual sistema de arquivos? ===== */
+(function(){
+  const items=[
+    {q:'Pendrive de 16 GB com músicas MP3 e fotos para tocar no som do carro, na TV antiga da sala e no PC com Windows.', a:'FAT32', ok:['exFAT'], why:'Arquivos pequenos e aparelhos antigos: o FAT32 é o que quase todo dispositivo lê. O limite de 4 GiB não atrapalha aqui.', okWhy:'Funciona se todos os aparelhos lerem exFAT, mas som de carro e TVs antigas costumam ler só FAT32.'},
+    {q:'Pendrive de 64 GB para levar um filme de 6 GB para uma smart TV recente e para o notebook.', a:'exFAT', ok:[], why:'O FAT32 recusa arquivos de 4 GiB ou mais. O exFAT não tem esse limite e é lido por TVs e computadores atuais. É a solução do gancho da aula.'},
+    {q:'Servidor Linux que guarda o banco de dados de uma clínica. Não pode ficar corrompido se faltar energia.', a:'ext4', ok:[], why:'Padrão do Linux, com journaling para recuperar a consistência após quedas e permissões Unix para isolar os usuários do servidor.'},
+    {q:'Notebook novo com SSD e Windows 11: o volume do sistema (C:).', a:'NTFS', ok:[], why:'É o padrão do Windows: journaling, permissões por ACL, criptografia e arquivos grandes. O FAT32 não tem nada disso.'},
+    {q:'MacBook com SSD: o disco interno do sistema.', a:'APFS', ok:[], why:'Padrão do macOS, otimizado para SSD, com copy-on-write, snapshots (usados no Time Machine) e criptografia nativa.'},
+    {q:'O estagiário sugeriu formatar o disco de dados de um servidor Linux em FAT32 "porque é compatível com tudo".', a:'ext4', ok:[], why:'FAT32 não tem dono nem permissões (qualquer processo mexe em tudo), não tem journaling e limita arquivos a 4 GiB. Compatibilidade não é requisito de um disco interno de servidor.'}
+  ];
+  let i=0, ok=0, tot=0, answered=false;
+  const q=document.getElementById('fsQ'), fb=document.getElementById('fsFb'), sc=document.getElementById('fsScore'), ct=document.getElementById('fsCount');
+  const btns=Array.from(document.querySelectorAll('[data-fs]'));
+  function load(){ answered=false; q.textContent=items[i].q; ct.textContent='Cenário '+(i+1)+' de '+items.length; fb.className='verdict'; fb.textContent='Escolha um sistema de arquivos.'; btns.forEach(b=>b.disabled=false); }
+  function answer(v){
+    if(answered) return; answered=true; tot++;
+    const it=items[i], right=v===it.a, partial=it.ok.includes(v); if(right) ok++;
+    const last=i===items.length-1;
+    fb.className='verdict '+(right?'ok':partial?'warn':'no');
+    const head= right ? '✓ Boa escolha!' : partial ? '≈ Aceitável, mas a melhor é '+it.a+'.' : '✗ A melhor opção aqui é '+it.a+'.';
+    fb.innerHTML='<b class="t">'+head+'</b> '+(partial?it.okWhy+' ':'')+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;" id="fsNext">'+(last?'recomeçar ↺':'próximo cenário →')+'</button>';
+    document.getElementById('fsNext').addEventListener('click',()=>{ if(last){ i=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else i++; load(); });
+    sc.textContent='Acertos: '+ok+' / '+tot; btns.forEach(b=>b.disabled=true);
+  }
+  btns.forEach(b=>b.addEventListener('click',()=>answer(b.dataset.fs)));
+  load();
+})();
+
+/* ===== Calculadora de blocos ===== */
+(function(){
+  const bs=document.getElementById('cBs'), sz=document.getElementById('cSz'), qt=document.getElementById('cQt'), bar=document.getElementById('cBar');
+  const fmt=n=>n.toLocaleString('pt-BR');
+  function human(b){ if(b<1024) return fmt(b)+' B'; const u=['KiB','MiB','GiB','TiB']; let v=b, k=-1; while(v>=1024 && k<u.length-1){ v/=1024; k++; } return fmt(b)+' B ('+v.toLocaleString('pt-BR',{maximumFractionDigits:1})+' '+u[k]+')'; }
+  function calc(){
+    const B=+bs.value, S=Math.max(0, Math.floor(+sz.value||0)), Q=Math.max(1, Math.floor(+qt.value||1));
+    const n=Math.ceil(S/B), alloc=n*B*Q, waste=(n*B-S)*Q, use= alloc? S*Q/alloc*100 : 100;
+    document.getElementById('cBlk').textContent=fmt(n);
+    document.getElementById('cAlloc').textContent=human(alloc);
+    document.getElementById('cWaste').textContent=human(waste);
+    document.getElementById('cUse').textContent=use.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+    bar.innerHTML='';
+    const show=Math.min(n,24);
+    for(let k=0;k<show;k++){ const s=document.createElement('span'); const used=Math.min(B, S-k*B); s.innerHTML='<i style="width:'+(Math.max(0,used)/B*100)+'%"></i>'; s.title='bloco '+(k+1)+': '+fmt(Math.max(0,used))+' de '+fmt(B)+' bytes usados'; bar.appendChild(s); }
+    if(n>show){ const m=document.createElement('span'); m.className='more'; m.textContent='+'+fmt(n-show)+' blocos'; bar.appendChild(m); }
+  }
+  [bs,sz,qt].forEach(e=>{ e.addEventListener('input',calc); e.addEventListener('keydown',ev=>ev.stopPropagation()); });
+  document.querySelectorAll('#cChips .chip').forEach(c=>c.addEventListener('click',()=>{ const [b,s,q]=c.dataset.c.split(','); bs.value=b; sz.value=s; qt.value=q; calc(); }));
+  calc();
+})();
+
+/* ===== Simulador de alocação ===== */
+(function(){
+  const N=32, BUSY=[0,1,4,6,9,15,16,18,19,20,23,24,27,30];
+  const disk=document.getElementById('disk'), term=document.getElementById('alTerm');
+  const names={contig:'Contígua', linked:'Encadeada', indexed:'Indexada'};
+  let mode=null, file=[], idx=null, grown=[], fail=[], read=[];
+  const isBusy=b=>BUSY.includes(b);
+  const used=()=>new Set([...BUSY, ...file, ...(idx!==null?[idx]:[])]);
+  const freeList=()=>{ const u=used(); const f=[]; for(let b=0;b<N;b++) if(!u.has(b)) f.push(b); return f; };
+  function out(cmd, txt){ term.innerHTML='<span class="p">$</span> <span class="c">'+cmd+'</span>\n'+txt; }
+  function render(){
+    disk.innerHTML='';
+    for(let b=0;b<N;b++){
+      const d=document.createElement('div'); d.className='blk'; let lb='', pt='';
+      const k=file.indexOf(b);
+      if(isBusy(b)){ d.classList.add('busy'); lb='ocupado'; }
+      else if(b===idx){ d.classList.add('idx'); lb='IDX'; pt='→ '+file.join(','); }
+      else if(k>=0){ d.classList.add(grown.includes(b)?'newb':'file'); lb='A'+(k+1);
+        if(mode==='linked') pt= k<file.length-1 ? '→ '+file[k+1] : 'fim'; }
+      if(fail.includes(b)) d.classList.add('fail');
+      if(read.includes(b)) d.classList.add('read');
+      d.innerHTML='<span class="ix">'+b+'</span><span class="lb">'+lb+'</span>'+(pt?'<span class="pt">'+pt+'</span>':'');
+      disk.appendChild(d);
+    }
+  }
+  function place(m){
+    mode=m; file=[]; idx=null; grown=[]; fail=[]; read=[];
+    if(m==='contig'){
+      for(let s=0;s<=N-5;s++){ let ok=true; for(let j=0;j<5;j++) if(isBusy(s+j)) ok=false; if(ok){ for(let j=0;j<5;j++) file.push(s+j); break; } }
+      out('gravar A (5 blocos) · contígua','Procurei a primeira faixa com 5 blocos livres seguidos: '+file[0]+' a '+file[4]+'.\n<span class="y">Diretório guarda só: início = '+file[0]+', tamanho = 5.</span>');
+    } else if(m==='linked'){
+      file=freeList().slice(0,5);
+      out('gravar A (5 blocos) · encadeada','Usei os 5 primeiros blocos livres, onde quer que estejam: '+file.join(', ')+'.\n<span class="y">Cada bloco guarda o número do próximo (→). O diretório guarda só o primeiro: '+file[0]+'.</span>');
+    } else {
+      const f=freeList(); idx=f[0]; file=f.slice(1,6);
+      out('gravar A (5 blocos) · indexada','Bloco índice: '+idx+'. Dados em: '+file.join(', ')+'.\n<span class="y">O índice lista todos os blocos do arquivo. Gasta 1 bloco a mais, mas dá acesso direto a qualquer parte.</span>');
+    }
+    render();
+  }
+  function readLast(){
+    if(!mode){ out('ler A[5]','<span class="e">Grave o arquivo A primeiro (escolha uma estratégia).</span>'); return; }
+    fail=[]; const n=file.length;
+    if(mode==='contig'){ read=[file[n-1]]; out('ler o último bloco de A','endereço = início + '+(n-1)+' = '+file[0]+' + '+(n-1)+' = '+file[n-1]+'\n<span class="y">1 leitura. Acesso direto: basta uma conta.</span>'); }
+    else if(mode==='linked'){ read=file.slice(); out('ler o último bloco de A','Preciso seguir a corrente: '+file.join(' → ')+'\n<span class="y">'+n+' leituras para chegar ao último bloco. Em um arquivo de 1 milhão de blocos, seria 1 milhão de leituras.</span>'); }
+    else { read=[idx, file[n-1]]; out('ler o último bloco de A','Leio o índice ('+idx+') e vou direto ao bloco '+file[n-1]+'.\n<span class="y">2 leituras, não importa o tamanho do arquivo.</span>'); }
+    render();
+  }
+  function grow(){
+    if(!mode){ out('crescer A +2','<span class="e">Grave o arquivo A primeiro (escolha uma estratégia).</span>'); return; }
+    read=[]; fail=[];
+    if(mode==='contig'){
+      const last=file[file.length-1], nxt=[last+1,last+2].filter(b=>b<N);
+      const blocked=nxt.filter(b=>used().has(b));
+      if(blocked.length || nxt.length<2){
+        fail=blocked;
+        const f=freeList().concat(file).sort((a,b)=>a-b);
+        let best=0, run=0, prev=-2; f.forEach(b=>{ run=(b===prev+1)?run+1:1; prev=b; best=Math.max(best,run); });
+        const need=file.length+2;
+        out('crescer A +2 · contígua','<span class="e">Os blocos '+blocked.join(' e ')+' logo depois de A já estão ocupados.</span>\nPara crescer, o SO teria que mover A inteiro para uma faixa com '+need+' blocos livres seguidos.\n'+(best>=need?'Existe uma faixa assim: dá, mas custa copiar o arquivo todo.':'<span class="y">Contando os blocos do próprio A, há '+(freeList().length+file.length)+' blocos que poderiam ser usados, mas a maior faixa contínua tem só '+best+'. Não cabe! Isso é fragmentação externa.</span>'));
+      } else { grown=nxt; file.push(...nxt); out('crescer A +2 · contígua','Os vizinhos estavam livres: A cresceu para '+file.length+' blocos.'); }
+    } else {
+      const f=freeList(); if(f.length<2){ out('crescer A +2','<span class="e">Disco cheio.</span>'); return; }
+      const nb=f.slice(0,2); grown.push(...nb); file.push(...nb);
+      out('crescer A +2 · '+names[mode].toLowerCase(), mode==='linked' ? 'Peguei os blocos livres '+nb.join(' e ')+' e liguei o antigo último bloco a eles.\n<span class="y">Crescer é fácil: qualquer bloco livre serve.</span>' : 'Peguei os blocos livres '+nb.join(' e ')+' e acrescentei os dois ao índice.\n<span class="y">Crescer é fácil e o acesso continua direto.</span>');
+    }
+    render();
+  }
+  document.querySelectorAll('[data-al]').forEach(b=>b.addEventListener('click',()=>{
+    const a=b.dataset.al;
+    if(a==='reset'){ mode=null; file=[]; idx=null; grown=[]; fail=[]; read=[]; out('disco','32 blocos · 14 ocupados por outros arquivos · 18 livres.\nEscolha uma estratégia para gravar o arquivo A (5 blocos).'); render(); }
+    else if(a==='read') readLast(); else if(a==='grow') grow(); else place(a);
+  }));
+  out('disco','32 blocos · 14 ocupados por outros arquivos · 18 livres.\nEscolha uma estratégia para gravar o arquivo A (5 blocos).');
+  render();
+})();
+
+/* ===== Quiz de fixação ===== */
+(function(){
+  const quiz=[
+    {tag:'Conceito', q:'Em uma frase: o que faz um sistema de arquivos?', a:'Organiza, nomeia, indexa e recupera dados no armazenamento: sabe <b>quais blocos pertencem a qual arquivo</b> e guarda os metadados de cada um.'},
+    {tag:'Metadados', q:'No Linux, o ctime de um arquivo é a data de criação?', a:'<b>Não.</b> ctime é a última mudança dos <b>metadados</b> (um <span class="code">chmod</span> altera). A criação aparece como <b>Birth</b> no <span class="code">stat</span>.'},
+    {tag:'Permissões', q:'Como fica a permissão 754 em notação simbólica? O que cada parte concede?', a:'<span class="code">rwxr-xr--</span>: o <b>dono</b> lê, altera e executa (7); o <b>grupo</b> lê e executa (5); os <b>outros</b> só leem (4).'},
+    {tag:'Cálculo', q:'Blocos de 4.096 B e um arquivo de 10.000 B: quantos blocos e quanto desperdício?', a:'<b>3 blocos</b> (12.288 B) e <b>2.288 B</b> de fragmentação interna.'},
+    {tag:'Comparativo', q:'Por que um vídeo de 6 GB não cabe num pendrive FAT32 com 50 GB livres? Qual a solução?', a:'O FAT32 limita cada arquivo a <b>4 GiB</b>. Solução: formatar em <b>exFAT</b> (após copiar os dados), que mantém a compatibilidade sem esse limite.'},
+    {tag:'Comparativo', q:'Cite 3 motivos técnicos para não usar FAT32 no disco de um servidor Linux.', a:'Não tem <b>dono nem permissões</b>, não tem <b>journaling</b> e limita arquivos a <b>4 GiB</b>. O padrão adequado é o <b>ext4</b>.'},
+    {tag:'Confiabilidade', q:'O que o journaling garante após uma queda de energia? E o que ele não garante?', a:'Garante a <b>consistência da estrutura</b> (metadados): o sistema refaz ou descarta operações incompletas sem varrer o disco todo. Não garante que o <b>conteúdo</b> mais recente foi salvo, e não substitui backup.'},
+    {tag:'Alocação', q:'Quantas leituras para chegar ao último bloco de um arquivo de 5 blocos em cada estratégia?', a:'<b>Contígua:</b> 1 (início + 4). <b>Encadeada:</b> 5 (segue a corrente). <b>Indexada:</b> 2 (índice + bloco).'},
+    {tag:'Hardware', q:'Devo desfragmentar meu SSD?', a:'<b>Não.</b> No SSD qualquer endereço é acessado praticamente no mesmo tempo; desfragmentar só gasta ciclos de escrita. O SO usa <b>TRIM</b> para manter o desempenho.'}
+  ];
+  const list=document.getElementById('quizList');
+  quiz.forEach((it,k)=>{
+    const c=document.createElement('div'); c.className='qcard';
+    c.innerHTML='<button class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">Q'+(k+1)+'.</b> '+it.q+'</span><span class="qtag">'+it.tag+'</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">'+it.a+'</div></div>';
+    list.appendChild(c);
+  });
+  bindQ(list);
+})();
+</script>
+
+</body>
+</html>
