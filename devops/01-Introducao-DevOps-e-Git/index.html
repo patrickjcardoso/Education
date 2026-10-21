@@ -313,6 +313,19 @@ table.trail .goal{color:var(--text);}
 .method .card .icon-chip{font-size:.9rem;}
 .review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
 @media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+
+/* ============================= REVISÃO: situação, aprofundar, exemplos ============================= */
+.ctx{margin-top:.8rem; padding:.65rem .95rem; border-left:3px solid var(--gold); background:rgba(242,169,59,.07); border-radius:0 10px 10px 0; font-size:.88rem; color:var(--text-dim); line-height:1.55; max-width:95ch;}
+.ctx b{color:var(--text);}
+.ctx b.tag{display:inline-block; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-right:.5rem;}
+.deep{margin-top:.9rem; display:flex; flex-wrap:wrap; gap:.35rem 1rem; align-items:baseline; font-size:.8rem; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:.6rem;}
+.deep > span:first-child{font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue);}
+.deep a{color:var(--blue); text-decoration:none;}
+.deep a:hover{text-decoration:underline;}
+.deep a::after{content:' ↗'; font-size:.75em; color:var(--text-faint);}
+.deep .ref{color:var(--text-dim);}
+.card p.ex{margin-top:.45rem; padding-top:.45rem; border-top:1px dashed var(--border-soft); font-size:.78rem;}
+.card p.ex b{color:var(--gold);}
 </style>
 </head>
 <body>
@@ -351,56 +364,58 @@ operate → monitor</div>
     <div class="slide-inner">
       <div class="kicker animate">Roteiro da aula</div>
       <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
-      <div class="toc animate delay-2" style="margin-top:.8rem;">
+      <p class="subtitle animate delay-2" style="margin-bottom:.4rem;">O número de cada item é o mesmo do canto inferior esquerdo da tela. Clique para ir direto ao slide.</p>
+      <div class="toc animate delay-2" style="margin-top:.6rem;">
         <div>
           <div class="toc-group">Antes de começar</div>
-          <a href="#s-prep"><span class="n">01</span><span class="t">Checklist: prepare seu ambiente</span></a>
-          <a href="#s-disciplina"><span class="n">02</span><span class="t">Como a disciplina funciona</span></a>
-          <a href="#s-metodo"><span class="n">02</span><span class="t">Como estudar sozinho</span></a>
-          <a href="#s-agenda"><span class="n">03</span><span class="t">Roteiro do encontro de hoje</span></a>
+          <a href="#s-prep"><span class="n"></span><span class="t">Checklist: prepare seu ambiente</span></a>
+          <a href="#s-disciplina"><span class="n"></span><span class="t">Como a disciplina funciona</span></a>
+          <a href="#s-metodo"><span class="n"></span><span class="t">Como estudar sozinho</span></a>
+          <a href="#s-agenda"><span class="n"></span><span class="t">Roteiro do encontro de hoje</span></a>
           <div class="toc-group">Cultura DevOps</div>
-          <a href="#s-knight"><span class="n">04</span><span class="t">45 minutos, US$ 440 milhões</span></a>
-          <a href="#s-muro"><span class="n">05</span><span class="t">O muro entre Dev e Ops</span></a>
-          <a href="#s-oque"><span class="n">06</span><span class="t">O que é (e o que não é) DevOps</span></a>
-          <a href="#s-calms"><span class="n">07</span><span class="t">CALMS: os 5 pilares</span></a>
+          <a href="#s-knight"><span class="n"></span><span class="t">Por que DevOps importa</span></a>
+          <a href="#s-muro"><span class="n"></span><span class="t">O conflito entre Dev e Ops</span></a>
+          <a href="#s-oque"><span class="n"></span><span class="t">O que é (e o que não é) DevOps</span></a>
+          <a href="#s-calms"><span class="n"></span><span class="t">CALMS: os 5 pilares</span></a>
+          <a href="#s-caminhos"><span class="n"></span><span class="t">Os Três Caminhos</span></a>
         </div>
         <div>
-          <a href="#s-caminhos"><span class="n">08</span><span class="t">Os Três Caminhos</span></a>
-          <a href="#s-ciclo"><span class="n">09</span><span class="t">O ciclo DevOps (interativo)</span></a>
-          <a href="#s-dora"><span class="n">10</span><span class="t">Benefícios e métricas DORA</span></a>
-          <a href="#s-mm-devops"><span class="n">11</span><span class="t">🛠️ É DevOps ou não?</span></a>
+          <a href="#s-ciclo"><span class="n"></span><span class="t">O ciclo DevOps (interativo)</span></a>
+          <a href="#s-dora"><span class="n"></span><span class="t">Como medir: métricas DORA</span></a>
+          <a href="#s-mm-devops"><span class="n"></span><span class="t">🛠️ É DevOps ou não?</span></a>
           <div class="toc-group">Controle de versão e Git</div>
-          <a href="#s-vcs"><span class="n">12</span><span class="t">O problema do "final_v2_agora_vai"</span></a>
-          <a href="#s-tipos"><span class="n">13</span><span class="t">Centralizado × distribuído</span></a>
-          <a href="#s-areas"><span class="n">14</span><span class="t">As 3 áreas do Git (simulador)</span></a>
-          <a href="#s-comandos"><span class="n">15</span><span class="t">Comandos essenciais</span></a>
-          <a href="#s-mm-config"><span class="n">16</span><span class="t">🛠️ Configure o Git</span></a>
+          <a href="#s-vcs"><span class="n"></span><span class="t">Para que serve o controle de versão</span></a>
+          <a href="#s-tipos"><span class="n"></span><span class="t">Centralizado × distribuído</span></a>
+          <a href="#s-areas"><span class="n"></span><span class="t">As 3 áreas do Git (simulador)</span></a>
+          <a href="#s-comandos"><span class="n"></span><span class="t">Os comandos do dia a dia</span></a>
+          <a href="#s-mm-config"><span class="n"></span><span class="t">🛠️ Configure o Git</span></a>
+          <a href="#s-commits"><span class="n"></span><span class="t">Mensagens de commit que explicam</span></a>
+          <a href="#s-mm-commits"><span class="n"></span><span class="t">🛠️ Validador de mensagens</span></a>
         </div>
         <div>
-          <a href="#s-commits"><span class="n">17</span><span class="t">🛠️ Commits bons (validador)</span></a>
-          <a href="#s-desfazer"><span class="n">18</span><span class="t">Desfazendo: restore, revert, reset</span></a>
-          <a href="#s-github"><span class="n">19</span><span class="t">Do local ao GitHub</span></a>
+          <a href="#s-desfazer"><span class="n"></span><span class="t">Desfazendo erros</span></a>
+          <a href="#s-github"><span class="n"></span><span class="t">Publicar no GitHub</span></a>
           <div class="toc-group">Autoestudo da semana</div>
-          <a href="#s-pbl"><span class="n">20</span><span class="t">Situação-problema: EntregaJá</span></a>
-          <a href="#s-lab"><span class="n">21</span><span class="t">Laboratório no Killercoda</span></a>
-          <a href="#s-projeto"><span class="n">22</span><span class="t">Projeto TaskFlow: checkpoint 1</span></a>
-          <a href="#s-plano"><span class="n">23</span><span class="t">Seu plano da semana</span></a>
-          <a href="#s-trilha"><span class="n">24</span><span class="t">Trilha de estudo da semana</span></a>
-          <a href="#s-fontes"><span class="n">25</span><span class="t">Biblioteca: livros e documentação</span></a>
-          <a href="#s-glossario"><span class="n">26</span><span class="t">Glossário da aula</span></a>
-          <a href="#s-autoavaliacao"><span class="n">27</span><span class="t">Autoavaliação</span></a>
-          <a href="#s-quiz"><span class="n">28</span><span class="t">Quiz de fixação</span></a>
+          <a href="#s-pbl"><span class="n"></span><span class="t">Situação-problema: EntregaJá</span></a>
+          <a href="#s-lab"><span class="n"></span><span class="t">Laboratório no Killercoda</span></a>
+          <a href="#s-projeto"><span class="n"></span><span class="t">Projeto TaskFlow: checkpoint 1</span></a>
+          <a href="#s-plano"><span class="n"></span><span class="t">Seu plano da semana</span></a>
+          <a href="#s-trilha"><span class="n"></span><span class="t">Trilha de estudo</span></a>
+          <a href="#s-fontes"><span class="n"></span><span class="t">Biblioteca da semana</span></a>
+          <a href="#s-glossario"><span class="n"></span><span class="t">Glossário</span></a>
+          <a href="#s-autoavaliacao"><span class="n"></span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n"></span><span class="t">Quiz de fixação</span></a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 01 PREP -->
+  <!-- ============================================================ PREP -->
   <section class="slide hands-on" id="s-prep">
     <div class="slide-inner">
-      <div class="kicker animate">01 · Antes do encontro <span class="mm-badge">⏱ 30 min · faça antes de 14/10</span></div>
-      <h2 class="stitle animate delay-1">Prepare seu ambiente antes da aula</h2>
-      <p class="subtitle animate delay-2">Chegue ao encontro com tudo instalado. Assim os 60 minutos ficam para prática e dúvidas. Marque cada item conforme concluir (fica salvo neste navegador).</p>
+      <div class="kicker animate"><span class="knum"></span>Antes do encontro <span class="mm-badge">⏱ 30 min · faça antes de 14/10</span></div>
+      <h2 class="stitle animate delay-1">Instale as ferramentas antes da aula</h2>
+      <p class="subtitle animate delay-2">Se a instalação ficar para o encontro, metade da hora vai embora resolvendo download e senha. Chegue com tudo pronto e use os 60 minutos para prática e dúvidas. Marque cada item ao concluir (fica salvo neste navegador).</p>
       <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
         <div class="check-list" data-check="prep">
           <label class="check-item"><input type="checkbox" id="prep1"><div><div class="ci-t">Conta no GitHub</div><div class="ci-d">Crie em <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>. Use um nome de usuário profissional: ele vai para o seu currículo.</div></div></label>
@@ -414,17 +429,18 @@ operate → monitor</div>
           <p>Tudo da Semana 1 funciona no <b>Killercoda</b>, direto no navegador: o Ubuntu Playground já vem com Git e Python. Você só precisa das contas no GitHub e no Killercoda.</p>
           <div class="info-box" style="margin-top:.8rem;"><b>Limite da conta grátis do Killercoda:</b> cada sessão dura cerca de 1 hora e é apagada ao fechar. Sempre faça <span class="code">git push</span> para o GitHub antes de sair, ou você perde o trabalho.</div>
           <div class="check-meter" id="prepMeter"><span>0/5</span><div class="check-bar"><span></span></div></div>
+          <div class="deep"><span>📖 Ajuda na instalação:</span><a href="https://git-scm.com/book/pt-br/v2/Primeiros-Passos-Instalando-o-Git" target="_blank" rel="noopener">Pro Git 1.5 · Instalando o Git</a></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 02 DISCIPLINA -->
+  <!-- ============================================================ DISCIPLINA -->
   <section class="slide" id="s-disciplina">
     <div class="slide-inner">
-      <div class="kicker animate">02 · Como a disciplina funciona</div>
-      <h2 class="stitle animate delay-1">6 semanas, 1 projeto, uma camada DevOps por semana</h2>
-      <p class="subtitle animate delay-2">Toda quarta temos 1 hora ao vivo. O restante (~5h40 por semana) é autoestudo guiado: leitura, laboratório e o projeto TaskFlow, que cresce a cada semana até virar uma aplicação com pipeline completo.</p>
+      <div class="kicker animate"><span class="knum"></span>Como a disciplina funciona</div>
+      <h2 class="stitle animate delay-1">Um projeto que ganha uma camada DevOps por semana</h2>
+      <p class="subtitle animate delay-2">Em vez de 6 exercícios soltos, você trabalha o semestre inteiro num único projeto: a API <b>TaskFlow</b>. Ela começa sem nenhuma automação e, a cada semana, recebe uma prática nova. Toda quarta temos 1 hora ao vivo; o restante (~5h40 por semana) é autoestudo guiado.</p>
       <div class="tbl-wrap animate delay-3" style="margin-top:1rem;">
         <table class="cmp">
           <tr><th>Sem.</th><th>Data</th><th>Tema</th><th>O TaskFlow ganha…</th></tr>
@@ -444,30 +460,30 @@ operate → monitor</div>
     </div>
   </section>
 
-  <!-- ============================================================ 02b COMO ESTUDAR -->
+  <!-- ============================================================ MÉTODO -->
   <section class="slide" id="s-metodo">
     <div class="slide-inner">
-      <div class="kicker animate">02 · Como estudar nesta disciplina</div>
-      <h2 class="stitle animate delay-1">34 das 40 horas são autoestudo: este é o método</h2>
-      <p class="subtitle animate delay-2">O encontro semanal dura 1 hora e serve para tirar dúvidas e dar a direção. O aprendizado acontece no seu estudo. Todo material semanal segue o mesmo roteiro de 4 passos.</p>
+      <div class="kicker animate"><span class="knum"></span>Como estudar nesta disciplina</div>
+      <h2 class="stitle animate delay-1">34 das 40 horas são autoestudo: siga estes 4 passos</h2>
+      <p class="subtitle animate delay-2">O encontro semanal dura 1 hora e serve para tirar dúvidas e dar a direção. O aprendizado acontece no seu estudo. Todo material semanal segue o mesmo roteiro.</p>
       <div class="method animate delay-3">
-        <div class="card"><div class="icon-chip">1</div><h3>Leia</h3><p>Siga a <b>Trilha de estudo</b> no fim de cada material: livro, documentação oficial e o que você deve saber ao terminar.</p></div>
+        <div class="card"><div class="icon-chip">1</div><h3>Leia</h3><p>Em cada slide, a caixa <b>📖 Para aprofundar</b> indica a leitura daquele tema. A <b>Trilha de estudo</b>, no fim, organiza tudo em ordem.</p></div>
         <div class="card"><div class="icon-chip">2</div><h3>Pratique</h3><p>Faça os slides <b>🛠️ Mão na massa</b> e o laboratório no Killercoda. DevOps se aprende digitando comandos, não só lendo.</p></div>
         <div class="card"><div class="icon-chip">3</div><h3>Aplique</h3><p>Resolva a <b>situação-problema</b> e o <b>checkpoint</b> do projeto TaskFlow com sua dupla.</p></div>
         <div class="card"><div class="icon-chip">4</div><h3>Confira</h3><p>Responda a <b>Autoavaliação</b> e o <b>Quiz</b>. O que errar, volte ao slide indicado antes da próxima aula.</p></div>
       </div>
       <div class="grid-3 animate delay-4" style="margin-top:1rem;">
         <div class="card"><h3>Onde estão os livros</h3><p>A bibliografia básica (MONTEIRO, <i>DevOps</i>; MUNIZ, <i>Jornada DevOps</i>; SILVA, <i>Cloud Computing</i>) está on-line nas bibliotecas virtuais da UNIPAR, pelo portal do aluno. O <a href="https://git-scm.com/book/pt-br/v2" target="_blank" rel="noopener">Pro Git</a> é gratuito na web.</p></div>
-        <div class="card"><h3>Organize sua semana</h3><p>Divida as ~5h40 em 3 ou 4 blocos curtos. O slide <b>Seu plano da semana</b> traz a ordem sugerida e um checklist que fica salvo no navegador.</p></div>
+        <div class="card"><h3>Organize sua semana</h3><p>Divida as ~5h40 em 3 ou 4 blocos curtos. O slide <b>Seu plano da semana</b> (<span class="sref" data-s="s-plano"></span>) traz a ordem sugerida e um checklist salvo no navegador.</p></div>
         <div class="card"><h3>Peça ajuda do jeito certo</h3><p>No canal da disciplina, mande <b>o comando, o print do erro e o que já tentou</b>. Pergunta bem feita recebe resposta rápida, do professor ou dos colegas.</p></div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 03 AGENDA -->
+  <!-- ============================================================ AGENDA -->
   <section class="slide" id="s-agenda">
     <div class="slide-inner">
-      <div class="kicker animate">03 · Encontro síncrono · 14/10</div>
+      <div class="kicker animate"><span class="knum"></span>Encontro síncrono · 14/10</div>
       <h2 class="stitle animate delay-1">Como serão os 60 minutos de hoje</h2>
       <p class="subtitle animate delay-2">O encontro é curto de propósito. Ele dá a direção; a prática acontece no seu autoestudo. Tenha o terminal (ou o Killercoda) aberto durante a demonstração.</p>
       <div class="agenda animate delay-3">
@@ -480,102 +496,113 @@ operate → monitor</div>
     </div>
   </section>
 
-  <!-- ============================================================ 04 KNIGHT -->
+  <!-- ============================================================ KNIGHT -->
   <section class="slide" id="s-knight">
     <div class="slide-inner">
-      <div class="kicker animate">04 · Gancho do mundo real</div>
-      <h2 class="stitle animate delay-1">Knight Capital, 1º de agosto de 2012</h2>
-      <p class="subtitle animate delay-2">A Knight Capital era uma das maiores operadoras de ações dos EUA. Uma atualização de software foi instalada <b>manualmente</b> em 8 servidores. Em um deles, o técnico não copiou a versão nova. Esse servidor reativou um código antigo, desativado havia anos, que começou a comprar e vender ações sem parar.</p>
+      <div class="kicker animate"><span class="knum"></span>Por que estudar DevOps</div>
+      <h2 class="stitle animate delay-1">Um deploy manual malfeito custou US$ 440 milhões em 45 minutos</h2>
+      <p class="subtitle animate delay-2">Em 1º de agosto de 2012, a <b>Knight Capital</b>, uma das maiores operadoras de ações dos EUA, instalou uma atualização <b>à mão</b> em 8 servidores. Em um deles, a versão nova não foi copiada. Esse servidor ativou um código antigo, esquecido havia anos, que começou a comprar e vender ações sem parar.</p>
       <div class="timeline animate delay-3">
-        <div class="tl-item"><div class="yr">Dias antes</div><p>Deploy manual da nova versão, servidor por servidor. Sem checagem automática de que todos ficaram iguais.</p></div>
+        <div class="tl-item"><div class="yr">Dias antes</div><p>Deploy manual, servidor por servidor, sem nenhuma checagem automática de que os 8 ficaram iguais.</p></div>
         <div class="tl-item warn"><div class="yr">09h30</div><p>A bolsa abre. O servidor desatualizado dispara milhões de ordens que ninguém pediu.</p></div>
-        <div class="tl-item hot"><div class="yr">~10h15</div><p>A equipe finalmente para o sistema. Sem monitoramento claro, demoraram para achar a causa.</p></div>
+        <div class="tl-item hot"><div class="yr">~10h15</div><p>A equipe consegue parar o sistema. Sem monitoramento claro, demorou para achar a causa.</p></div>
       </div>
       <div class="bignum-row animate delay-4">
         <div class="bignum"><div class="n">45 min</div><div class="l">de operação descontrolada</div></div>
         <div class="bignum"><div class="n">US$ 440 mi</div><div class="l">de prejuízo</div></div>
         <div class="bignum"><div class="n">1 de 8</div><div class="l">servidores sem a versão nova</div></div>
       </div>
-      <div class="info-box animate delay-4"><b>Para a discussão:</b> deploy automatizado e idêntico em todos os servidores, versionamento do que está em produção e monitoramento com alertas teriam evitado ou encurtado o desastre. São exatamente os temas das próximas 6 semanas.</div>
+      <div class="info-box animate delay-4"><b>O que teria evitado isso:</b> deploy <b>automatizado</b> e idêntico em todos os servidores (Semanas 3–4), saber exatamente <b>qual versão</b> está em produção (Git, hoje) e <b>monitoramento com alertas</b> (Semana 6). DevOps é o conjunto dessas práticas.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://www.sec.gov/news/press-release/2013-222" target="_blank" rel="noopener">Comunicado oficial da SEC sobre o caso (em inglês)</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 05 MURO -->
+  <!-- ============================================================ MURO -->
   <section class="slide" id="s-muro">
     <div class="slide-inner">
-      <div class="kicker animate">05 · Cultura DevOps</div>
-      <h2 class="stitle animate delay-1">O "muro da confusão" entre Dev e Ops</h2>
-      <p class="subtitle animate delay-2">Antes do DevOps, desenvolvimento e operações tinham metas opostas. O código era "jogado por cima do muro" e cada lado culpava o outro quando algo quebrava.</p>
+      <div class="kicker animate"><span class="knum"></span>Cultura DevOps</div>
+      <h2 class="stitle animate delay-1">Por que desenvolvimento e operações viviam em conflito</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Sexta, 18h. O dev manda um .zip por e-mail: "é só subir, na minha máquina funciona". O operador instala, o sistema cai às 23h e ele passa a madrugada tentando consertar um código que nunca viu. Na segunda, um culpa o outro.</div>
+      <p class="subtitle animate delay-2" style="margin-top:.8rem;">Isso acontecia porque os dois times eram <b>cobrados por metas opostas</b>: um por mudar rápido, o outro por não deixar nada quebrar. Entre eles havia um "muro" por cima do qual o código era jogado.</p>
       <div class="wall animate delay-3">
-        <div class="side dev"><h3>Desenvolvimento (Dev)</h3><ul><li>É cobrado por <b>entregar mudanças</b> rápido.</li><li>"Na minha máquina funciona."</li><li>Entrega um .zip e um e-mail: "é só subir".</li><li>Não vê o sistema em produção.</li></ul></div>
+        <div class="side dev"><h3>Desenvolvimento (Dev)</h3><ul><li>É cobrado por <b>entregar mudanças</b> rápido.</li><li>"Na minha máquina funciona."</li><li>Entrega e esquece: não vê o sistema em produção.</li></ul></div>
         <div class="brick">muro</div>
-        <div class="side ops"><h3>Operações (Ops)</h3><ul><li>É cobrado por <b>estabilidade</b>: mudança é risco.</li><li>"Deploy só na sexta à noite, com janela."</li><li>Recebe código que nunca testou.</li><li>É acordado de madrugada quando cai.</li></ul></div>
+        <div class="side ops"><h3>Operações (Ops)</h3><ul><li>É cobrado por <b>estabilidade</b>: mudança é risco.</li><li>"Deploy só na sexta à noite, com janela."</li><li>Recebe código que nunca testou e é acordado quando cai.</li></ul></div>
       </div>
-      <p class="subtitle animate delay-4" style="margin-top:1rem;">O termo <b>DevOps</b> surgiu em 2009, com Patrick Debois e as conferências <b>DevOpsDays</b>, justamente para derrubar esse muro: o mesmo time é responsável por construir <b>e</b> manter o software funcionando.</p>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">O termo <b>DevOps</b> surgiu em 2009, com Patrick Debois e as conferências <b>DevOpsDays</b>, para derrubar esse muro: o mesmo time passa a ser responsável por construir <b>e</b> manter o software funcionando.</p>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://aws.amazon.com/pt/devops/what-is-devops/" target="_blank" rel="noopener">AWS · O que é DevOps? (pt)</a><span class="ref">MUNIZ et al. <i>Jornada DevOps</i>: capítulo sobre a origem do DevOps</span></div>
     </div>
   </section>
 
-  <!-- ============================================================ 06 O QUE É -->
+  <!-- ============================================================ O QUE É -->
   <section class="slide" id="s-oque">
     <div class="slide-inner">
-      <div class="kicker animate">06 · Cultura DevOps</div>
-      <h2 class="stitle animate delay-1">O que é DevOps</h2>
-      <p class="subtitle animate delay-2"><b>DevOps é um conjunto de práticas culturais, de processo e de ferramentas que aproxima desenvolvimento e operações para entregar software com mais frequência, mais qualidade e menos risco.</b> A ferramenta vem por último: ela automatiza uma cultura que já precisa existir.</p>
+      <div class="kicker animate"><span class="knum"></span>Cultura DevOps</div>
+      <h2 class="stitle animate delay-1">DevOps é cultura, processo e ferramenta, nessa ordem</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Uma empresa compra a melhor ferramenta de automação do mercado, mas continua com deploys mensais e 5 aprovações para cada mudança. Seis meses depois, nada melhorou. O que faltou?</div>
+      <p class="subtitle animate delay-2" style="margin-top:.8rem;"><b>Definição:</b> DevOps é um conjunto de práticas culturais, de processo e de ferramentas que aproxima desenvolvimento e operações para entregar software <b>com mais frequência, mais qualidade e menos risco</b>. A ferramenta automatiza uma forma de trabalhar; se a forma de trabalhar não muda, a ferramenta não resolve.</p>
       <div class="grid-2 animate delay-3" style="margin-top:1rem;">
         <div class="card"><h3 class="accent-g">DevOps é…</h3><ul><li>Responsabilidade compartilhada pelo software em produção.</li><li>Mudanças pequenas e frequentes, fáceis de testar e desfazer.</li><li>Automação de tudo que é repetitivo: build, teste, deploy.</li><li>Medir o que acontece e aprender com falhas, sem caça a culpados.</li></ul></div>
-        <div class="card"><h3 class="accent-r">DevOps não é…</h3><ul><li>Um cargo isolado que "faz o deploy" pelos outros.</li><li>Comprar uma ferramenta de CI e manter o mesmo processo.</li><li>Pular testes para entregar mais rápido.</li><li>Só para empresas grandes: uma equipe de 3 pessoas também se beneficia.</li></ul></div>
+        <div class="card"><h3 class="accent-r">DevOps não é…</h3><ul><li>Um cargo isolado que "faz o deploy" pelos outros.</li><li>Comprar uma ferramenta e manter o mesmo processo.</li><li>Pular testes para entregar mais rápido.</li><li>Só para empresas grandes: uma equipe de 3 pessoas também se beneficia.</li></ul></div>
       </div>
-      <div class="warn-box animate delay-4"><b>Sobre o cargo "Engenheiro DevOps":</b> ele existe no mercado e costuma cuidar de pipelines e infraestrutura. Mas, se só essa pessoa "faz DevOps", o muro apenas mudou de lugar.</div>
+      <div class="warn-box animate delay-4"><b>Sobre o cargo "Engenheiro DevOps":</b> ele existe e costuma cuidar de pipelines e infraestrutura. Mas, se só essa pessoa "faz DevOps", o muro apenas mudou de lugar.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://azure.microsoft.com/pt-br/resources/cloud-computing-dictionary/what-is-devops/" target="_blank" rel="noopener">Microsoft Azure · O que é DevOps? (pt)</a><span class="ref">MONTEIRO et al. <i>DevOps</i> (SAGAH): capítulo de conceitos e princípios</span></div>
     </div>
   </section>
 
-  <!-- ============================================================ 07 CALMS -->
+  <!-- ============================================================ CALMS -->
   <section class="slide" id="s-calms">
     <div class="slide-inner">
-      <div class="kicker animate">07 · Princípios</div>
-      <h2 class="stitle animate delay-1">CALMS: os cinco pilares do DevOps</h2>
-      <p class="subtitle animate delay-2">Modelo criado por John Willis e Damon Edwards (e ampliado por Jez Humble) para avaliar se uma organização realmente pratica DevOps.</p>
+      <div class="kicker animate"><span class="knum"></span>Princípios</div>
+      <h2 class="stitle animate delay-1">CALMS: 5 perguntas para saber se um time pratica DevOps</h2>
+      <p class="subtitle animate delay-2">O modelo CALMS (John Willis e Damon Edwards, ampliado por Jez Humble) funciona como um checklist. Para cada letra, veja a pergunta e um exemplo prático.</p>
       <div class="grid-5 calms animate delay-3" style="margin-top:1rem;">
-        <div class="card"><div class="letter">C</div><h3>Culture</h3><p>Cultura de colaboração e confiança. Erro vira aprendizado, não punição.</p></div>
-        <div class="card"><div class="letter">A</div><h3>Automation</h3><p>Automatizar build, testes, deploy e infraestrutura. Menos passos manuais, menos falhas humanas.</p></div>
-        <div class="card"><div class="letter">L</div><h3>Lean</h3><p>Lotes pequenos, fluxo contínuo, eliminar desperdício (esperas, retrabalho, aprovações inúteis).</p></div>
-        <div class="card"><div class="letter">M</div><h3>Measurement</h3><p>Medir tudo: tempo de entrega, falhas, uso. Decidir com dados, não com achismo.</p></div>
-        <div class="card"><div class="letter">S</div><h3>Sharing</h3><p>Compartilhar conhecimento, ferramentas e responsabilidades entre times.</p></div>
+        <div class="card"><div class="letter">C</div><h3>Culture</h3><p>O time colabora e aprende com erros, sem buscar culpados?</p><p class="ex"><b>Na prática:</b> após uma falha, o time escreve o que aconteceu e o que muda no processo.</p></div>
+        <div class="card"><div class="letter">A</div><h3>Automation</h3><p>Tarefas repetitivas são feitas por máquina?</p><p class="ex"><b>Na prática:</b> os testes rodam sozinhos a cada mudança.</p></div>
+        <div class="card"><div class="letter">L</div><h3>Lean</h3><p>O trabalho flui em lotes pequenos, sem esperas?</p><p class="ex"><b>Na prática:</b> 10 entregas pequenas por semana, em vez de 1 grande por mês.</p></div>
+        <div class="card"><div class="letter">M</div><h3>Measurement</h3><p>As decisões se baseiam em dados?</p><p class="ex"><b>Na prática:</b> o time sabe quanto tempo leva do commit à produção.</p></div>
+        <div class="card"><div class="letter">S</div><h3>Sharing</h3><p>Conhecimento e responsabilidade são compartilhados?</p><p class="ex"><b>Na prática:</b> dev e ops olham o mesmo painel e participam do mesmo plantão.</p></div>
       </div>
       <p class="subtitle animate delay-4" style="margin-top:1rem;">Repare: só um dos cinco pilares (<b>Automation</b>) é sobre ferramentas. Os outros quatro são sobre pessoas e processos.</p>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://www.atlassian.com/br/devops/frameworks/calms-framework" target="_blank" rel="noopener">Atlassian · Framework CALMS (pt)</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 08 TRÊS CAMINHOS -->
+  <!-- ============================================================ TRÊS CAMINHOS -->
   <section class="slide" id="s-caminhos">
     <div class="slide-inner">
-      <div class="kicker animate">08 · Princípios</div>
-      <h2 class="stitle animate delay-1">Os Três Caminhos</h2>
-      <p class="subtitle animate delay-2">Proposto por Gene Kim no livro <i>O Projeto Fênix</i> e detalhado no <i>Manual de DevOps</i>. A obra <i>Jornada DevOps</i> (bibliografia básica) usa o mesmo modelo.</p>
+      <div class="kicker animate"><span class="knum"></span>Princípios</div>
+      <h2 class="stitle animate delay-1">Os Três Caminhos: fluxo, feedback e aprendizado</h2>
+      <p class="subtitle animate delay-2">Modelo de Gene Kim (livros <i>O Projeto Fênix</i> e <i>Manual de DevOps</i>), também usado no <i>Jornada DevOps</i> da bibliografia. Cada caminho resolve um problema diferente.</p>
       <div class="ways animate delay-3">
         <div class="card way">
           <svg viewBox="0 0 220 70" aria-hidden="true"><rect x="4" y="20" width="56" height="30" rx="7" fill="rgba(47,176,232,.15)" stroke="#2fb0e8"/><text x="32" y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#eef3f8">Dev</text><rect x="160" y="20" width="56" height="30" rx="7" fill="rgba(242,169,59,.15)" stroke="#f2a93b"/><text x="188" y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#eef3f8">Cliente</text><path d="M64 35 H152" stroke="#2fb0e8" stroke-width="2" marker-end="url(#a1)"/><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2fb0e8"/></marker></defs></svg>
           <div class="lbl">1º caminho</div><h3>Fluxo</h3><p>Acelerar o caminho do código até o cliente: lotes pequenos, menos esperas, automação, nunca passar defeito adiante.</p>
+          <p class="ex"><b>Problema que resolve:</b> uma correção pronta em 1 hora que leva 3 semanas para chegar ao usuário.</p>
         </div>
         <div class="card way">
           <svg viewBox="0 0 220 70" aria-hidden="true"><rect x="4" y="20" width="56" height="30" rx="7" fill="rgba(47,176,232,.15)" stroke="#2fb0e8"/><text x="32" y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#eef3f8">Dev</text><rect x="160" y="20" width="56" height="30" rx="7" fill="rgba(242,169,59,.15)" stroke="#f2a93b"/><text x="188" y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#eef3f8">Cliente</text><path d="M64 28 H152" stroke="#5c7080" stroke-width="1.5" marker-end="url(#a2)"/><path d="M156 44 H68" stroke="#36c58f" stroke-width="2" marker-end="url(#a3)"/><defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5c7080"/></marker><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#36c58f"/></marker></defs></svg>
           <div class="lbl">2º caminho</div><h3>Feedback</h3><p>Informação rápida no sentido contrário: testes automáticos, monitoramento e alertas avisam o time antes do cliente.</p>
+          <p class="ex"><b>Problema que resolve:</b> descobrir um bug pelas reclamações nas redes sociais.</p>
         </div>
         <div class="card way">
           <svg viewBox="0 0 220 70" aria-hidden="true"><circle cx="110" cy="35" r="26" fill="none" stroke="#f2a93b" stroke-width="2" stroke-dasharray="120 44"/><path d="M128 14 l8 6 l-9 4" fill="none" stroke="#f2a93b" stroke-width="2"/><text x="110" y="39" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#eef3f8">aprender</text></svg>
           <div class="lbl">3º caminho</div><h3>Aprendizado contínuo</h3><p>Experimentar, errar com segurança e melhorar sempre. Pós-incidente sem culpados (<i>blameless postmortem</i>).</p>
+          <p class="ex"><b>Problema que resolve:</b> o mesmo erro acontecendo de novo porque ninguém registrou a causa.</p>
         </div>
       </div>
-      <p class="subtitle animate delay-4" style="margin-top:1rem;">Volte ao caso Knight Capital: qual dos três caminhos falhou mais? (Dica: talvez todos.)</p>
+      <div class="info-box animate delay-4"><b>Volte ao caso Knight Capital:</b> faltou <b>fluxo</b> (deploy manual), faltou <b>feedback</b> (45 minutos para perceber) e faltou <b>aprendizado</b> (código antigo esquecido no servidor).</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://itrevolution.com/the-three-ways-principles-underpinning-devops/" target="_blank" rel="noopener">Gene Kim · The Three Ways (em inglês)</a><span class="ref">MUNIZ et al. <i>Jornada DevOps</i>: capítulo sobre os Três Caminhos</span></div>
     </div>
   </section>
 
-  <!-- ============================================================ 09 CICLO -->
+  <!-- ============================================================ CICLO -->
   <section class="slide" id="s-ciclo">
     <div class="slide-inner">
-      <div class="kicker animate">09 · Ciclo DevOps · Interativo</div>
-      <h2 class="stitle animate delay-1">O ciclo infinito: clique em cada fase</h2>
-      <div class="loop-wrap animate delay-2">
+      <div class="kicker animate"><span class="knum"></span>Ciclo DevOps · Interativo</div>
+      <h2 class="stitle animate delay-1">As 8 fases por onde passa cada mudança no software</h2>
+      <p class="subtitle animate delay-2">O símbolo do infinito mostra que o trabalho não termina no deploy: o que se aprende monitorando volta para o planejamento. Exemplo: uma nova rota do TaskFlow é <b>planejada</b>, <b>codificada</b>, <b>testada</b>, <b>implantada</b> e <b>monitorada</b>; se ficar lenta, vira um item no próximo planejamento. <b>Clique em cada fase</b> para ver o que acontece nela e em qual semana você vai praticar.</p>
+      <div class="loop-wrap animate delay-3">
         <svg class="loop-svg" viewBox="0 0 560 280" id="loopSvg" role="group" aria-label="Fases do ciclo DevOps">
           <path class="path" d="M140 140 C140 40, 270 40, 280 140 C290 240, 420 240, 420 140 C420 40, 290 40, 280 140 C270 240, 140 240, 140 140 Z"/>
           <text class="side-l" x="150" y="270">DEV</text>
@@ -591,38 +618,36 @@ operate → monitor</div>
         </svg>
         <div class="phase-panel" id="phasePanel" aria-live="polite"></div>
       </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://www.atlassian.com/br/devops" target="_blank" rel="noopener">Atlassian · O que é DevOps e o ciclo de vida (pt)</a><span class="ref">MONTEIRO et al. <i>DevOps</i> (SAGAH): ciclo de vida DevOps</span></div>
     </div>
   </section>
 
-  <!-- ============================================================ 10 DORA -->
+  <!-- ============================================================ DORA -->
   <section class="slide" id="s-dora">
     <div class="slide-inner">
-      <div class="kicker animate">10 · Benefícios</div>
-      <h2 class="stitle animate delay-1">Como saber se o DevOps está funcionando? As 4 métricas DORA</h2>
-      <p class="subtitle animate delay-2">O programa de pesquisa <b>DORA</b> (DevOps Research and Assessment, hoje no Google Cloud) estuda milhares de equipes desde 2014. A conclusão central: <b>velocidade e estabilidade andam juntas</b>. Os times que entregam mais rápido também quebram menos.</p>
+      <div class="kicker animate"><span class="knum"></span>Benefícios</div>
+      <h2 class="stitle animate delay-1">4 métricas para saber se a entrega de software está melhorando</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> O time A faz 1 deploy por mês e o time B faz 20 por semana. Qual quebra mais? A intuição diz "o B, porque muda mais". Os dados dizem o contrário.</div>
+      <p class="subtitle animate delay-2" style="margin-top:.8rem;">O programa de pesquisa <b>DORA</b> (DevOps Research and Assessment, hoje no Google Cloud) estuda milhares de equipes desde 2014. A conclusão central: <b>velocidade e estabilidade andam juntas</b>. Quem entrega em lotes pequenos e frequentes também falha menos e se recupera mais rápido. Para medir isso, o DORA usa 4 métricas:</p>
       <div class="tbl-wrap animate delay-3" style="margin-top:1rem;">
         <table class="cmp">
-          <tr><th>Métrica</th><th>Pergunta que responde</th><th>Mede</th><th>Exemplo no caso Knight</th></tr>
+          <tr><th>Métrica</th><th>Pergunta que responde</th><th>Mede</th><th>No caso Knight Capital</th></tr>
           <tr><td>Frequência de deploy</td><td>Com que frequência entregamos em produção?</td><td class="accent-b">Velocidade</td><td>Deploys raros e grandes</td></tr>
           <tr><td>Lead time de mudanças</td><td>Quanto tempo do commit até produção?</td><td class="accent-b">Velocidade</td><td>Dias, com etapas manuais</td></tr>
-          <tr><td>Taxa de falha de mudanças</td><td>Que % dos deploys causa problema?</td><td class="accent">Estabilidade</td><td>Um deploy causou a falência</td></tr>
+          <tr><td>Taxa de falha de mudanças</td><td>Que % dos deploys causa problema?</td><td class="accent">Estabilidade</td><td>Um único deploy quase quebrou a empresa</td></tr>
           <tr><td>Tempo de recuperação</td><td>Quanto tempo para restaurar o serviço após falha?</td><td class="accent">Estabilidade</td><td>45 minutos sem saber a causa</td></tr>
         </table>
       </div>
-      <div class="grid-3 animate delay-4" style="margin-top:1rem;">
-        <div class="card"><div class="icon-chip">⚡</div><h3>Entregas mais rápidas</h3><p>Mudanças pequenas e automatizadas chegam ao cliente em horas, não meses.</p></div>
-        <div class="card"><div class="icon-chip">🛡️</div><h3>Menos falhas</h3><p>Testes automáticos e deploys idênticos removem o erro humano repetitivo.</p></div>
-        <div class="card"><div class="icon-chip">🔁</div><h3>Recuperação rápida</h3><p>Com versionamento, voltar à versão anterior é um comando.</p></div>
-      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://dora.dev/guides/dora-metrics-four-keys" target="_blank" rel="noopener">DORA · The four keys (guia oficial, em inglês)</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 11 MM DEVOPS -->
+  <!-- ============================================================ MM DEVOPS -->
   <section class="slide hands-on" id="s-mm-devops">
     <div class="slide-inner" style="max-width:900px;">
-      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
-      <h2 class="stitle animate delay-1">É DevOps ou não é?</h2>
-      <p class="subtitle animate delay-2">Leia cada prática de uma empresa e decida se ela segue a cultura DevOps. Responda as 8 situações.</p>
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Teste: é DevOps ou não é?</h2>
+      <p class="subtitle animate delay-2">Aplique o que viu nos slides anteriores. Leia cada prática de uma empresa e decida se ela segue a cultura DevOps. Depois de responder, a explicação aponta o pilar CALMS ou o Caminho envolvido.</p>
       <div class="drill animate delay-3" style="margin-top:1rem;">
         <div class="kicker" style="margin-bottom:.4rem;" id="drillCount">Situação 1 de 8</div>
         <div class="drill-q" id="drillQ"></div>
@@ -636,14 +661,14 @@ operate → monitor</div>
     </div>
   </section>
 
-  <!-- ============================================================ 12 VCS -->
+  <!-- ============================================================ VCS -->
   <section class="slide" id="s-vcs">
     <div class="slide-inner">
-      <div class="kicker animate">12 · Controle de versão</div>
-      <h2 class="stitle animate delay-1">O problema do "trabalho_final_v2_AGORA_VAI.zip"</h2>
+      <div class="kicker animate"><span class="knum"></span>Controle de versão</div>
+      <h2 class="stitle animate delay-1">Controle de versão: saber quem mudou o quê, quando e por quê</h2>
       <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
         <div class="card">
-          <h3 class="accent-r">Sem controle de versão</h3>
+          <h3 class="accent-r">Situação: o projeto sem controle de versão</h3>
           <div class="tree" style="margin-top:.4rem;">📁 projeto/
   sistema.zip
   sistema_v2.zip
@@ -651,49 +676,52 @@ operate → monitor</div>
   sistema_final.zip
   sistema_final_<b>AGORA_VAI</b>.zip
   sistema_final_joao_NAO_MEXER.zip</div>
-          <p style="margin-top:.6rem;">Qual é a versão em produção? Quem mudou a função de cálculo? Como juntar o trabalho de duas pessoas sem sobrescrever?</p>
+          <p style="margin-top:.6rem;">Qual destes está em produção? Quem mudou a função de cálculo, e por quê? Como juntar o trabalho de duas pessoas sem uma apagar a outra?</p>
         </div>
         <div class="card">
-          <h3 class="accent-g">Com controle de versão</h3>
-          <p>Um <b>sistema de controle de versão (VCS)</b> registra cada mudança nos arquivos: <b>o quê</b> mudou, <b>quem</b> mudou, <b>quando</b> e <b>por quê</b>.</p>
+          <h3 class="accent-g">O que um sistema de controle de versão faz</h3>
+          <p>Um <b>sistema de controle de versão (VCS)</b> guarda um histórico de cada mudança nos arquivos, com <b>o quê</b> mudou, <b>quem</b> mudou, <b>quando</b> e <b>por quê</b> (a mensagem).</p>
           <ul style="margin-top:.5rem;">
-            <li>Histórico completo: volta a qualquer versão.</li>
-            <li>Várias pessoas trabalham no mesmo projeto ao mesmo tempo.</li>
+            <li>Volta a qualquer versão anterior em segundos.</li>
+            <li>Várias pessoas trabalham ao mesmo tempo sem se sobrescrever.</li>
             <li>Cada versão em produção tem um identificador exato.</li>
-            <li>É a base de todas as práticas DevOps: CI, CD e IaC partem de um repositório.</li>
+            <li>É a base de tudo que vem depois: CI, CD e infraestrutura como código partem de um repositório.</li>
           </ul>
         </div>
       </div>
-      <p class="subtitle animate delay-3" style="margin-top:1rem;">Analogia: o controle de versão é o <b>"Ctrl+Z com memória infinita"</b> do projeto inteiro, compartilhado com a equipe e com anotação de cada passo.</p>
+      <p class="subtitle animate delay-3" style="margin-top:1rem;"><b>Analogia:</b> o controle de versão é um "Ctrl+Z com memória infinita" do projeto inteiro, compartilhado com a equipe e com anotação de cada passo.</p>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Primeiros-Passos-Sobre-Controle-de-Vers%c3%a3o" target="_blank" rel="noopener">Pro Git 1.1 · Sobre controle de versão</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 13 TIPOS -->
+  <!-- ============================================================ TIPOS -->
   <section class="slide" id="s-tipos">
     <div class="slide-inner">
-      <div class="kicker animate">13 · Controle de versão</div>
-      <h2 class="stitle animate delay-1">Centralizado × distribuído</h2>
-      <p class="subtitle animate delay-2">O Git foi criado em 2005 por Linus Torvalds para gerenciar o código do kernel Linux. Ele é <b>distribuído</b>: cada pessoa tem uma cópia completa do repositório, com todo o histórico.</p>
+      <div class="kicker animate"><span class="knum"></span>Controle de versão</div>
+      <h2 class="stitle animate delay-1">Por que o Git é distribuído e o que isso muda no dia a dia</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> O servidor da empresa saiu do ar por 1 dia. No sistema antigo (centralizado), ninguém conseguiu registrar trabalho e o histórico corria risco. Com Git, cada dev continuou fazendo commits no próprio notebook e sincronizou quando o servidor voltou.</div>
+      <p class="subtitle animate delay-2" style="margin-top:.8rem;">O Git foi criado em 2005 por Linus Torvalds para o código do kernel Linux. Ele é <b>distribuído</b>: cada pessoa tem uma cópia completa do repositório, com todo o histórico.</p>
       <div class="tbl-wrap animate delay-3" style="margin-top:1rem;">
         <table class="cmp">
           <tr><th>Aspecto</th><th>Centralizado (ex.: SVN)</th><th>Distribuído (ex.: Git)</th></tr>
           <tr><td>Onde fica o histórico</td><td>Só no servidor central</td><td>Em cada máquina, completo</td></tr>
           <tr><td>Trabalhar offline</td><td>Não consegue fazer commit</td><td>Commit, log e branch funcionam offline</td></tr>
           <tr><td>Servidor caiu</td><td>Ninguém trabalha; risco de perder histórico</td><td>Qualquer cópia restaura o projeto</td></tr>
-          <tr><td>Velocidade</td><td>Cada operação vai à rede</td><td>Quase tudo é local e instantâneo</td></tr>
           <tr><td>Uso hoje</td><td>Sistemas legados</td><td>Padrão do mercado (GitHub, GitLab, Bitbucket, Azure DevOps)</td></tr>
         </table>
       </div>
       <div class="info-box animate delay-4"><b>Git ≠ GitHub.</b> Git é a ferramenta de versionamento, que roda na sua máquina. GitHub é um serviço online que hospeda repositórios Git e adiciona colaboração (Pull Requests, Issues, Actions).</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Primeiros-Passos-Uma-Breve-Hist%c3%b3ria-do-Git" target="_blank" rel="noopener">Pro Git 1.2 · Uma breve história do Git</a><a href="https://git-scm.com/book/pt-br/v2/Primeiros-Passos-O-que-%c3%a9-Git%3F" target="_blank" rel="noopener">Pro Git 1.3 · O que é Git?</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 14 ÁREAS -->
+  <!-- ============================================================ ÁREAS -->
   <section class="slide" id="s-areas">
     <div class="slide-inner">
-      <div class="kicker animate">14 · Git · Simulador</div>
-      <h2 class="stitle animate delay-1">As 3 áreas do Git: edite, prepare, registre</h2>
-      <p class="subtitle animate delay-2">Um arquivo passa por três áreas antes de virar histórico. Use os botões na ordem que quiser e veja o que o Git responderia.</p>
+      <div class="kicker animate"><span class="knum"></span>Git · Simulador</div>
+      <h2 class="stitle animate delay-1">O caminho de uma mudança: pasta → staging → commit</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você corrigiu um bug em <span class="code">app.py</span> e, no mesmo dia, começou a mexer no <span class="code">README.md</span>, que ainda não está pronto. Como registrar só a correção? É para isso que existe a <b>staging area</b>: você escolhe o que entra em cada commit.</div>
+      <p class="subtitle animate delay-2" style="margin-top:.6rem;">Toda mudança passa por 3 áreas: você <b>edita</b> na pasta, <b>prepara</b> com <span class="code">git add</span> e <b>registra</b> com <span class="code">git commit</span>. Use os botões e veja o que o Git responderia.</p>
       <div class="areas animate delay-3">
         <div class="area wd" id="aWd"><h4>Working directory</h4><div class="sub">Sua pasta. Arquivos modificados.</div><div id="aWdList"></div></div>
         <div class="area st" id="aSt"><h4>Staging area</h4><div class="sub">O que vai no próximo commit.</div><div id="aStList"></div></div>
@@ -702,6 +730,7 @@ operate → monitor</div>
       <div class="git-ctrl animate delay-3">
         <button class="btn ghost" data-g="edit:app.py">✎ editar app.py</button>
         <button class="btn ghost" data-g="edit:README.md">✎ editar README.md</button>
+        <button class="btn" data-g="add:app.py">git add app.py</button>
         <button class="btn" data-g="add">git add .</button>
         <button class="btn gold" data-g="commit">git commit -m "…"</button>
         <button class="btn ghost" data-g="restore">git restore .</button>
@@ -710,37 +739,41 @@ operate → monitor</div>
       </div>
       <div class="term animate delay-4" id="gitTerm" aria-live="polite"><span class="p">$</span> <span class="c">git init</span>
 Initialized empty Git repository in /home/aluno/taskflow/.git/</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Gravando-Altera%c3%a7%c3%b5es-no-Reposit%c3%b3rio" target="_blank" rel="noopener">Pro Git 2.2 · Gravando alterações no repositório</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 15 COMANDOS -->
+  <!-- ============================================================ COMANDOS -->
   <section class="slide" id="s-comandos">
     <div class="slide-inner">
-      <div class="kicker animate">15 · Git · Referência rápida</div>
-      <h2 class="stitle animate delay-1">Os comandos essenciais da Semana 1</h2>
-      <div class="tbl-wrap animate delay-2" style="margin-top:.8rem;">
+      <div class="kicker animate"><span class="knum"></span>Git · Referência rápida</div>
+      <h2 class="stitle animate delay-1">Os 8 comandos que você vai usar todo dia</h2>
+      <p class="subtitle animate delay-2">Um dia típico: <span class="code">git pull</span> ao começar, editar, conferir com <span class="code">git status</span> e <span class="code">git diff</span>, preparar com <span class="code">git add</span>, registrar com <span class="code">git commit</span> e enviar com <span class="code">git push</span>. Guarde esta tabela.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
         <table class="cmp">
           <tr><th>Comando</th><th>O que faz</th><th>Quando usar</th></tr>
           <tr><td><span class="code">git init</span></td><td>Cria um repositório na pasta atual (pasta oculta <span class="code">.git</span>).</td><td>Uma vez, no início do projeto.</td></tr>
-          <tr><td><span class="code">git clone &lt;url&gt;</span></td><td>Copia um repositório remoto com todo o histórico.</td><td>Para começar a trabalhar em um projeto existente.</td></tr>
+          <tr><td><span class="code">git clone &lt;url&gt;</span></td><td>Copia um repositório remoto com todo o histórico.</td><td>Para começar num projeto que já existe.</td></tr>
           <tr><td><span class="code">git status</span></td><td>Mostra o estado dos arquivos nas 3 áreas.</td><td>O tempo todo. Na dúvida, rode <span class="code">git status</span>.</td></tr>
-          <tr><td><span class="code">git add &lt;arq&gt;</span></td><td>Move mudanças para a staging area.</td><td>Ao escolher o que entra no commit.</td></tr>
-          <tr><td><span class="code">git commit -m "…"</span></td><td>Registra a staging area no histórico, com mensagem.</td><td>A cada mudança pequena e completa.</td></tr>
-          <tr><td><span class="code">git log --oneline --graph</span></td><td>Mostra o histórico resumido, em forma de grafo.</td><td>Para ver o que já foi feito.</td></tr>
           <tr><td><span class="code">git diff</span></td><td>Mostra linha a linha o que mudou e ainda não foi para a staging.</td><td>Antes do <span class="code">git add</span>, para revisar.</td></tr>
+          <tr><td><span class="code">git add &lt;arq&gt;</span></td><td>Coloca mudanças na staging area.</td><td>Ao escolher o que entra no commit.</td></tr>
+          <tr><td><span class="code">git commit -m "…"</span></td><td>Registra a staging area no histórico, com mensagem.</td><td>A cada mudança pequena e completa.</td></tr>
+          <tr><td><span class="code">git log --oneline</span></td><td>Mostra o histórico resumido.</td><td>Para ver o que já foi feito.</td></tr>
           <tr><td><span class="code">git push</span> / <span class="code">git pull</span></td><td>Envia / traz commits do repositório remoto (GitHub).</td><td>Ao sincronizar com a equipe.</td></tr>
         </table>
       </div>
-      <div class="info-box animate delay-3"><b>Arquivo .gitignore:</b> lista o que o Git deve ignorar (ex.: <span class="code">.venv/</span>, <span class="code">__pycache__/</span>, <span class="code">.env</span> com senhas). Modelos prontos em <a href="https://github.com/github/gitignore" target="_blank" rel="noopener">github.com/github/gitignore</a>.</div>
+      <div class="warn-box animate delay-4"><b>Cuidado com o que entra no repositório.</b> Um arquivo <span class="code">.env</span> com senha, enviado por engano ao GitHub, pode ser lido por qualquer pessoa. O arquivo <span class="code">.gitignore</span> lista o que o Git deve ignorar (ex.: <span class="code">.venv/</span>, <span class="code">__pycache__/</span>, <span class="code">.env</span>). Modelos prontos em <a href="https://github.com/github/gitignore" target="_blank" rel="noopener">github.com/github/gitignore</a>.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Obtendo-um-Reposit%c3%b3rio-Git" target="_blank" rel="noopener">Pro Git 2.1 a 2.3</a><a href="https://git-scm.com/docs" target="_blank" rel="noopener">Referência oficial de comandos</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 16 MM CONFIG -->
+  <!-- ============================================================ MM CONFIG -->
   <section class="slide hands-on" id="s-mm-config">
     <div class="slide-inner">
-      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 10 min · durante a demonstração</span></div>
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 10 min · durante a demonstração</span></div>
       <h2 class="stitle animate delay-1">Configure o Git e faça seu primeiro commit</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+      <p class="subtitle animate delay-2">Antes do primeiro commit, o Git precisa saber <b>quem você é</b>: nome e e-mail vão em cada registro do histórico. Sem isso, o Git recusa o commit ou registra um autor genérico.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
         <div class="codeblock">
           <div class="cb-title">terminal · Git Bash, PowerShell ou Killercoda</div>
           <button class="copy">copiar</button>
@@ -769,26 +802,48 @@ git log --oneline</pre>
             <div class="qcard"><button class="qhead"><span class="qtext">O que é o código de 7 caracteres no <span class="code">git log --oneline</span>?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">É o início do <b>hash SHA-1</b> do commit: um identificador único calculado a partir do conteúdo. Com ele você referencia aquele commit em qualquer comando.</div></div></div>
           </div>
           <div class="warn-box" style="margin-top:.8rem;"><b>No Windows</b>, use o <b>Git Bash</b> (instalado junto com o Git) para que os comandos funcionem exatamente como no slide.</div>
+          <div class="deep"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Primeiros-Passos-Configura%c3%a7%c3%a3o-inicial-do-Git" target="_blank" rel="noopener">Pro Git 1.6 · Configuração inicial</a></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 17 COMMITS -->
-  <section class="slide hands-on" id="s-commits">
+  <!-- ============================================================ COMMITS (conceito) -->
+  <section class="slide" id="s-commits">
     <div class="slide-inner">
-      <div class="kicker animate">🛠️ Mão na Massa · Interativo <span class="mm-badge">⏱ 5 min</span></div>
-      <h2 class="stitle animate delay-1">Mensagens de commit: o padrão Conventional Commits</h2>
-      <p class="subtitle animate delay-2">A mensagem explica <b>por que</b> a mudança existe. No projeto, use o formato <span class="code">tipo(escopo opcional): descrição</span>. Ferramentas de CI leem esse padrão para gerar changelogs e versões automaticamente.</p>
-      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>Git · Boas práticas</div>
+      <h2 class="stitle animate delay-1">Como escrever mensagens de commit que explicam a mudança</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> São 3h da manhã e a API do TaskFlow começou a devolver erro no cadastro de tarefas. Você abre o histórico para descobrir qual mudança causou o problema. Qual dos dois históricos abaixo ajuda?</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="card">
-          <h3 class="accent">Valide uma mensagem</h3>
-          <div class="input-row" style="margin-top:.4rem;">
-            <input class="ip-input" id="cmIn" type="text" value="feat(tasks): adiciona endpoint de listagem" aria-label="Mensagem de commit">
-            <button class="btn" id="cmBtn">Validar</button>
-          </div>
-          <div class="chips" id="cmChips"></div>
-          <div class="verdict" id="cmOut"></div>
+          <h3 class="accent-r">Histórico A</h3>
+          <div class="tree">a1f3c9e ajustes
+7b2d410 update
+e94c07a wip
+3c5f2b1 agora vai
+d0a8e66 mudanças gerais</div>
+          <p style="margin-top:.5rem;">Nenhuma mensagem diz o que mudou. Você vai precisar abrir commit por commit.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent-g">Histórico B</h3>
+          <div class="tree">a1f3c9e docs: explica como rodar os testes
+7b2d410 <b>fix(tasks): rejeita título vazio no cadastro</b>
+e94c07a feat(tasks): adiciona filtro por status
+3c5f2b1 test: cobre exclusão de tarefa
+d0a8e66 chore: atualiza fastapi para 0.115</div>
+          <p style="margin-top:.5rem;">Em segundos você suspeita do <span class="code">7b2d410</span>: ele mexeu no cadastro.</p>
+        </div>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">O padrão Conventional Commits</h3>
+          <p>A primeira linha segue o formato <span class="code">tipo(escopo): descrição</span>:</p>
+          <ul style="margin-top:.4rem;">
+            <li><b>tipo</b>: a natureza da mudança (<span class="code">feat</span>, <span class="code">fix</span>, <span class="code">docs</span>… veja ao lado).</li>
+            <li><b>escopo</b> (opcional): a parte do sistema afetada, entre parênteses.</li>
+            <li><b>descrição</b>: o que a mudança faz, em até ~72 caracteres, sem ponto final.</li>
+          </ul>
+          <p style="margin-top:.4rem;">Ferramentas de CI leem esse padrão para gerar a lista de mudanças de cada versão automaticamente.</p>
         </div>
         <div class="card">
           <h3 class="accent-b">Tipos mais usados</h3>
@@ -802,18 +857,50 @@ git log --oneline</pre>
             <div><b>chore</b> tarefas gerais (dependências, configs)</div>
             <div><b>ci</b> pipeline de integração contínua</div>
           </div>
-          <div class="info-box"><b>Regra de ouro:</b> commits <b>pequenos e atômicos</b>. Um commit = uma mudança com um único objetivo. "Ajustes gerais" com 40 arquivos alterados é difícil de revisar e de desfazer.</div>
+          <div class="info-box"><b>Regra de ouro:</b> commits <b>pequenos e atômicos</b>. Um commit = uma mudança com um único objetivo. Assim a mensagem fica fácil de escrever e o commit fica fácil de desfazer.</div>
+        </div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://www.conventionalcommits.org/pt-br/v1.0.0/" target="_blank" rel="noopener">Especificação Conventional Commits 1.0 (pt-br)</a><a href="https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Visualizando-o-Hist%c3%b3rico-de-Commits" target="_blank" rel="noopener">Pro Git 2.3 · Visualizando o histórico</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MM COMMITS -->
+  <section class="slide hands-on" id="s-mm-commits">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa · Interativo <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Valide suas mensagens de commit</h2>
+      <p class="subtitle animate delay-2">Digite uma mensagem (ou clique num exemplo) e veja se ela segue o padrão do slide anterior. O validador explica o que corrigir. Tente reescrever as mensagens ruins até ficarem verdes.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Valide uma mensagem</h3>
+          <div class="input-row" style="margin-top:.4rem;">
+            <input class="ip-input" id="cmIn" type="text" value="feat(tasks): adiciona endpoint de listagem" aria-label="Mensagem de commit">
+            <button class="btn" id="cmBtn">Validar</button>
+          </div>
+          <div class="chips" id="cmChips"></div>
+          <div class="verdict" id="cmOut"></div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Desafio: reescreva</h3>
+          <p>Transforme cada mensagem ruim numa mensagem válida e específica:</p>
+          <div class="quiz-list static" style="margin-top:.5rem;">
+            <div class="qcard"><button class="qhead"><span class="qtext"><span class="code">ajustes</span> (corrigiu o erro 404 na rota PUT)</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Ex.: <span class="code">fix(tasks): retorna 404 ao atualizar tarefa inexistente</span></div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext"><span class="code">update</span> (adicionou instruções de instalação)</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Ex.: <span class="code">docs: adiciona instruções de instalação ao README</span></div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext"><span class="code">wip</span> (criou o .gitignore)</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Ex.: <span class="code">chore: adiciona gitignore para Python</span></div></div></div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 18 DESFAZER -->
+  <!-- ============================================================ DESFAZER -->
   <section class="slide" id="s-desfazer">
     <div class="slide-inner">
-      <div class="kicker animate">18 · Git · Recuperação</div>
-      <h2 class="stitle animate delay-1">Errei. E agora? restore, revert e reset</h2>
-      <div class="tbl-wrap animate delay-2" style="margin-top:.8rem;">
+      <div class="kicker animate"><span class="knum"></span>Git · Recuperação</div>
+      <h2 class="stitle animate delay-1">Desfazendo erros: qual comando usar em cada situação</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você enviou ao GitHub um commit que quebrou o cálculo de prazo, e seu colega já baixou esse commit. Se você "apagar" o commit da sua máquina, o histórico dos dois fica diferente e o próximo push vira uma bagunça. A saída certa é registrar <b>um novo commit que desfaz o erro</b>.</div>
+      <p class="subtitle animate delay-2" style="margin-top:.6rem;">A pergunta que decide o comando é: <b>o erro já foi compartilhado?</b></p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
         <table class="cmp">
           <tr><th>Situação</th><th>Comando</th><th>O que acontece</th><th>Seguro?</th></tr>
           <tr><td>Apaguei ou estraguei um arquivo e ainda não fiz commit</td><td><span class="code">git restore arquivo</span></td><td>Volta o arquivo para a versão do último commit.</td><td class="accent">Perde a edição local</td></tr>
@@ -822,17 +909,18 @@ git log --oneline</pre>
           <tr><td>Quero apagar commits locais que ninguém viu</td><td><span class="code">git reset --hard &lt;hash&gt;</span></td><td>Move o histórico para trás e <b>descarta</b> tudo depois daquele commit.</td><td class="accent-r">Perigoso</td></tr>
         </table>
       </div>
-      <div class="warn-box animate delay-3"><b>Regra prática:</b> commit que já foi para o GitHub (compartilhado) se desfaz com <span class="code">revert</span>, nunca com <span class="code">reset</span>. Reescrever histórico público quebra o repositório dos colegas.</div>
-      <p class="subtitle animate delay-4" style="margin-top:.9rem;">Ligação com DevOps: no 2º Caminho (feedback), errar barato é essencial. Com Git, voltar uma versão quebrada leva segundos. Essa é a métrica <b>tempo de recuperação</b> na prática.</p>
+      <div class="warn-box animate delay-4"><b>Regra prática:</b> commit que já foi para o GitHub se desfaz com <span class="code">revert</span>, nunca com <span class="code">reset</span>. Ligação com DevOps: voltar uma versão quebrada em segundos melhora a métrica <b>tempo de recuperação</b>.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Desfazendo-Coisas" target="_blank" rel="noopener">Pro Git 2.4 · Desfazendo coisas</a><a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Reset-Desmistificado" target="_blank" rel="noopener">Pro Git 7.7 · Reset desmistificado</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 19 GITHUB -->
+  <!-- ============================================================ GITHUB -->
   <section class="slide" id="s-github">
     <div class="slide-inner">
-      <div class="kicker animate">19 · Do local ao remoto</div>
-      <h2 class="stitle animate delay-1">Enviando o repositório para o GitHub</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>Do local ao remoto</div>
+      <h2 class="stitle animate delay-1">Publicar o repositório no GitHub e autenticar com token</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Seu notebook queimou na véspera da entrega. Se o projeto só existia nele, todo o histórico se foi. Com uma cópia no GitHub (o <b>repositório remoto</b>), basta um <span class="code">git clone</span> em outra máquina. O remoto também é o ponto de encontro da equipe.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="card">
           <h3 class="accent">Passo a passo</h3>
           <ol class="steps">
@@ -844,23 +932,27 @@ git log --oneline</pre>
           </ol>
         </div>
         <div class="card">
-          <h3 class="accent-b">Autenticação: a senha não funciona</h3>
+          <h3 class="accent-b">Erro comum: a senha não funciona</h3>
+          <div class="tree" style="margin:.2rem 0 .5rem; color:var(--red);">remote: Invalid username or token.
+Password authentication is not supported
+for Git operations.</div>
           <p>O GitHub não aceita a senha da conta no terminal. Use uma destas opções:</p>
-          <ul style="margin-top:.5rem;">
-            <li><b>VS Code ou GitHub Desktop:</b> fazem login pelo navegador. Mais simples para começar.</li>
-            <li><b>Personal Access Token (PAT):</b> crie em <i>Settings → Developer settings → Personal access tokens</i> e use no lugar da senha. <a href="https://docs.github.com/pt/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens" target="_blank" rel="noopener">Guia oficial</a>.</li>
-            <li><b>Chave SSH:</b> configure uma vez e não digita mais nada. <a href="https://docs.github.com/pt/authentication/connecting-to-github-with-ssh" target="_blank" rel="noopener">Guia oficial</a>.</li>
+          <ul style="margin-top:.4rem;">
+            <li><b>Personal Access Token (PAT):</b> crie em <i>Settings → Developer settings → Personal access tokens</i>, com escopo <b>repo</b>, e cole no lugar da senha.</li>
+            <li><b>VS Code ou GitHub Desktop:</b> fazem login pelo navegador.</li>
+            <li><b>Chave SSH:</b> configure uma vez e não digita mais nada.</li>
           </ul>
-          <div class="warn-box"><b>No Killercoda</b>, use o PAT: a máquina é temporária, não vale a pena criar chave SSH nela. Nunca coloque o token dentro de arquivos do repositório.</div>
+          <div class="warn-box"><b>No Killercoda</b>, use o PAT. Nunca coloque o token dentro de arquivos do repositório.</div>
         </div>
       </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Trabalhando-com-Reposit%c3%b3rios-Remotos" target="_blank" rel="noopener">Pro Git 2.5 · Repositórios remotos</a><a href="https://docs.github.com/pt/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens" target="_blank" rel="noopener">GitHub · Tokens de acesso pessoal</a><a href="https://docs.github.com/pt/authentication/connecting-to-github-with-ssh" target="_blank" rel="noopener">GitHub · Conectar com SSH</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 20 PBL -->
+  <!-- ============================================================ PBL -->
   <section class="slide hands-on" id="s-pbl">
     <div class="slide-inner">
-      <div class="kicker animate">20 · Autoestudo · Situação-problema <span class="mm-badge">⏱ 30 min</span></div>
+      <div class="kicker animate"><span class="knum"></span>Autoestudo · Situação-problema <span class="mm-badge">⏱ 30 min</span></div>
       <h2 class="stitle animate delay-1">Caso EntregaJá: "quem sobrescreveu meu código?"</h2>
       <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
         <div class="card">
@@ -882,10 +974,10 @@ git log --oneline</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 21 LAB -->
+  <!-- ============================================================ LAB -->
   <section class="slide hands-on" id="s-lab">
     <div class="slide-inner">
-      <div class="kicker animate">21 · Autoestudo · Laboratório <span class="mm-badge">⏱ 1 h</span></div>
+      <div class="kicker animate"><span class="knum"></span>Autoestudo · Laboratório <span class="mm-badge">⏱ 1 h</span></div>
       <h2 class="stitle animate delay-1">Laboratório: simule o repositório da EntregaJá</h2>
       <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.25fr 1fr;">
         <div class="codeblock">
@@ -941,10 +1033,10 @@ git log --graph --oneline</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 22 PROJETO -->
+  <!-- ============================================================ PROJETO -->
   <section class="slide hands-on" id="s-projeto">
     <div class="slide-inner">
-      <div class="kicker animate">22 · Projeto evolutivo <span class="mm-badge">⏱ 1h30 · em dupla</span></div>
+      <div class="kicker animate"><span class="knum"></span>Projeto evolutivo <span class="mm-badge">⏱ 1h30 · em dupla</span></div>
       <h2 class="stitle animate delay-1">TaskFlow · Checkpoint 1 (tag v0.1): versionamento</h2>
       <p class="subtitle animate delay-2">O <b>TaskFlow</b> é uma API REST de tarefas em Python (FastAPI), com 4 endpoints e 3 testes. Ela vem sem nenhuma automação. Durante 6 semanas, sua dupla vai transformá-la em um projeto DevOps completo. Repositório-modelo: <a href="https://github.com/patrickjcardoso/taskflow" target="_blank" rel="noopener">github.com/patrickjcardoso/taskflow</a></p>
       <div class="grid-3 animate delay-3" style="margin-top:.9rem; align-items:start;">
@@ -981,16 +1073,16 @@ uvicorn app.main:app --reload
     </div>
   </section>
 
-  <!-- ============================================================ 23 PLANO -->
+  <!-- ============================================================ PLANO -->
   <section class="slide" id="s-plano">
     <div class="slide-inner" style="max-width:980px;">
-      <div class="kicker animate">23 · Autoestudo</div>
+      <div class="kicker animate"><span class="knum"></span>Autoestudo</div>
       <h2 class="stitle animate delay-1">Seu plano da Semana 1 (≈ 5h40)</h2>
       <p class="subtitle animate delay-2">Sugestão de ordem. Divida em blocos ao longo da semana. Marque o que concluir (fica salvo neste navegador).</p>
       <div class="check-list animate delay-3" data-check="week" style="margin-top:.9rem;">
         <label class="check-item"><input type="checkbox" id="wk1"><div><div class="ci-t">Revisar este material</div><div class="ci-d">Refaça o simulador das 3 áreas e o validador de commits.</div></div><span class="ci-time">15 min</span></label>
-        <label class="check-item"><input type="checkbox" id="wk2"><div><div class="ci-t">Trilha de estudo: itens 1 a 6</div><div class="ci-d">Livros da bibliografia e Pro Git, na ordem da seção 24.</div></div><span class="ci-time">2 h</span></label>
-        <label class="check-item"><input type="checkbox" id="wk3"><div><div class="ci-t">Laboratório no Killercoda</div><div class="ci-d">Partes 1 a 5 da seção 21 + print do log.</div></div><span class="ci-time">1 h</span></label>
+        <label class="check-item"><input type="checkbox" id="wk2"><div><div class="ci-t">Trilha de estudo: itens 1 a 6</div><div class="ci-d">Livros da bibliografia e Pro Git, na ordem do slide <span class="sref" data-s="s-trilha"></span>.</div></div><span class="ci-time">2 h</span></label>
+        <label class="check-item"><input type="checkbox" id="wk3"><div><div class="ci-t">Laboratório no Killercoda</div><div class="ci-d">Partes 1 a 5 do slide <span class="sref" data-s="s-lab"></span> + print do log.</div></div><span class="ci-time">1 h</span></label>
         <label class="check-item"><input type="checkbox" id="wk4"><div><div class="ci-t">Situação-problema EntregaJá</div><div class="ci-d">Escreva docs/pbl-semana1.md.</div></div><span class="ci-time">30 min</span></label>
         <label class="check-item"><input type="checkbox" id="wk5"><div><div class="ci-t">Projeto TaskFlow: checkpoint 1</div><div class="ci-d">Fork, API rodando, commits, README e tag v0.1.</div></div><span class="ci-time">1h30</span></label>
         <label class="check-item"><input type="checkbox" id="wk6"><div><div class="ci-t">Curso LFS162: módulo 1</div><div class="ci-d">Introduction to DevOps and SRE, Linux Foundation.</div></div><span class="ci-time">25 min</span></label>
@@ -999,10 +1091,10 @@ uvicorn app.main:app --reload
     </div>
   </section>
 
-  <!-- ============================================================ 24 TRILHA DE LEITURA -->
+  <!-- ============================================================ TRILHA DE LEITURA -->
   <section class="slide tall" id="s-trilha">
     <div class="slide-inner">
-      <div class="kicker animate">24 · Trilha de estudo da semana</div>
+      <div class="kicker animate"><span class="knum"></span>Trilha de estudo da semana</div>
       <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
       <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem o que cai na prova e no projeto; os <span class="req">complementar</span> aprofundam e ficam fora das ~5h40 da semana. A última coluna diz o que você deve saber explicar ao terminar cada item.</p>
       <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
@@ -1022,10 +1114,10 @@ uvicorn app.main:app --reload
     </div>
   </section>
 
-  <!-- ============================================================ 25 BIBLIOTECA -->
+  <!-- ============================================================ BIBLIOTECA -->
   <section class="slide tall" id="s-fontes">
     <div class="slide-inner">
-      <div class="kicker animate">25 · Biblioteca da semana</div>
+      <div class="kicker animate"><span class="knum"></span>Biblioteca da semana</div>
       <h2 class="stitle animate delay-1">Livros, documentação oficial e cursos</h2>
       <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
         <div class="card lib">
@@ -1059,10 +1151,10 @@ uvicorn app.main:app --reload
     </div>
   </section>
 
-  <!-- ============================================================ 26 GLOSSÁRIO -->
+  <!-- ============================================================ GLOSSÁRIO -->
   <section class="slide tall" id="s-glossario">
     <div class="slide-inner">
-      <div class="kicker animate">26 · Glossário da aula</div>
+      <div class="kicker animate"><span class="knum"></span>Glossário da aula</div>
       <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
       <dl class="gloss animate delay-2">
         <div><dt>DevOps</dt><dd>Práticas de cultura, processo e ferramentas que aproximam desenvolvimento e operações para entregar software com frequência e qualidade.</dd></div>
@@ -1083,29 +1175,29 @@ uvicorn app.main:app --reload
     </div>
   </section>
 
-  <!-- ============================================================ 27 AUTOAVALIAÇÃO -->
+  <!-- ============================================================ AUTOAVALIAÇÃO -->
   <section class="slide" id="s-autoavaliacao">
     <div class="slide-inner" style="max-width:980px;">
-      <div class="kicker animate">27 · Autoavaliação</div>
+      <div class="kicker animate"><span class="knum"></span>Autoavaliação</div>
       <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
       <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pelo slide indicado à direita (fica salvo neste navegador).</p>
       <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
-        <label class="check-item"><input type="checkbox" id="au1a"><div><div class="ci-t">Explicar o que é DevOps e por que não é um cargo nem uma ferramenta</div></div><span class="review-hint">seções 05–06</span></label>
-        <label class="check-item"><input type="checkbox" id="au1b"><div><div class="ci-t">Citar os 5 pilares do CALMS e os Três Caminhos, com um exemplo de cada</div></div><span class="review-hint">seções 07–08</span></label>
-        <label class="check-item"><input type="checkbox" id="au1c"><div><div class="ci-t">Nomear as 4 métricas DORA e dizer quais medem velocidade e quais medem estabilidade</div></div><span class="review-hint">seção 10</span></label>
-        <label class="check-item"><input type="checkbox" id="au1d"><div><div class="ci-t">Explicar as 3 áreas do Git e o caminho de um arquivo até o commit</div></div><span class="review-hint">seção 14</span></label>
-        <label class="check-item"><input type="checkbox" id="au1e"><div><div class="ci-t">Escrever uma mensagem de commit no padrão Conventional Commits</div></div><span class="review-hint">seção 17</span></label>
-        <label class="check-item"><input type="checkbox" id="au1f"><div><div class="ci-t">Escolher entre restore, revert e reset para desfazer um erro</div></div><span class="review-hint">seção 18</span></label>
-        <label class="check-item"><input type="checkbox" id="au1g"><div><div class="ci-t">Enviar um repositório local para o GitHub usando token</div></div><span class="review-hint">seção 19</span></label>
+        <label class="check-item"><input type="checkbox" id="au1a"><div><div class="ci-t">Explicar o que é DevOps e por que não é um cargo nem uma ferramenta</div></div><span class="review-hint">slides <span class="sref" data-s="s-muro"></span>–<span class="sref" data-s="s-oque"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au1b"><div><div class="ci-t">Citar os 5 pilares do CALMS e os Três Caminhos, com um exemplo de cada</div></div><span class="review-hint">slides <span class="sref" data-s="s-calms"></span>–<span class="sref" data-s="s-caminhos"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au1c"><div><div class="ci-t">Nomear as 4 métricas DORA e dizer quais medem velocidade e quais medem estabilidade</div></div><span class="review-hint">slide <span class="sref" data-s="s-dora"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au1d"><div><div class="ci-t">Explicar as 3 áreas do Git e o caminho de um arquivo até o commit</div></div><span class="review-hint">slide <span class="sref" data-s="s-areas"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au1e"><div><div class="ci-t">Escrever uma mensagem de commit no padrão Conventional Commits</div></div><span class="review-hint">slides <span class="sref" data-s="s-commits"></span> e <span class="sref" data-s="s-mm-commits"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au1f"><div><div class="ci-t">Escolher entre restore, revert e reset para desfazer um erro</div></div><span class="review-hint">slide <span class="sref" data-s="s-desfazer"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au1g"><div><div class="ci-t">Enviar um repositório local para o GitHub usando token</div></div><span class="review-hint">slide <span class="sref" data-s="s-github"></span></span></label>
       </div>
       <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
     </div>
   </section>
 
-  <!-- ============================================================ 28 QUIZ -->
+  <!-- ============================================================ QUIZ -->
   <section class="slide" id="s-quiz">
     <div class="slide-inner">
-      <div class="kicker animate">28 · Fixação</div>
+      <div class="kicker animate"><span class="knum"></span>Fixação</div>
       <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
       <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
     </div>
@@ -1145,6 +1237,12 @@ slides.forEach((s,i)=>{
   dotnav.appendChild(b);
 });
 const dots = Array.from(dotnav.children);
+/* Numeração automática: kicker, sumário e referências usam a posição real do slide */
+const pad = n => String(n).padStart(2,'0');
+slides.forEach((s,i)=>{ const k=s.querySelector('.knum'); if(k) k.textContent = pad(i+1)+' · '; });
+document.querySelectorAll('.toc a').forEach(a=>{ const t=document.querySelector(a.getAttribute('href')); const n=a.querySelector('.n'); if(t&&n) n.textContent = pad(slides.indexOf(t)+1); });
+document.querySelectorAll('.sref').forEach(r=>{ const t=document.getElementById(r.dataset.s); if(t) r.textContent = pad(slides.indexOf(t)+1); });
+
 const io = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{
     if(e.isIntersecting){ e.target.classList.add('in-view'); }
@@ -1254,7 +1352,7 @@ document.querySelectorAll('.check-list[data-check]').forEach(list=>{
     const last = idx===items.length-1;
     fb.innerHTML='<b class="t">'+(right?'✓ Acertou!':'✗ Não foi dessa vez.')+'</b> '+(it.a?'É DevOps. ':'Não é DevOps. ')+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;" id="drillNext">'+(last?'recomeçar ↺':'próxima situação →')+'</button>';
     document.getElementById('drillNext').addEventListener('click', ()=>{ if(last){ idx=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else idx++; load(); });
-    sc.textContent='Acertos: '+ok+' / '+tot+(last?' · '+(ok>=6?'Excelente!':'Revise os slides 06 a 08.'):'');
+    sc.textContent='Acertos: '+ok+' / '+tot+(last?' · '+(ok>=6?'Excelente!':'Revise os slides '+pad(slides.indexOf(document.getElementById('s-muro'))+1)+' a '+pad(slides.indexOf(document.getElementById('s-caminhos'))+1)+'.'):'');
     yes.disabled=no.disabled=true;
   }
   yes.addEventListener('click', ()=>answer(true));
@@ -1280,6 +1378,10 @@ document.querySelectorAll('.check-list[data-check]').forEach(list=>{
     if(a.startsWith('edit:')){
       const f=a.slice(5); wd.add(f); flash('aWd');
       out('code '+f, '<span class="y">(você salvou alterações em '+f+')</span>');
+    } else if(a.startsWith('add:')){
+      const f=a.slice(4);
+      if(!wd.has(f)){ out('git add '+f, '<span class="y">('+f+' não tem mudanças para adicionar)</span>'); }
+      else { wd.delete(f); st.add(f); flash('aSt'); out('git add '+f, '<span class="y">(só '+f+' foi para a staging. O resto continua na pasta, fora do próximo commit.)</span>'); }
     } else if(a==='add'){
       if(!wd.size){ out('git add .', '<span class="y">(nada para adicionar: nenhum arquivo modificado)</span>'); }
       else { wd.forEach(f=>st.add(f)); wd.clear(); flash('aSt'); out('git add .', '<span class="y">(sem saída: mudanças foram para a staging area)</span>'); }
