@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Ambientação Tech · Aula 07: máquinas virtuais. Hypervisors, criação e gerenciamento de VMs, instalação e uso de sistemas operacionais, snapshots e clones.">
+<title>Ambientação Tech · Aula 07</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@600;700;800&display=swap">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — herdado das aulas do Prof. Patrick (mesmo padrão visual
+   de Redes e DevOps Tools). Deck vertical com scroll-snap, tema dark-tech.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12; --bg-2:#0c131d; --surface:#121b27; --surface-2:#182434;
+  --border:#223049; --border-soft:#1a2436;
+  --text:#eef3f8; --text-dim:#9fb0c3; --text-faint:#62768a;
+  --blue:#2fb0e8; --blue-dim:#12719e; --navy:#0b3556;
+  --gold:#f2a93b; --green:#36c58f; --red:#ef5b5b;
+  --mono:'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --disp:'Sora', 'Inter', sans-serif;
+  --radius:16px; --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+a{color:var(--blue);}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto; min-width:0;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); font-weight:600;
+  display:flex; align-items:center; gap:.6em; margin-bottom:.8rem; flex-wrap:wrap;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em; text-wrap:balance;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem; text-wrap:balance;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:70ch; line-height:1.55;}
+.subtitle b, .card p b, ol.steps b{color:var(--text);}
+.accent{color:var(--gold);} .accent-b{color:var(--blue);} .accent-g{color:var(--green);} .accent-r{color:var(--red);}
+
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease);}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;} .delay-4{transition-delay:.32s;}
+@media (prefers-reduced-motion: reduce){ .animate{opacity:1; transform:none; transition:none;} .deck{scroll-behavior:auto;} }
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem; min-width:0;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p, .card li{color:var(--text-dim); font-size:.84rem; line-height:1.5;}
+.card ul{padding-left:1.1rem; display:grid; gap:.25rem;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+.grid-5{display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+.icon-chip.g{background:rgba(242,169,59,.12); color:var(--gold);}
+
+.tbl-wrap{overflow-x:auto; min-width:0;}
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.1rem; cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn.gold{background:linear-gradient(180deg,var(--gold),#c98520);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue); white-space:nowrap;}
+
+/* ============================= CAPA ============================= */
+#s-capa{align-items:flex-start;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem; flex-wrap:wrap;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.16);
+  font-size:1rem; line-height:1.75; text-align:right; user-select:none; pointer-events:none; white-space:pre;}
+
+/* ============================= SUMÁRIO ============================= */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.76rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.82rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= CHECKLIST / AGENDA ============================= */
+.check-list{display:grid; gap:.5rem;}
+.check-item{display:flex; gap:.75rem; align-items:flex-start; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; cursor:pointer; transition:border-color .2s, background .2s;}
+.check-item input{appearance:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border); flex:none; margin-top:.1rem; display:grid; place-items:center; cursor:pointer; background:var(--surface-2);}
+.check-item input:checked{background:var(--green); border-color:var(--green);}
+.check-item input:checked::after{content:'✓'; color:#062014; font-weight:800; font-size:.8rem;}
+.check-item.done{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.05);}
+.check-item.done .ci-t{text-decoration:line-through; color:var(--text-faint);}
+.ci-t{font-size:.86rem; color:var(--text); font-weight:600;}
+.ci-d{font-size:.78rem; color:var(--text-dim); margin-top:.15rem; line-height:1.45;}
+.ci-time{margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--gold); flex:none; padding-top:.15rem;}
+.check-meter{display:flex; align-items:center; gap:.8rem; margin-top:.8rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);}
+.check-bar{flex:1; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.check-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--blue)); transition:width .4s var(--ease);}
+
+.agenda{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:1rem;}
+.ag{border-top:3px solid var(--blue); background:var(--surface); border-radius:0 0 12px 12px; padding:.75rem .9rem;}
+.ag .min{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.86rem;}
+.ag h4{font-family:var(--disp); font-size:.9rem; margin:.25rem 0; color:var(--text);}
+.ag p{font-size:.78rem; color:var(--text-dim); line-height:1.45;}
+.ag:nth-child(2){border-color:var(--gold);} .ag:nth-child(2) .min{color:var(--gold);}
+.ag:nth-child(3){border-color:var(--green);} .ag:nth-child(3) .min{color:var(--green);}
+.ag:nth-child(4){border-color:var(--text-faint);} .ag:nth-child(4) .min{color:var(--text-dim);}
+
+/* ============================= TIMELINE ============================= */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem; min-width:0;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.92rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item.hot{border-color:var(--red);} .tl-item.hot .yr{color:var(--red);}
+.tl-item.warn{border-color:var(--gold);} .tl-item.warn .yr{color:var(--gold);}
+.bignum-row{display:flex; gap:2.2rem; margin-top:1.2rem; flex-wrap:wrap;}
+.bignum .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); color:var(--red); line-height:1;}
+.bignum .l{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* ============================= MURO DA CONFUSÃO ============================= */
+.wall{display:grid; grid-template-columns:1fr 70px 1fr; gap:1rem; align-items:stretch; margin-top:1.1rem;}
+.wall .side{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1rem 1.1rem;}
+.wall .side h3{font-family:var(--disp); font-size:1rem; margin-bottom:.5rem;}
+.wall .side.dev h3{color:var(--blue);} .wall .side.ops h3{color:var(--gold);}
+.wall .side li{font-size:.84rem; color:var(--text-dim); line-height:1.5; margin-left:1rem;}
+.wall .brick{border-radius:10px; background:repeating-linear-gradient(0deg, var(--surface-2) 0 18px, var(--border) 18px 20px), var(--surface-2);
+  display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; font-family:var(--mono); font-size:.68rem; color:var(--text-dim); letter-spacing:.12em; text-transform:uppercase;}
+
+/* ============================= CALMS / 3 CAMINHOS ============================= */
+.calms .card .letter{font-family:var(--disp); font-weight:800; font-size:2rem; color:var(--blue); line-height:1;}
+.calms .card:nth-child(even) .letter{color:var(--gold);}
+.ways{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; margin-top:1rem;}
+.way svg{width:100%; height:70px; display:block; margin-bottom:.6rem;}
+.way .lbl{font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);}
+
+/* ============================= CICLO DEVOPS ============================= */
+.loop-wrap{display:grid; grid-template-columns:1.25fr 1fr; gap:1.4rem; align-items:center; margin-top:.8rem;}
+.loop-svg{width:100%; height:auto; display:block;}
+.loop-svg .seg{cursor:pointer;}
+.loop-svg .seg rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1; transition:all .25s;}
+.loop-svg .seg text{font-family:var(--mono); font-size:11px; fill:var(--text-dim); text-anchor:middle; pointer-events:none;}
+.loop-svg .seg:hover rect, .loop-svg .seg:focus rect{stroke:var(--blue);}
+.loop-svg .seg.dev.active rect{fill:rgba(47,176,232,.2); stroke:var(--blue);}
+.loop-svg .seg.ops.active rect{fill:rgba(242,169,59,.18); stroke:var(--gold);}
+.loop-svg .seg.active text{fill:var(--text); font-weight:700;}
+.loop-svg .path{fill:none; stroke:var(--border); stroke-width:2; stroke-dasharray:5 6;}
+.loop-svg .side-l{font-family:var(--mono); font-size:10px; letter-spacing:.12em; fill:var(--text-faint); text-anchor:middle;}
+.phase-panel{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.3rem; min-height:230px;}
+.phase-panel h4{font-family:var(--disp); color:var(--gold); font-size:1.05rem; margin-bottom:.1rem;}
+.phase-panel .tag{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:block; margin-bottom:.7rem;}
+.phase-panel p{font-size:.84rem; color:var(--text-dim); line-height:1.5;}
+.phase-panel .tools{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.7rem;}
+.phase-panel .tools span{font-family:var(--mono); font-size:.7rem; padding:.2rem .55rem; border-radius:99px; border:1px solid var(--border); color:var(--blue);}
+.phase-panel .week{margin-top:.8rem; font-size:.78rem; color:var(--green); font-family:var(--mono);}
+
+/* ============================= HANDS-ON ============================= */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.5rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+
+/* ============================= QUIZ / GABARITOS ============================= */
+.quiz-list{display:flex; flex-direction:column; gap:.5rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; cursor:pointer; gap:1rem; width:100%; background:none; border:none; text-align:left; color:inherit; font:inherit;}
+.qcard .qhead .qtext{font-size:.85rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.62rem; color:var(--text-faint); flex-shrink:0; margin-left:auto;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:280px;}
+.qcard .qanswer{padding:.6rem 1rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft);}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= DRILL: É DEVOPS? ============================= */
+.drill{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid rgba(242,169,59,.28); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+.drill-q{font-family:var(--disp); font-size:clamp(1rem,1.7vw,1.3rem); font-weight:700; color:var(--text); min-height:3.2em; line-height:1.35;}
+.drill-btns{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+.verdict{margin-top:.9rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.4em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.ok{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.ok b.t{color:var(--green);}
+.verdict.no{border-color:rgba(239,91,91,.5); background:rgba(239,91,91,.07);} .verdict.no b.t{color:var(--red);}
+.verdict.warn{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.warn b.t{color:var(--gold);}
+.drill-score{font-family:var(--mono); font-size:.76rem; color:var(--gold); margin-top:.6rem;}
+
+/* ============================= GIT 3 ÁREAS ============================= */
+.areas{display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-top:.9rem;}
+.area{background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:.8rem .9rem; min-height:150px; transition:box-shadow .3s;}
+.area h4{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.15rem;}
+.area .sub{font-size:.72rem; color:var(--text-faint); margin-bottom:.6rem;}
+.area.wd h4{color:var(--red);} .area.st h4{color:var(--gold);} .area.rp h4{color:var(--green);}
+.area.flash{box-shadow:0 0 0 3px rgba(47,176,232,.25);}
+.fchip{display:inline-flex; align-items:center; gap:.35em; font-family:var(--mono); font-size:.72rem; padding:.25rem .55rem; border-radius:7px; margin:0 .3rem .3rem 0; border:1px solid var(--border);}
+.fchip.m{color:var(--red); border-color:rgba(239,91,91,.45); background:rgba(239,91,91,.07);}
+.fchip.s{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.07);}
+.commit-row{font-family:var(--mono); font-size:.7rem; color:var(--text-dim); padding:.2rem 0; border-bottom:1px solid var(--border-soft);}
+.commit-row .h{color:var(--gold);}
+.empty{font-size:.74rem; color:var(--text-faint); font-style:italic;}
+.git-ctrl{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;}
+.term{margin-top:.8rem; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim); min-height:3.6em; white-space:pre-wrap; overflow-x:auto;}
+.term .p{color:var(--green);} .term .c{color:var(--text);} .term .e{color:var(--red);} .term .y{color:var(--gold);}
+
+/* ============================= CODE BLOCK ============================= */
+.codeblock{position:relative; background:#04070c; border:1px solid var(--border); border-radius:12px; min-width:0;}
+.codeblock pre{font-family:var(--mono); font-size:.74rem; line-height:1.6; color:var(--text); padding:.8rem 1rem; overflow:auto; max-height:52vh;}
+.codeblock pre .cm{color:var(--text-faint);}
+.codeblock .copy{position:absolute; top:.5rem; right:.5rem; font-family:var(--mono); font-size:.66rem; padding:.25rem .6rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer;}
+.codeblock .copy:hover{color:var(--blue); border-color:var(--blue);}
+.codeblock .cb-title{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); padding:.5rem 1rem 0; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ============================= COMMIT CHECKER ============================= */
+.ip-input{font-family:var(--mono); font-size:.88rem; padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.input-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;}
+.input-row .ip-input{flex:1; min-width:200px;}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+.types{display:grid; grid-template-columns:repeat(2,1fr); gap:.25rem .9rem; font-size:.78rem; color:var(--text-dim);}
+.types b{font-family:var(--mono); color:var(--blue); font-weight:600;}
+
+/* ============================= MISC ============================= */
+.warn-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.warn-box b{color:var(--gold);}
+.info-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(47,176,232,.07); border:1px solid rgba(47,176,232,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.info-box b{color:var(--blue);}
+.refs-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem 1rem; min-width:0;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.5rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.4rem;}
+.refs-box a, .refs-box span.ref{color:var(--text-dim); text-decoration:none; font-size:.8rem; display:flex; align-items:baseline; gap:.5em; line-height:1.4;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box .ext{color:var(--text-faint); font-family:var(--mono); font-size:.66rem; flex:none;}
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border); background:var(--surface); margin-top:1.4rem; flex-wrap:wrap;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+.deliver{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;}
+.deliver span{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid rgba(54,197,143,.4); background:rgba(54,197,143,.07); color:var(--green);}
+.tree{font-family:var(--mono); font-size:.76rem; line-height:1.6; color:var(--text-dim); white-space:pre; overflow-x:auto;}
+.tree b{color:var(--gold); font-weight:600;}
+
+/* ============================= RESPONSIVO ============================= */
+@media (max-width:860px){
+  html,body{overflow:auto;}
+  .deck{height:auto; overflow:visible; scroll-snap-type:none;}
+  .slide{height:auto; min-height:auto; padding:3.5rem 16px; overflow:visible;}
+  .grid-3,.grid-2,.grid-4,.grid-5,.ways,.loop-wrap,.areas,.agenda,.wall,.types{grid-template-columns:1fr;}
+  .wall .brick{writing-mode:horizontal-tb; padding:.5rem;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits,.hint,.slide-no{display:none;}
+  .timeline{flex-direction:column;}
+  .animate{opacity:1; transform:none;}
+}
+
+
+/* ============================= AUTOESTUDO (trilha, biblioteca, glossário, autoavaliação) ============================= */
+.slide.tall{justify-content:flex-start; overflow-y:auto; padding-top:6vh; padding-bottom:10vh;}
+table.trail td:nth-child(4){white-space:nowrap;}
+table.trail td{font-size:.8rem; line-height:1.45;}
+table.trail td:first-child{font-family:var(--mono); color:var(--text-faint); font-weight:600; width:2.2em;}
+table.trail td a{color:var(--blue); text-decoration:none;}
+table.trail td a:hover{text-decoration:underline;}
+table.trail .goal{color:var(--text);}
+.req{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; padding:.1rem .45rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); white-space:nowrap; margin-left:.3rem; vertical-align:1px;}
+.req.ob{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+.lib h4{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:.2rem 0 .45rem;}
+.lib ul{list-style:none; display:grid; gap:.45rem;}
+.lib li{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.lib li b{color:var(--text);}
+.lib li a{color:var(--blue); text-decoration:none;}
+.lib li a:hover{text-decoration:underline;}
+.lib .find{display:block; font-size:.74rem; color:var(--text-faint); margin-top:.1rem;}
+.gloss{display:grid; grid-template-columns:repeat(2,1fr); gap:.2rem 1.6rem; margin-top:.8rem;}
+.gloss div{border-bottom:1px solid var(--border-soft); padding:.4rem 0; min-width:0;}
+.gloss dt{font-family:var(--mono); color:var(--blue); font-size:.78rem; font-weight:600;}
+.gloss dd{font-size:.78rem; color:var(--text-dim); line-height:1.45; margin-top:.1rem;}
+.method{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem;}
+.method .card .icon-chip{font-size:.9rem;}
+.review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
+@media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+
+/* ============================= AMBIENTAÇÃO TECH · AULA 06 — componentes novos ============================= */
+.agenda.six{grid-template-columns:repeat(3,1fr);}
+.agenda.six .ag:nth-child(3){border-color:var(--text-faint);} .agenda.six .ag:nth-child(3) .min{color:var(--text-dim);}
+.agenda.six .ag:nth-child(4){border-color:var(--green);} .agenda.six .ag:nth-child(4) .min{color:var(--green);}
+.agenda.six .ag:nth-child(5){border-color:var(--gold);} .agenda.six .ag:nth-child(5) .min{color:var(--gold);}
+table.cmp td.accent-r{color:var(--red);} table.cmp td.accent-g{color:var(--green);}
+.agenda.six .ag:nth-child(6){border-color:var(--blue);} .agenda.six .ag:nth-child(6) .min{color:var(--blue);}
+.agenda.six .ag.pause{opacity:.7;}
+
+/* permissões rwx ↔ octal */
+.perm{width:100%; border-collapse:collapse; font-size:.82rem;}
+.perm th{font-family:var(--mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.35rem .5rem; text-align:center; border-bottom:1px solid var(--border);}
+.perm th:first-child{text-align:left;}
+.perm td{padding:.45rem .5rem; text-align:center; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+.perm td:first-child{text-align:left; color:var(--text); font-weight:600;}
+.perm td.oct{font-family:var(--mono); color:var(--gold); font-weight:700;}
+.perm input{appearance:none; width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border); background:var(--surface-2); cursor:pointer; display:inline-grid; place-items:center; vertical-align:middle;}
+.perm input:checked{background:var(--blue); border-color:var(--blue);}
+.perm input:checked::after{content:'✓'; color:#04121b; font-weight:800; font-size:.8rem;}
+.perm-out{display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-end; margin-top:.8rem;}
+.perm-out .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); line-height:1; color:var(--gold);}
+.perm-out .n.sym{font-family:var(--mono); font-size:clamp(1.1rem,2vw,1.5rem); color:var(--blue);}
+.perm-out .l{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* saída anotada do stat */
+pre.stat{font-family:var(--mono); font-size:.74rem; line-height:1.7; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; color:var(--text-dim); overflow-x:auto; white-space:pre;}
+pre.stat .hl{color:var(--text); background:rgba(47,176,232,.14); border-radius:4px; padding:0 .2rem;}
+pre.stat .hg{color:var(--text); background:rgba(242,169,59,.16); border-radius:4px; padding:0 .2rem;}
+pre.stat .hr{color:var(--text); background:rgba(239,91,91,.16); border-radius:4px; padding:0 .2rem;}
+.legend{display:grid; gap:.45rem;}
+.legend div{font-size:.8rem; color:var(--text-dim); line-height:1.45; padding-left:.7rem; border-left:3px solid var(--blue);}
+.legend div.g{border-color:var(--gold);} .legend div.r{border-color:var(--red);}
+.legend b{color:var(--text);}
+
+/* calculadora de blocos */
+.calc-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem;}
+.calc-row label{font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:.3rem;}
+select.ip-input{cursor:pointer;}
+.calc-out{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:.9rem;}
+.calc-out .bignum{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .8rem; min-width:0;}
+.calc-out .bignum .n{color:var(--blue); font-size:clamp(1.1rem,2vw,1.6rem); overflow-wrap:anywhere;}
+.calc-out .bignum.w .n{color:var(--red);} .calc-out .bignum.ok .n{color:var(--green);}
+.blocks-bar{display:flex; flex-wrap:wrap; gap:4px; margin-top:.8rem;}
+.blocks-bar span{position:relative; width:46px; height:22px; border-radius:5px; border:1px solid var(--border); background:var(--surface-2); overflow:hidden;}
+.blocks-bar span i{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,var(--blue),var(--blue-dim));}
+.blocks-bar .more{width:auto; border:none; background:none; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); padding:.2rem;}
+
+/* simulador de alocação */
+.disk{display:grid; grid-template-columns:repeat(8,1fr); gap:5px; margin-top:.2rem;}
+.blk{position:relative; aspect-ratio:1.7/1; border-radius:7px; border:1px solid var(--border-soft); background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--mono); min-width:0; transition:background .25s, border-color .25s;}
+.blk .ix{position:absolute; top:2px; left:5px; font-size:.56rem; color:var(--text-faint);}
+.blk .lb{font-size:.74rem; font-weight:700; color:var(--text);}
+.blk .pt{font-size:.58rem; color:var(--text-dim);}
+.blk.busy{background:repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--border-soft) 6px 12px); border-color:var(--border);}
+.blk.busy .lb{color:var(--text-faint); font-weight:400; font-size:.6rem;}
+.blk.file{background:rgba(47,176,232,.18); border-color:var(--blue);}
+.blk.idx{background:rgba(242,169,59,.2); border-color:var(--gold);}
+.blk.newb{background:rgba(54,197,143,.2); border-color:var(--green);}
+.blk.fail{border-color:var(--red); box-shadow:0 0 0 2px rgba(239,91,91,.35);}
+.blk.read{box-shadow:0 0 0 3px rgba(242,169,59,.55);}
+.disk-legend{display:flex; gap:1rem; flex-wrap:wrap; margin-top:.6rem; font-family:var(--mono); font-size:.66rem; color:var(--text-faint);}
+.disk-legend i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:.3rem; border:1px solid var(--border);}
+
+.fs-card .lbl{font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:.15rem;}
+.fs-card .big{font-family:var(--disp); font-weight:800; font-size:1.5rem; line-height:1.1; margin-bottom:.4rem;}
+.fs-card ul{margin-top:.4rem;}
+.new-tag{display:inline-block; font-family:var(--mono); font-size:.58rem; letter-spacing:.04em; padding:.08rem .4rem; border-radius:99px; border:1px solid rgba(54,197,143,.45); color:var(--green); background:rgba(54,197,143,.08); vertical-align:2px; margin-left:.3rem;}
+
+@media (max-width:860px){
+  .agenda.six,.calc-row,.calc-out{grid-template-columns:1fr;}
+  .disk{grid-template-columns:repeat(4,1fr);}
+}
+
+/* ============================= AULA 07 — componentes novos ============================= */
+.flow{display:grid; grid-template-columns:repeat(6,1fr); gap:.6rem; margin-top:1rem;}
+.fstep{position:relative; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.75rem .8rem; min-width:0;}
+.fstep .fn{width:26px; height:26px; border-radius:50%; background:rgba(47,176,232,.15); color:var(--blue); font-family:var(--mono); font-weight:700; font-size:.78rem; display:grid; place-items:center; margin-bottom:.4rem;}
+.fstep:nth-child(5) .fn,.fstep:nth-child(6) .fn{background:rgba(242,169,59,.15); color:var(--gold);}
+.fstep h4{font-family:var(--disp); font-size:.88rem; margin-bottom:.2rem;}
+.fstep p{font-size:.74rem; color:var(--text-dim); line-height:1.45; overflow-wrap:anywhere;}
+.fstep:not(:last-child)::after{content:'→'; position:absolute; right:-.55rem; top:50%; transform:translateY(-50%); color:var(--text-faint); font-family:var(--mono); font-size:.8rem;}
+
+/* pilhas de camadas (hypervisor tipo 1 / tipo 2 / contêiner) */
+.stack{display:flex; flex-direction:column; gap:4px; margin:.6rem 0 .7rem;}
+.stack .row{display:flex; gap:4px;}
+.stack .lay{flex:1; text-align:center; font-family:var(--mono); font-size:.68rem; padding:.42rem .3rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); min-width:0;}
+.stack .lay.vm{background:rgba(47,176,232,.14); border-color:rgba(47,176,232,.5); color:var(--text);}
+.stack .lay.hv{background:rgba(242,169,59,.16); border-color:rgba(242,169,59,.55); color:var(--gold); font-weight:700;}
+.stack .lay.os{background:rgba(54,197,143,.1); border-color:rgba(54,197,143,.45); color:var(--green);}
+.stack .lay.hw{background:var(--bg-2); color:var(--text-faint);}
+
+/* dimensionador */
+.sz-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem;}
+.sz-grid label{font-family:var(--mono); font-size:.64rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:.25rem;}
+.sz-out{display:grid; gap:.4rem; margin-top:.2rem;}
+.sz-line{font-size:.8rem; color:var(--text-dim); line-height:1.45; padding:.45rem .7rem; border-radius:9px; border:1px solid var(--border-soft); background:var(--surface);}
+.sz-line b.t{font-family:var(--mono); font-size:.74rem; margin-right:.35rem;}
+.sz-line.ok{border-color:rgba(54,197,143,.45);} .sz-line.ok b.t{color:var(--green);}
+.sz-line.warn{border-color:rgba(242,169,59,.45);} .sz-line.warn b.t{color:var(--gold);}
+.sz-line.no{border-color:rgba(239,91,91,.5);} .sz-line.no b.t{color:var(--red);}
+.meter{height:10px; border-radius:99px; background:var(--surface-2); overflow:hidden; display:flex; margin-top:.35rem;}
+.meter span{display:block; height:100%;}
+.meter .m-vm{background:var(--blue);} .meter .m-host{background:var(--gold);} .meter .m-over{background:var(--red);}
+.meter-l{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.64rem; color:var(--text-faint); margin-top:.25rem;}
+
+/* simulador de snapshots */
+.snap-tree{display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; margin:.4rem 0 .2rem;}
+.snode{font-family:var(--mono); font-size:.72rem; padding:.35rem .6rem; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim);}
+.snode.base{border-color:rgba(47,176,232,.5); color:var(--blue);}
+.snode.snap{border-color:rgba(242,169,59,.55); color:var(--gold);}
+.snode.cur{border-color:rgba(54,197,143,.55); color:var(--green); font-weight:700;}
+.snode.cur.broken{border-color:rgba(239,91,91,.6); color:var(--red);}
+.snode small{display:block; font-size:.6rem; color:var(--text-faint); font-weight:400;}
+.sarrow{color:var(--text-faint); font-family:var(--mono);}
+.vm-status{display:flex; gap:1.6rem; flex-wrap:wrap; margin-top:.6rem;}
+.vm-status .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.1rem,2vw,1.5rem); line-height:1.1;}
+.vm-status .l{font-family:var(--mono); font-size:.64rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.2rem;}
+
+.codeblock pre.wrap{white-space:pre-wrap; overflow-wrap:anywhere;}
+@media (max-width:860px){
+  .flow,.sz-grid{grid-template-columns:1fr;} .fstep::after{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">--</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> AMBIENTAÇÃO TECH · ADS 5º PERÍODO · AULA 07 · 2026/2</div>
+      <h1 class="title animate delay-1">Máquinas virtuais:<br>um <span class="accent-b">computador inteiro</span> dentro do <span class="accent">seu computador</span></h1>
+      <p class="subtitle animate delay-2" style="margin-top:1.1rem;">Hoje você cria uma máquina virtual do zero, instala um sistema operacional nela e aprende a gerenciá-la com snapshots e clones, sem nenhum risco para o seu computador.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas · UNIPAR</div>
+        <div><b>Unidade II · Sistemas operacionais</b><br>3 h presenciais · metodologia ativa</div>
+        <div><b>Traga</b><br>VirtualBox instalado e a ISO do Ubuntu baixada</div>
+      </div>
+    </div>
+    <div class="capa-bits">$ systemd-detect-virt
+oracle
+
+$ VBoxManage list vms
+"ubuntu-lab" {3f9c…}
+
+$ VBoxManage snapshot ubuntu-lab list
+Name: pos-instalacao *</div>
+  </section>
+
+  <!-- ============================================================ SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
+      <div class="toc animate delay-2" style="margin-top:.8rem;">
+        <div>
+          <div class="toc-group">Antes de começar</div>
+          <a href="#s-prep"><span class="n">01</span><span class="t">Checklist antes da aula</span></a>
+          <a href="#s-agenda"><span class="n">02</span><span class="t">Roteiro da noite</span></a>
+          <a href="#s-metodo"><span class="n">03</span><span class="t">Como vamos trabalhar hoje</span></a>
+          <a href="#s-revisao"><span class="n">04</span><span class="t">Revisão relâmpago da Aula 06</span></a>
+          <a href="#s-gancho"><span class="n">05</span><span class="t">O dual boot que apagou o TCC</span></a>
+          <div class="toc-group">Abertura · mini-aula</div>
+          <a href="#s-conceitos"><span class="n">06</span><span class="t">3 ideias essenciais</span></a>
+          <a href="#s-hypervisor"><span class="n">07</span><span class="t">Tipo 1, tipo 2 e contêiner</span></a>
+          <a href="#s-ferramentas"><span class="n">08</span><span class="t">Ferramentas de virtualização</span></a>
+          <a href="#s-sondagem"><span class="n">09</span><span class="t">🛠️ Sondagem técnica</span></a>
+          <div class="toc-group">Bloco 1 · Criar a VM</div>
+          <a href="#s-vtx"><span class="n">10</span><span class="t">Virtualização no processador</span></a>
+          <a href="#s-recursos"><span class="n">11</span><span class="t">vCPU, vRAM e disco virtual</span></a>
+        </div>
+        <div>
+          <a href="#s-rede"><span class="n">12</span><span class="t">Modos de rede virtual</span></a>
+          <a href="#s-dimensionar"><span class="n">13</span><span class="t">Dimensione sua VM</span></a>
+          <a href="#s-criar"><span class="n">14</span><span class="t">🛠️ Crie a VM no VirtualBox</span></a>
+          <div class="toc-group">Bloco 2 · Instalar o SO</div>
+          <a href="#s-planejar"><span class="n">15</span><span class="t">Planejamento: ISO, hash, partições</span></a>
+          <a href="#s-boot"><span class="n">16</span><span class="t">Do boot ao primeiro login</span></a>
+          <a href="#s-instalar"><span class="n">17</span><span class="t">🛠️ Instale o Ubuntu</span></a>
+          <a href="#s-fisico"><span class="n">18</span><span class="t">VM × computador físico</span></a>
+          <a href="#s-diagnostico"><span class="n">19</span><span class="t">🛠️ O que deu errado?</span></a>
+          <div class="toc-group">Bloco 3 · Gerenciar</div>
+          <a href="#s-pos"><span class="n">20</span><span class="t">Pós-instalação</span></a>
+          <a href="#s-ciclo"><span class="n">21</span><span class="t">Ciclo de vida da VM</span></a>
+        </div>
+        <div>
+          <a href="#s-snapsim"><span class="n">22</span><span class="t">Simulador de snapshots</span></a>
+          <a href="#s-gerenciar"><span class="n">23</span><span class="t">🛠️ Snapshot, clone e exportação</span></a>
+          <a href="#s-problemas"><span class="n">24</span><span class="t">Situações-problema</span></a>
+          <div class="toc-group">Bloco 4 · Síntese e depois da aula</div>
+          <a href="#s-sintese"><span class="n">25</span><span class="t">O que vimos e o que vem</span></a>
+          <a href="#s-avaliacao"><span class="n">26</span><span class="t">🛠️ Quiz técnico e exit ticket</span></a>
+          <a href="#s-tarefa"><span class="n">27</span><span class="t">Tarefa: relatório da VM</span></a>
+          <a href="#s-trilha"><span class="n">28</span><span class="t">Trilha de estudo</span></a>
+          <a href="#s-fontes"><span class="n">29</span><span class="t">Biblioteca</span></a>
+          <a href="#s-glossario"><span class="n">30</span><span class="t">Glossário</span></a>
+          <a href="#s-autoavaliacao"><span class="n">31</span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n">32</span><span class="t">Quiz de fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 01 PREP -->
+  <section class="slide hands-on" id="s-prep">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Antes da aula <span class="mm-badge">⏱ 40 min · faça em casa</span></div>
+      <h2 class="stitle animate delay-1">Chegue com tudo baixado e testado</h2>
+      <p class="subtitle animate delay-2">Instalar um sistema operacional exige downloads grandes. Feito em casa, sobra a aula inteira para a prática (fica salvo neste navegador).</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="check-list" data-check="prep">
+          <label class="check-item"><input type="checkbox" id="p7a"><div><div class="ci-t">Conferir se a virtualização está ativa</div><div class="ci-d">Windows: Gerenciador de Tarefas → Desempenho → CPU → <i>Virtualização: Habilitado</i>. Outros sistemas: seção 10.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p7b"><div><div class="ci-t">Instalar o VirtualBox</div><div class="ci-d">Versão atual em <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank" rel="noopener">virtualbox.org</a>. Mac com chip Apple: veja a dica ao lado.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p7c"><div><div class="ci-t">Baixar a ISO do Ubuntu 26.04 LTS</div><div class="ci-d">Notebook com 16 GB de RAM ou mais: <b>Desktop</b> (~6 GB). Com 8 GB: <b>Server</b> (~3 GB). Fonte oficial: <a href="https://ubuntu.com/download" target="_blank" rel="noopener">ubuntu.com/download</a>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p7d"><div><div class="ci-t">Liberar 30 GB no disco</div><div class="ci-d">O disco virtual é um arquivo no seu computador e cresce conforme o uso.</div></div></label>
+        </div>
+        <div class="card">
+          <h3 class="accent">Casos especiais</h3>
+          <ul>
+            <li><b>Mac com chip Apple (M1 a M4):</b> só roda sistemas <b>ARM</b>. Baixe a ISO <span class="code">arm64</span> do Ubuntu e use o VirtualBox 7.2 ou o <a href="https://mac.getutm.app/" target="_blank" rel="noopener">UTM</a>.</li>
+            <li><b>Sem notebook ou com menos de 8 GB:</b> use o computador do laboratório. Avise o professor antes.</li>
+            <li><b>Internet lenta:</b> o professor leva a ISO num pendrive em <b>exFAT</b>. Lembra por quê? (Aula 06)</li>
+          </ul>
+          <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 AGENDA -->
+  <section class="slide" id="s-agenda">
+    <div class="slide-inner">
+      <div class="kicker animate">02 · Encontro presencial · 3 h</div>
+      <h2 class="stitle animate delay-1">Como serão as 3 horas de hoje</h2>
+      <div class="agenda six animate delay-2">
+        <div class="ag"><div class="min">20 min</div><h4>Abertura</h4><p>Mini-aula com 3 ideias essenciais (15 min) e sondagem técnica com a turma (5 min).</p></div>
+        <div class="ag"><div class="min">35 min</div><h4>Bloco 1 · Criar a VM</h4><p>Conferir a virtualização no processador, dimensionar recursos e criar a VM no VirtualBox.</p></div>
+        <div class="ag pause"><div class="min">10 min</div><h4>Intervalo</h4><p>Deixe a VM criada e a ISO conectada antes de sair.</p></div>
+        <div class="ag"><div class="min">50 min</div><h4>Bloco 2 · Instalar o SO</h4><p>Verificar a ISO, instalar o Ubuntu e, enquanto os arquivos copiam, debater VM × físico e diagnosticar falhas.</p></div>
+        <div class="ag"><div class="min">35 min</div><h4>Bloco 3 · Gerenciar</h4><p>Pós-instalação, snapshot, "quebrar e restaurar", clone e exportação. Debate das situações-problema.</p></div>
+        <div class="ag"><div class="min">20 min</div><h4>Bloco 4 · Síntese</h4><p>Síntese coletiva, quiz técnico no Classroom e exit ticket.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pergunta para pensar antes da aula:</b> se a sua VM "acha" que tem um disco de 25 GB, um processador e uma placa de rede, onde esses componentes estão de verdade?</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 03 MÉTODO -->
+  <section class="slide" id="s-metodo">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Metodologia ativa</div>
+      <h2 class="stitle animate delay-1">Como vamos trabalhar hoje</h2>
+      <div class="method animate delay-2">
+        <div class="card"><div class="icon-chip">01</div><h3>Mini-aula direta</h3><p>Só o essencial, em 15 minutos. O resto do tempo é mão na massa.</p></div>
+        <div class="card"><div class="icon-chip g">02</div><h3>Construção individual</h3><p>Cada um cria e instala a própria VM, registrando as decisões numa ficha técnica.</p></div>
+        <div class="card"><div class="icon-chip">03</div><h3>Discussão coletiva</h3><p>Erros e escolhas diferentes viram material de debate, mediado pelo professor.</p></div>
+        <div class="card"><div class="icon-chip g">04</div><h3>Avaliação contínua</h3><p>Contam a VM funcionando, a ficha técnica, as contribuições no debate e o quiz final.</p></div>
+      </div>
+      <div class="info-box animate delay-3"><b>Ajude o colega ao lado:</b> instalações travam por motivos variados. Quem terminar primeiro vira monitor da fileira. Ensinar também é aprender.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 REVISÃO -->
+  <section class="slide" id="s-revisao">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">04 · Revisão da Aula 06</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas rápidas</h2>
+      <p class="subtitle animate delay-2">Responda de cabeça e clique para conferir. Todas voltam a aparecer hoje.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual o maior arquivo que cabe num pendrive FAT32?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>4 GiB menos 1 byte.</b> Hoje isso importa: uma ISO de desktop ou um disco virtual passam fácil disso. Para transportá-los, use <b>exFAT</b> ou NTFS.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual sistema de arquivos o instalador do Ubuntu usa por padrão?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>ext4</b>, com journaling. Depois da instalação você vai confirmar com <span class="code">lsblk -f</span> dentro da VM.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual a diferença entre tamanho lógico e tamanho alocado de um arquivo?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O lógico é o conteúdo; o alocado é o espaço em <b>blocos</b> reservado no disco. Hoje veremos um caso extremo: um disco virtual <b>dinâmico</b> de 25 GB que ocupa só o que foi gravado.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">O que o journaling protege, e o que ele não substitui?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Protege a <b>consistência dos metadados</b> após uma queda. Não substitui <b>backup</b>. Hoje a mesma lógica vale para o <b>snapshot</b>: ótimo para voltar atrás, mas não é cópia de segurança.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 GANCHO -->
+  <section class="slide" id="s-gancho">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Gancho · situação comum</div>
+      <h2 class="stitle animate delay-1">Queria só testar o Linux. Perdeu o TCC.</h2>
+      <p class="subtitle animate delay-2">Um estudante decide experimentar o Linux sem abrir mão do Windows. Segue um tutorial de <b>dual boot</b> (dois sistemas no mesmo disco) numa madrugada antes da entrega.</p>
+      <div class="timeline animate delay-3">
+        <div class="tl-item"><div class="yr">23h40</div><p>Instalador aberto. Na tela de particionamento, escolhe "apagar disco e instalar" achando que é o pendrive.</p></div>
+        <div class="tl-item warn"><div class="yr">00h15</div><p>O Linux sobe lindo. O Windows sumiu do menu de boot.</p></div>
+        <div class="tl-item hot"><div class="yr">00h20</div><p>A partição com o TCC foi formatada em ext4. Último backup: 3 semanas atrás.</p></div>
+      </div>
+      <div class="info-box animate delay-4"><b>A lição:</b> para experimentar, aprender ou testar, o lugar certo é uma <b>máquina virtual</b>. Ela vê um disco virtual, que é só um arquivo no seu computador. Se algo der errado, você apaga o arquivo ou volta um <b>snapshot</b>, e o seu sistema real nem percebe.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 06 CONCEITOS -->
+  <section class="slide" id="s-conceitos">
+    <div class="slide-inner">
+      <div class="kicker animate">06 · Mini-aula · 15 min</div>
+      <h2 class="stitle animate delay-1">O mínimo para começar: 3 ideias</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>Virtualização e VM</h3><p><b>Virtualização</b> é uma camada de software que permite que vários sistemas operacionais compartilhem o mesmo hardware, cada um isolado como se tivesse a máquina só para si. Cada ambiente isolado é uma <b>máquina virtual (VM)</b>.</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Hypervisor</h3><p>O software que <b>cria, executa e gerencia</b> as VMs, repartindo CPU, memória, disco e rede entre elas. O sistema da máquina real é o <b>host</b> (hospedeiro); o sistema dentro da VM é o <b>guest</b> (convidado).</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Hardware virtual</h3><p>A VM recebe <b>vCPUs</b>, <b>memória</b>, um <b>disco virtual</b> (um arquivo no host) e uma <b>placa de rede virtual</b>. O SO convidado acha que é hardware de verdade e se instala normalmente.</p></div>
+      </div>
+      <p class="subtitle animate delay-3" style="margin-top:1rem;">Conexão com a Aula 05: o hypervisor é quem decide quem usa o hardware, um papel parecido com o do kernel, só que um nível abaixo, entre <b>sistemas operacionais inteiros</b>.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 07 HYPERVISOR -->
+  <section class="slide" id="s-hypervisor">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Mini-aula · arquiteturas</div>
+      <h2 class="stitle animate delay-1">Hypervisor tipo 1, tipo 2 e o contêiner</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Tipo 1 · bare-metal</h3>
+          <div class="stack"><div class="row"><div class="lay vm">VM 1</div><div class="lay vm">VM 2</div><div class="lay vm">VM 3</div></div><div class="lay hv">hypervisor</div><div class="lay hw">hardware</div></div>
+          <p>Roda <b>direto sobre o hardware</b>, sem SO hospedeiro no meio. Menos overhead. Domina servidores e data centers.</p>
+          <p style="margin-top:.3rem;">Ex.: <b>VMware ESXi</b>, <b>Microsoft Hyper-V</b>, <b>KVM</b>.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Tipo 2 · hospedado</h3>
+          <div class="stack"><div class="row"><div class="lay vm">VM 1</div><div class="lay vm">VM 2</div><div class="lay">navegador</div></div><div class="lay hv">VirtualBox</div><div class="lay os">SO host (Windows, macOS, Linux)</div><div class="lay hw">hardware</div></div>
+          <p>É um <b>programa</b> instalado sobre o SO que você já usa. Mais simples; o acesso ao hardware passa pelo host. Ideal para estudo e testes.</p>
+          <p style="margin-top:.3rem;">Ex.: <b>VirtualBox</b>, <b>VMware Workstation/Fusion</b>, <b>Parallels</b>.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent-g">Contêiner · não é VM</h3>
+          <div class="stack"><div class="row"><div class="lay vm">app A</div><div class="lay vm">app B</div><div class="lay vm">app C</div></div><div class="lay hv">Docker</div><div class="lay os">kernel do host (compartilhado)</div><div class="lay hw">hardware</div></div>
+          <p>Isola <b>processos</b>, não máquinas: todos compartilham o <b>kernel do host</b>. Sobe em segundos e é leve, mas isola menos que uma VM.</p>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pegadinha:</b> o <b>Hyper-V</b> é tipo 1 <b>mesmo no Windows 11 Pro</b>. Ao ativá-lo, o hypervisor passa a rodar por baixo e o próprio Windows vira uma partição privilegiada sobre ele. Já o <b>KVM</b> transforma o kernel Linux no hypervisor; por isso costuma ser classificado como tipo 1.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 08 FERRAMENTAS -->
+  <section class="slide" id="s-ferramentas">
+    <div class="slide-inner">
+      <div class="kicker animate">08 · Mini-aula · ferramentas</div>
+      <h2 class="stitle animate delay-1">Principais ferramentas de virtualização</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+        <table class="cmp">
+          <tr><th>Ferramenta</th><th>Tipo</th><th>Licença</th><th>Host</th><th>Disco virtual</th><th>Uso típico</th></tr>
+          <tr><td>Oracle VirtualBox</td><td>2</td><td>Gratuito, código aberto</td><td>Windows, Linux, macOS (Intel e Apple)</td><td>VDI</td><td>Ensino, testes, desenvolvimento · <b>usado nesta aula</b></td></tr>
+          <tr><td>VMware Workstation Pro / Fusion Pro</td><td>2</td><td>Gratuito para qualquer uso desde nov/2024</td><td>Windows, Linux (Workstation) · macOS (Fusion)</td><td>VMDK</td><td>Estações de trabalho profissionais</td></tr>
+          <tr><td>Microsoft Hyper-V</td><td>1</td><td>Incluído no Windows Pro, Enterprise e Server</td><td>Windows</td><td>VHDX</td><td>Servidores Windows, base da nuvem Azure</td></tr>
+          <tr><td>KVM (com QEMU)</td><td>1</td><td>Gratuito, código aberto</td><td>Linux</td><td>QCOW2</td><td>Data centers e nuvens públicas</td></tr>
+          <tr><td>VMware ESXi</td><td>1</td><td>Comercial</td><td>Instalado direto no servidor</td><td>VMDK</td><td>Data centers corporativos</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-3"><b>Na nuvem é a mesma ideia:</b> quando você cria uma "instância" na AWS, no Azure ou no Google Cloud, está alugando uma VM rodando sobre um hypervisor tipo 1 no data center deles.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 09 SONDAGEM -->
+  <section class="slide hands-on" id="s-sondagem">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">🛠️ Sondagem técnica · turma toda <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Conectando com a prática</h2>
+      <p class="subtitle animate delay-2">Discussão oral, mediada pelo professor. Levante hipóteses: o laboratório de hoje vai testá-las.</p>
+      <div class="card animate delay-3" style="margin-top:1rem;">
+        <ol class="steps">
+          <li><span>Alguém já usou uma máquina virtual, um emulador de celular ou um contêiner? Para quê?</span></li>
+          <li><span>Se a VM tem 4 GB de RAM, de onde vem essa memória? O que acontece com o host se você der RAM demais para a VM?</span></li>
+          <li><span>Que <b>evidência técnica</b> provaria, de dentro do sistema, que ele está rodando numa VM e não num computador físico?</span></li>
+        </ol>
+      </div>
+      <div class="info-box animate delay-4"><b>Spoiler da pergunta 3:</b> no fim da instalação você vai rodar <span class="code">systemd-detect-virt</span> dentro da VM.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 10 VT-x -->
+  <section class="slide" id="s-vtx">
+    <div class="slide-inner">
+      <div class="kicker animate">10 · Bloco 1 · Pré-requisito</div>
+      <h2 class="stitle animate delay-1">A virtualização começa no processador</h2>
+      <p class="subtitle animate delay-2">Processadores modernos têm instruções próprias para virtualização: <b>Intel VT-x</b> e <b>AMD-V</b> (chamado <b>SVM</b> no BIOS). Sem elas ativas, o VirtualBox fica lento ou nem liga a VM. Elas são ligadas no <b>UEFI/BIOS</b>, aquele SETUP que você viu na Aula 03.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>Sistema host</th><th>Como conferir</th><th>Resultado esperado</th></tr>
+          <tr><td>Windows</td><td>Gerenciador de Tarefas → Desempenho → CPU</td><td><i>Virtualização: Habilitado</i></td></tr>
+          <tr><td>Linux</td><td><span class="code">lscpu | grep -i virtualiz</span></td><td><i>VT-x</i> ou <i>AMD-V</i></td></tr>
+          <tr><td>macOS</td><td><span class="code">sysctl kern.hv_support</span></td><td><i>kern.hv_support: 1</i></td></tr>
+        </table>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:.9rem;">
+        <div class="warn-box" style="margin-top:0;"><b>Aparece "Desabilitado"?</b> Reinicie, entre no SETUP (Del, F2 ou F10, conforme o fabricante) e ative <i>Intel Virtualization Technology</i> ou <i>SVM Mode</i>. Salve e saia.</div>
+        <div class="warn-box" style="margin-top:0;"><b>Tartaruga verde no VirtualBox (Windows)?</b> Hyper-V, WSL2 ou a <i>Integridade de memória</i> estão ativos, e o VirtualBox roda por cima do Hyper-V, mais lento. Funciona; só não espere velocidade.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 11 RECURSOS -->
+  <section class="slide" id="s-recursos">
+    <div class="slide-inner">
+      <div class="kicker animate">11 · Bloco 1 · Hardware virtual</div>
+      <h2 class="stitle animate delay-1">vCPU, memória e disco virtual</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><div class="icon-chip">⚙</div><h3>vCPU</h3><p>Núcleos virtuais que o hypervisor escalona sobre os núcleos (threads) reais. Dá para somar mais vCPUs entre as VMs do que núcleos existem (<b>overcommit</b>), mas, se todas trabalharem ao mesmo tempo, todas ficam lentas.</p><p style="margin-top:.4rem;"><b>Regra prática:</b> até metade das threads do host para uma VM.</p></div>
+        <div class="card"><div class="icon-chip g">▦</div><h3>Memória (vRAM)</h3><p>RAM do host <b>reservada</b> para a VM enquanto ela está ligada. O host continua precisando da dele: se faltar, os dois começam a usar o disco como memória (swap) e tudo trava.</p><p style="margin-top:.4rem;"><b>Regra prática:</b> deixe ao menos 4 GB livres para um host Windows ou macOS.</p></div>
+        <div class="card"><div class="icon-chip">⛁</div><h3>Disco virtual</h3><p>Um <b>arquivo</b> no host que a VM enxerga como disco: VDI (VirtualBox), VMDK (VMware), VHDX (Hyper-V), QCOW2 (KVM).</p>
+          <ul style="margin-top:.4rem;"><li><b>Dinâmico:</b> começa pequeno e cresce até o limite. Economiza espaço.</li><li><b>Fixo:</b> reserva tudo na criação. Um pouco mais rápido, ocupa tudo já.</li></ul></div>
+      </div>
+      <div class="info-box animate delay-3"><b>Ligando com a Aula 06:</b> o disco dinâmico é o caso extremo de "tamanho lógico × alocado": a VM vê 25 GB, mas o arquivo <span class="code">.vdi</span> ocupa só o que foi gravado. E como ele passa de 4 GiB, <b>não cabe num pendrive FAT32</b>.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 12 REDE -->
+  <section class="slide" id="s-rede">
+    <div class="slide-inner">
+      <div class="kicker animate">12 · Bloco 1 · Rede virtual</div>
+      <h2 class="stitle animate delay-1">Modos de rede: quem consegue falar com quem?</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+        <table class="cmp">
+          <tr><th>Modo (VirtualBox)</th><th>VM → internet</th><th>Host → VM</th><th>VM ↔ VM</th><th>Outros PCs → VM</th><th>Quando usar</th></tr>
+          <tr><td>NAT <span class="req">padrão</span></td><td class="accent-g">Sim</td><td>Só com redirecionamento de porta</td><td class="accent-r">Não</td><td class="accent-r">Não</td><td>Navegar e atualizar o sistema. <b>Usaremos hoje.</b></td></tr>
+          <tr><td>Rede NAT</td><td class="accent-g">Sim</td><td>Só com redirecionamento de porta</td><td class="accent-g">Sim</td><td class="accent-r">Não</td><td>Laboratório com várias VMs que acessam a internet</td></tr>
+          <tr><td>Placa em modo bridge</td><td class="accent-g">Sim</td><td class="accent-g">Sim</td><td class="accent-g">Sim</td><td class="accent-g">Sim</td><td>VM como "mais um computador" na rede, com IP próprio</td></tr>
+          <tr><td>Somente host</td><td class="accent-r">Não</td><td class="accent-g">Sim</td><td class="accent-g">Sim</td><td class="accent-r">Não</td><td>Testes isolados entre host e VMs</td></tr>
+          <tr><td>Rede interna</td><td class="accent-r">Não</td><td class="accent-r">Não</td><td class="accent-g">Sim</td><td class="accent-r">Não</td><td>Simular uma rede fechada só de VMs</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-3"><b>Guarde para as próximas aulas:</b> no modo NAT, a VM recebe o IP <span class="code">10.0.2.15</span>, o gateway <span class="code">10.0.2.2</span> e o DNS <span class="code">10.0.2.3</span>. Endereço IP, gateway e DNS são exatamente o próximo tema da disciplina.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 13 DIMENSIONAR -->
+  <section class="slide" id="s-dimensionar">
+    <div class="slide-inner">
+      <div class="kicker animate">13 · Bloco 1 · Interativo</div>
+      <h2 class="stitle animate delay-1">Dimensione a VM para o <span class="accent-b">seu</span> computador</h2>
+      <p class="subtitle animate delay-2">Informe o seu host e a configuração da VM. O verificador aplica os requisitos do sistema e as regras práticas da seção 11.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <div class="sz-grid">
+            <div><label for="zHram">RAM do host</label><select class="ip-input" id="zHram"><option>4</option><option selected>8</option><option>12</option><option>16</option><option>32</option></select></div>
+            <div><label for="zHcpu">Threads do host</label><select class="ip-input" id="zHcpu"><option>2</option><option selected>4</option><option>8</option><option>12</option><option>16</option></select></div>
+            <div><label for="zHdisk">Disco livre (GB)</label><input class="ip-input" id="zHdisk" type="number" min="0" value="60"></div>
+          </div>
+          <div style="margin-top:.8rem;"><label for="zOs" style="font-family:var(--mono); font-size:.64rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:.25rem;">Sistema convidado</label>
+            <select class="ip-input" id="zOs">
+              <option value="srv" selected>Ubuntu Server 26.04 LTS (sem interface gráfica)</option>
+              <option value="desk">Ubuntu Desktop 26.04 LTS</option>
+              <option value="desk24">Ubuntu Desktop 24.04 LTS</option>
+              <option value="win11">Windows 11</option>
+            </select></div>
+          <div class="sz-grid" style="margin-top:.8rem;">
+            <div><label for="zVcpu">vCPU</label><input class="ip-input" id="zVcpu" type="number" min="1" max="16" value="2"></div>
+            <div><label for="zVram">RAM da VM (GB)</label><input class="ip-input" id="zVram" type="number" min="1" max="32" step="0.5" value="2"></div>
+            <div><label for="zVdisk">Disco virtual (GB)</label><input class="ip-input" id="zVdisk" type="number" min="1" value="25"></div>
+          </div>
+          <div style="margin-top:.8rem;">
+            <div class="meter" id="zMeter"><span class="m-vm"></span><span class="m-host"></span><span class="m-over"></span></div>
+            <div class="meter-l"><span><span style="color:var(--blue)">■</span> VM · <span style="color:var(--gold)">■</span> reserva do host</span><span id="zMeterL">8 GB</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="accent">Diagnóstico</h3>
+          <div class="sz-out" id="zOut"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 14 CRIAR -->
+  <section class="slide hands-on" id="s-criar">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 20 min</span></div>
+      <h2 class="stitle animate delay-1">Crie a VM no VirtualBox</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.1fr;">
+        <div class="card">
+          <h3 class="accent">Pela interface gráfica</h3>
+          <ol class="steps">
+            <li><span><b>Máquina → Nova.</b> Nome <span class="code">ubuntu-lab</span>, escolha a <b>ISO</b> baixada. Tipo: Linux; versão: Ubuntu (64-bit) ou (arm64).</span></li>
+            <li><span>Marque <b>"Pular instalação desassistida"</b>: hoje você vai ver cada etapa do instalador.</span></li>
+            <li><span><b>Hardware:</b> vCPU e memória definidos na seção 13.</span></li>
+            <li><span><b>Disco:</b> criar novo, VDI, <b>dinâmico</b>, 25 GB.</span></li>
+            <li><span>Abra <b>Configurações → Rede</b> e confira: Adaptador 1 em <b>NAT</b>.</span></li>
+            <li><span>Anote tudo na <b>ficha da VM</b> (abaixo). <b>Ainda não ligue.</b></span></li>
+          </ol>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Alternativa pelo terminal (opcional) · VBoxManage</div>
+          <button class="copy">copiar</button>
+<pre class="wrap"><span class="cm"># cria e registra a VM</span>
+VBoxManage createvm --name ubuntu-lab --ostype Ubuntu_64 --register
+VBoxManage modifyvm ubuntu-lab --cpus 2 --memory 2048 --nic1 nat --boot1 dvd --boot2 disk
+
+<span class="cm"># disco dinâmico de 25 GB (o tamanho é em MB)</span>
+VBoxManage createmedium disk --filename ubuntu-lab.vdi --size 25600
+
+<span class="cm"># controladora SATA: disco na porta 0, ISO na porta 1</span>
+VBoxManage storagectl ubuntu-lab --name SATA --add sata
+VBoxManage storageattach ubuntu-lab --storagectl SATA --port 0 --device 0 --type hdd --medium ubuntu-lab.vdi
+VBoxManage storageattach ubuntu-lab --storagectl SATA --port 1 --device 0 --type dvddrive --medium ubuntu-26.04-live-server-amd64.iso
+
+VBoxManage showvminfo ubuntu-lab   <span class="cm"># confira o resultado</span></pre>
+        </div>
+      </div>
+      <div class="codeblock animate delay-3" style="margin-top:.8rem;">
+        <div class="cb-title">Ficha técnica da VM · copie para suas anotações</div>
+        <button class="copy">copiar</button>
+<pre>| Host: SO / RAM / threads | ISO usada | vCPU | RAM da VM | Disco (tipo, tamanho) | Rede | Por que escolhi esses valores |
+| ------------------------ | --------- | ---- | --------- | --------------------- | ---- | ----------------------------- |
+|                          |           |      |           |                       |      |                               |</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 15 PLANEJAR -->
+  <section class="slide" id="s-planejar">
+    <div class="slide-inner">
+      <div class="kicker animate">15 · Bloco 2 · Planejamento</div>
+      <h2 class="stitle animate delay-1">Antes de instalar: requisitos, ISO confiável e partições</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent-b">1 · Requisitos</h3>
+          <p>Consulte os mínimos <b>do sistema que vai instalar</b> e dê margem.</p>
+          <div class="tbl-wrap" style="margin-top:.4rem;"><table class="cmp">
+            <tr><td>Ubuntu Desktop 26.04</td><td>6 GB RAM · 25 GB</td></tr>
+            <tr><td>Ubuntu Desktop 24.04</td><td>4 GB RAM · 25 GB</td></tr>
+            <tr><td>Ubuntu Server 26.04</td><td>a partir de 1,5 GB RAM</td></tr>
+            <tr><td>Windows 11</td><td>4 GB RAM · 64 GB · TPM 2.0</td></tr>
+          </table></div>
+        </div>
+        <div class="card">
+          <h3 class="accent">2 · ISO íntegra</h3>
+          <p>A <b>ISO</b> é a imagem do disco de instalação. Baixe só do site oficial e compare o <b>hash SHA-256</b> com o publicado no arquivo <span class="code">SHA256SUMS</span>. Se um único bit mudou, o hash muda inteiro.</p>
+          <div class="tree" style="margin-top:.5rem; font-size:.7rem;"><span style="color:var(--text-faint)"># Windows (PowerShell)</span>
+Get-FileHash .\ubuntu.iso -Algorithm SHA256
+<span style="color:var(--text-faint)"># Linux</span>
+sha256sum ubuntu.iso
+<span style="color:var(--text-faint)"># macOS</span>
+shasum -a 256 ubuntu.iso</div>
+        </div>
+        <div class="card">
+          <h3 class="accent-g">3 · Partições</h3>
+          <ul>
+            <li><b>MBR:</b> padrão antigo. Discos de até 2 TiB e 4 partições primárias.</li>
+            <li><b>GPT:</b> padrão atual, usado com UEFI. Discos enormes e até 128 partições.</li>
+            <li>No Linux, cada partição é <b>montada</b> num ponto da árvore: <span class="code">/</span>, <span class="code">/boot/efi</span>, e a swap (que hoje costuma ser um arquivo).</li>
+          </ul>
+          <p style="margin-top:.4rem;">Numa VM nova, "usar o disco inteiro" é seguro: o disco é virtual.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 16 BOOT -->
+  <section class="slide" id="s-boot">
+    <div class="slide-inner">
+      <div class="kicker animate">16 · Bloco 2 · Processo</div>
+      <h2 class="stitle animate delay-1">Do boot pela ISO ao primeiro login</h2>
+      <div class="flow animate delay-2">
+        <div class="fstep"><div class="fn">1</div><h4>Boot pela ISO</h4><p>O disco virtual está vazio; a VM inicia pela unidade óptica com a ISO.</p></div>
+        <div class="fstep"><div class="fn">2</div><h4>Idioma e teclado</h4><p>Português do Brasil; teclado <i>ABNT2</i> na maioria dos notebooks.</p></div>
+        <div class="fstep"><div class="fn">3</div><h4>Rede e pacotes</h4><p>Rede via NAT já funciona. Escolha a instalação padrão.</p></div>
+        <div class="fstep"><div class="fn">4</div><h4>Particionar</h4><p>"Apagar disco e instalar": tabela GPT, pequena partição de boot e <span class="code">/</span> em ext4.</p></div>
+        <div class="fstep"><div class="fn">5</div><h4>Usuário</h4><p>Nome, nome do computador (<span class="code">ubuntu-lab</span>) e senha. Esse usuário pode usar <span class="code">sudo</span>.</p></div>
+        <div class="fstep"><div class="fn">6</div><h4>Copiar e reiniciar</h4><p>Cópia dos arquivos (10 a 25 min). Ao reiniciar, a ISO precisa sair.</p></div>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem;">
+        <div class="info-box" style="margin-top:0;"><b>Ubuntu Server:</b> o instalador é em modo texto. Navegue com <b>Tab</b>, <b>setas</b> e <b>Enter</b>. Na tela "SSH", pode marcar <i>Install OpenSSH server</i>: vai ser útil nas aulas de rede.</div>
+        <div class="warn-box" style="margin-top:0;"><b>Voltou para o instalador após reiniciar?</b> A ISO continua conectada e vem antes do disco na ordem de boot. Remova-a em <i>Dispositivos → Unidades ópticas</i> (o Ubuntu costuma pedir "remova a mídia e pressione Enter").</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 17 INSTALAR -->
+  <section class="slide hands-on" id="s-instalar">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 30 min</span></div>
+      <h2 class="stitle animate delay-1">Instale o Ubuntu e colete as evidências</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Roteiro</h3>
+          <ol class="steps">
+            <li><span>Confira o <b>hash</b> da ISO (seção 15) e registre na ficha se bateu.</span></li>
+            <li><span>Ligue a VM e siga as etapas da seção 16. Anote cada decisão do instalador.</span></li>
+            <li><span>Enquanto os arquivos copiam: seções <b>18 e 19</b> com a turma.</span></li>
+            <li><span>Após o primeiro login, rode os comandos ao lado e <b>tire um print</b> de cada saída.</span></li>
+          </ol>
+          <div class="info-box"><b>Ubuntu Desktop:</b> abra o terminal com <span class="code">Ctrl+Alt+T</span>. <b>Server:</b> você já está nele.</div>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Evidências · dentro da VM</div>
+          <button class="copy">copiar</button>
+<pre>systemd-detect-virt     <span class="cm"># "oracle" = VirtualBox; "none" = físico</span>
+hostnamectl             <span class="cm"># nome, SO, kernel e "Virtualization"</span>
+nproc                   <span class="cm"># quantas vCPUs a VM enxerga</span>
+free -h                 <span class="cm"># memória que a VM enxerga</span>
+lsblk -f                <span class="cm"># disco sda, partições e ext4 (Aula 06!)</span>
+df -Th /                <span class="cm"># tamanho e uso da partição raiz</span>
+ip -br a                <span class="cm"># IP da placa virtual (NAT: 10.0.2.15)</span></pre>
+        </div>
+      </div>
+      <div class="deliver animate delay-3"><span>VM instalada e funcionando</span><span>Ficha técnica + prints das evidências</span><span>Conta na avaliação contínua</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 18 FÍSICO -->
+  <section class="slide" id="s-fisico">
+    <div class="slide-inner">
+      <div class="kicker animate">18 · Bloco 2 · Comparação · enquanto copia</div>
+      <h2 class="stitle animate delay-1">Instalar numa VM × instalar no computador físico</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+        <table class="cmp">
+          <tr><th>Aspecto</th><th>Computador físico</th><th>Máquina virtual</th></tr>
+          <tr><td>Drivers</td><td>Dependem do fabricante; placa de Wi-Fi ou vídeo pode faltar no instalador</td><td>O hypervisor emula dispositivos padronizados e conhecidos: quase nunca falta driver</td></tr>
+          <tr><td>Desfazer um erro</td><td>Backup prévio ou reinstalação completa</td><td>Volta um <b>snapshot</b> em segundos</td></tr>
+          <tr><td>Desempenho</td><td>Acesso direto e total ao hardware</td><td>Com VT-x/AMD-V, a CPU perde pouco; disco, vídeo e rede perdem mais</td></tr>
+          <tr><td>Isolamento de falhas</td><td>Uma falha grave afeta o sistema inteiro</td><td>Um problema na VM não afeta o host nem as outras VMs</td></tr>
+          <tr><td>Vários sistemas</td><td>Um por vez (ou dual boot, com risco)</td><td>Vários ao mesmo tempo, limitados pela RAM e CPU do host</td></tr>
+          <tr><td>Recursos</td><td>Todo o hardware é do sistema</td><td>A VM disputa CPU, RAM e disco com o host</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-3"><b>Para debater:</b> se a VM é tão vantajosa, por que alguém ainda instala direto no hardware? (Pense em jogos, edição de vídeo, servidores dedicados e no próprio host, que precisa existir.)</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 19 DIAGNÓSTICO -->
+  <section class="slide hands-on" id="s-diagnostico">
+    <div class="slide-inner" style="max-width:920px;">
+      <div class="kicker animate">🛠️ Mão na Massa · Troubleshooting <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">O que deu errado nesta VM?</h2>
+      <p class="subtitle animate delay-2">Sintomas reais de laboratório. Escolha a causa mais provável. Se o seu colega travar num destes, você já sabe resolver.</p>
+      <div class="drill animate delay-3" style="margin-top:1rem;">
+        <div class="kicker" style="margin-bottom:.4rem;" id="dgCount">Sintoma 1 de 7</div>
+        <div class="drill-q" id="dgQ"></div>
+        <div class="drill-btns" id="dgBtns"></div>
+        <div class="verdict" id="dgFb">Escolha a causa.</div>
+        <div class="drill-score" id="dgScore">Acertos: 0 / 0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 20 PÓS -->
+  <section class="slide" id="s-pos">
+    <div class="slide-inner">
+      <div class="kicker animate">20 · Bloco 3 · Pós-instalação</div>
+      <h2 class="stitle animate delay-1">Sistema instalado não é sistema pronto</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.1fr;">
+        <div class="card">
+          <h3 class="accent-b">Os 3 passos</h3>
+          <ol class="steps">
+            <li><span><b>Atualizar:</b> a ISO foi gerada meses atrás; correções de segurança saíram depois dela.</span></li>
+            <li><span><b>Ferramentas de integração</b> (<i>Guest Additions</i> no VirtualBox, <i>VMware Tools</i>, <i>Integration Services</i> no Hyper-V): drivers instalados <b>dentro</b> do convidado. Habilitam tela que se ajusta à janela, copiar e colar entre host e VM, pastas compartilhadas e mouse sem "captura".</span></li>
+            <li><span><b>Identificar:</b> nome de host claro e o modo de rede adequado à finalidade.</span></li>
+          </ol>
+          <div class="warn-box"><b>Depois disso:</b> desligue a VM e tire o snapshot <span class="code">pos-instalacao</span>. É o seu "ponto de restauração limpo".</div>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Dentro da VM (Ubuntu)</div>
+          <button class="copy">copiar</button>
+<pre><span class="cm"># 1 · atualizar o sistema</span>
+sudo apt update && sudo apt upgrade -y
+
+<span class="cm"># 2 · Guest Additions (Desktop). No VirtualBox:</span>
+<span class="cm">#     Dispositivos → Inserir imagem de CD dos Adicionais para Convidado</span>
+sudo apt install -y build-essential bzip2 linux-headers-$(uname -r)
+sudo sh /media/$USER/VBox_GAs_*/VBoxLinuxAdditions.run
+sudo reboot
+
+<span class="cm"># 3 · conferir a identificação</span>
+hostnamectl
+sudo hostnamectl set-hostname ubuntu-lab   <span class="cm"># se quiser trocar</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 21 CICLO -->
+  <section class="slide" id="s-ciclo">
+    <div class="slide-inner">
+      <div class="kicker animate">21 · Bloco 3 · Gerenciamento</div>
+      <h2 class="stitle animate delay-1">O ciclo de vida de uma VM</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">📸</div><h3>Snapshot</h3><p>Fotografa o estado da VM: disco e configuração (e a memória, se estiver ligada). A partir dali, as mudanças vão para um <b>disco de diferenças</b>. Restaurar descarta essas mudanças.</p></div>
+        <div class="card"><div class="icon-chip g">⧉</div><h3>Clone</h3><p><b>Completo:</b> cópia independente de todos os arquivos. <b>Vinculado (linked):</b> reaproveita o disco original e grava só as diferenças. Economiza espaço, mas depende do original.</p></div>
+        <div class="card"><div class="icon-chip">📦</div><h3>Exportação (OVA)</h3><p>Empacota VM e discos num único arquivo <span class="code">.ova</span>, que pode ser importado em outro computador. Guardado em outro disco, serve de <b>backup</b>.</p></div>
+        <div class="card"><div class="icon-chip g">⇄</div><h3>Migração</h3><p>Mover a VM para outro host. Em data centers, a <b>migração ao vivo</b> (ex.: vMotion) faz isso com a VM ligada, para manutenção sem parar o serviço.</p></div>
+        <div class="card"><div class="icon-chip">⏻</div><h3>Estados</h3><p><b>Desligar</b> (como tirar da tomada), <b>desligamento ACPI</b> (pede ao SO para desligar, o certo) e <b>salvar estado</b> (hiberna a VM).</p></div>
+        <div class="card"><div class="icon-chip g">🗑</div><h3>Exclusão</h3><p>Remove a VM do VirtualBox e, se você escolher, também apaga os arquivos de disco. Não tem lixeira.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Snapshot não é backup.</b> Ele fica no mesmo disco do host que a VM e depende do disco original. Se o SSD do notebook morrer, a VM e todos os snapshots morrem juntos. Backup é uma cópia independente, em outro lugar: um <span class="code">.ova</span> num HD externo, por exemplo.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 22 SIMULADOR SNAPSHOT -->
+  <section class="slide" id="s-snapsim">
+    <div class="slide-inner">
+      <div class="kicker animate">22 · Bloco 3 · Interativo</div>
+      <h2 class="stitle animate delay-1">Simulador de snapshots: quebre sem medo</h2>
+      <p class="subtitle animate delay-2">Tire um snapshot, instale coisas, quebre o sistema e restaure. Observe o espaço em disco crescer. Por fim, simule a falha do disco do host, com e sem backup.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1.15fr 1fr;">
+        <div class="card">
+          <div class="snap-tree" id="snTree"></div>
+          <div class="vm-status">
+            <div><div class="n" id="snState" style="color:var(--green)">OK</div><div class="l">estado da VM</div></div>
+            <div><div class="n" id="snDisk" style="color:var(--blue)">9,0 GB</div><div class="l">espaço no host</div></div>
+            <div><div class="n" id="snBkp" style="color:var(--text-faint)">nenhum</div><div class="l">backup (.ova)</div></div>
+          </div>
+          <div class="term" id="snTerm" aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <div class="git-ctrl" style="margin-top:0;">
+            <button class="btn" data-sn="take">📸 Tirar snapshot</button>
+            <button class="btn ghost" data-sn="install">Instalar programa (+0,8 GB)</button>
+            <button class="btn ghost" data-sn="break">💥 Quebrar o sistema</button>
+          </div>
+          <div class="git-ctrl">
+            <button class="btn gold" data-sn="restore">↶ Restaurar último snapshot</button>
+            <button class="btn ghost" data-sn="merge">Excluir snapshots</button>
+          </div>
+          <div class="git-ctrl">
+            <button class="btn ghost" data-sn="export">📦 Exportar .ova para HD externo</button>
+            <button class="btn ghost" data-sn="disk" style="border-color:rgba(239,91,91,.5); color:var(--red);">⚠ SSD do host falha</button>
+            <button class="btn ghost" data-sn="reset">↺</button>
+          </div>
+          <p style="margin-top:.7rem; font-size:.8rem; color:var(--text-dim);">"Quebrar o sistema" representa o clássico <span class="code">sudo rm -rf /etc</span> por engano, ou uma atualização que não volta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 23 GERENCIAR -->
+  <section class="slide hands-on" id="s-gerenciar">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 15 min</span></div>
+      <h2 class="stitle animate delay-1">Snapshot, "quebre e restaure", clone e exportação</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.15fr;">
+        <div class="card">
+          <h3 class="accent">Roteiro (pela interface)</h3>
+          <ol class="steps">
+            <li><span>Desligue a VM. Em <b>Snapshots</b>, tire <span class="code">pos-instalacao</span>.</span></li>
+            <li><span>Ligue, crie um arquivo <span class="code">teste.txt</span> na pasta pessoal e desligue.</span></li>
+            <li><span><b>Restaure</b> o snapshot e ligue de novo. O arquivo ainda existe? Por quê?</span></li>
+            <li><span>Crie um <b>clone vinculado</b> a partir do snapshot. Compare o tamanho da pasta dele com a da original.</span></li>
+            <li><span>Opcional, em casa: <b>Arquivo → Exportar</b> para <span class="code">.ova</span> num HD externo.</span></li>
+          </ol>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Os mesmos passos pelo terminal do host</div>
+          <button class="copy">copiar</button>
+<pre class="wrap">VBoxManage snapshot ubuntu-lab take pos-instalacao --description "SO limpo"
+VBoxManage snapshot ubuntu-lab list
+
+VBoxManage controlvm ubuntu-lab acpipowerbutton      <span class="cm"># desliga "pelo botão"</span>
+VBoxManage snapshot ubuntu-lab restore pos-instalacao  <span class="cm"># com a VM desligada</span>
+
+<span class="cm"># clone vinculado (só as diferenças) e clone completo</span>
+VBoxManage clonevm ubuntu-lab --snapshot pos-instalacao --options link --name ubuntu-linked --register
+VBoxManage clonevm ubuntu-lab --name ubuntu-full --register
+
+VBoxManage export ubuntu-lab -o ubuntu-lab.ova        <span class="cm"># backup portátil</span></pre>
+        </div>
+      </div>
+      <div class="info-box animate delay-3"><b>Resposta esperada no passo 3:</b> o arquivo some. Ele foi gravado no disco de diferenças criado depois do snapshot, e restaurar descarta esse disco. É assim que o laboratório "volta ao zero" a cada aula.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 24 PROBLEMAS -->
+  <section class="slide" id="s-problemas">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">24 · Bloco 3 · Situações-problema · debate coletivo</div>
+      <h2 class="stitle animate delay-1">Aplique o que você construiu hoje</h2>
+      <p class="subtitle animate delay-2">Pense sozinho por 1 minuto em cada cenário, depois debata com a turma. Os pontos-chave ficam escondidos para revisão.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Compatibilidade.</b> Você precisa testar um app em Windows, Linux e macOS, mas só tem um notebook Windows. Como a virtualização resolve? Tipo 1 ou tipo 2?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Uma VM para cada sistema, no mesmo notebook. <b>Tipo 2</b> (VirtualBox, VMware Workstation): roda sobre o Windows que você já usa. Atenção: o macOS só pode ser virtualizado legalmente em <b>hardware Apple</b>, pela licença da Apple.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Consolidação.</b> Uma empresa quer trocar 10 servidores físicos subutilizados por menos máquinas, sem perder o isolamento entre as aplicações. Que tecnologia? Tipo 1 ou 2?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Virtualização de servidores com <b>hypervisor tipo 1</b> (ESXi, Hyper-V, KVM): sem SO hospedeiro no meio, com menos overhead e com recursos de data center, como migração ao vivo. Cada aplicação continua isolada na sua VM, e o hardware passa a ser bem aproveitado.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Plano de reversão.</b> Antes de uma atualização crítica numa VM de produção, que mecanismo garante a volta rápida? Ele substitui o backup?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Snapshot</b> logo antes da atualização: se der errado, restaura em segundos. <b>Não substitui backup:</b> fica no mesmo armazenamento e depende do disco original. Depois de validar a atualização, apague o snapshot; mantido por muito tempo, ele cresce e deixa a VM mais lenta.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Driver ausente.</b> O instalador não reconhece a placa de rede. Isso é mais ou menos provável numa VM do que num PC físico? Por quê?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Menos provável.</b> O hypervisor apresenta à VM dispositivos <b>emulados e padronizados</b> (como placas Intel PRO/1000 no VirtualBox), com drivers que quase todo sistema já traz. No físico, o hardware varia por fabricante e modelo.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Laboratório de ensino.</b> Todos os alunos precisam começar cada prática com o mesmo ambiente, mesmo que alguém tenha "quebrado" o sistema na aula anterior. Qual recurso e como usar?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Uma VM-modelo com um <b>snapshot base</b>: no início de cada aula, todos <b>restauram</b> o snapshot. Para muitas máquinas, distribua um <b>.ova</b> ou crie <b>clones vinculados</b> a partir do mesmo snapshot.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 25 SÍNTESE -->
+  <section class="slide" id="s-sintese">
+    <div class="slide-inner">
+      <div class="kicker animate">25 · Bloco 4 · Síntese</div>
+      <h2 class="stitle animate delay-1">O que vimos e o que vem a seguir</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>Hoje</h3><p>Hypervisors tipo 1 e 2, VM × contêiner, recursos e redes virtuais. Criamos a VM, instalamos o Ubuntu, coletamos evidências e gerenciamos o ciclo de vida com snapshot, clone e exportação.</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Próxima aula</h3><p><b>Comunicação entre computadores:</b> endereço IP, gateway e DNS. A VM de hoje é o nosso laboratório: o <span class="code">10.0.2.15</span> que você viu no <span class="code">ip -br a</span> é o ponto de partida.</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Para ir além</h3><p>TANENBAUM, <i>Sistemas Operacionais Modernos</i>, capítulo sobre virtualização e nuvem, e o <a href="https://www.virtualbox.org/manual/" target="_blank" rel="noopener">manual do VirtualBox</a>, capítulos de rede e snapshots.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Não apague a VM!</b> Ela será usada nas próximas aulas. Mantenha o snapshot <span class="code">pos-instalacao</span>.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 26 AVALIAÇÃO -->
+  <section class="slide hands-on" id="s-avaliacao">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Bloco 4 · Avaliação formativa <span class="mm-badge">⏱ 10 + 5 min</span></div>
+      <h2 class="stitle animate delay-1">Quiz técnico e exit ticket no Google Classroom</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Quiz técnico individual (10 min)</h3>
+          <ul>
+            <li>Pelo celular ou notebook, no <b>Google Classroom</b> (Forms com autocorreção).</li>
+            <li><b>5 questões</b> cobrindo os 3 blocos: hypervisors, recursos, instalação e snapshots.</li>
+            <li>Gabarito discutido logo depois, com foco nas questões com <b>mais erros</b>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Exit ticket (5 min, sem nota)</h3>
+          <ol class="steps">
+            <li><span><b>Minha VM ficou funcionando?</b> (sim; sim, com ajuda; não)</span></li>
+            <li><span><b>Consigo explicar</b> a diferença entre snapshot e backup?</span></li>
+            <li><span><b>O que ainda não ficou claro?</b> Escreva em 1 ou 2 frases.</span></li>
+          </ol>
+          <p style="margin-top:.5rem;">Quem não terminou a instalação: avise no exit ticket para receber ajuda antes da próxima aula.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 27 TAREFA -->
+  <section class="slide hands-on" id="s-tarefa">
+    <div class="slide-inner">
+      <div class="kicker animate">27 · Depois da aula · Tarefa de fixação <span class="mm-badge">⏱ 40 min · individual</span></div>
+      <h2 class="stitle animate delay-1">Relatório técnico da sua VM</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">O que entregar</h3>
+          <ol class="steps">
+            <li><span><b>Ficha técnica</b> da VM (seção 14), com a justificativa de cada valor.</span></li>
+            <li><span><b>Prints das evidências</b> da seção 17 e da lista de snapshots.</span></li>
+            <li><span>Compare o tamanho do arquivo <span class="code">.vdi</span> no host com o uso mostrado por <span class="code">df -Th /</span> dentro da VM. Explique a diferença usando a Aula 06.</span></li>
+            <li><span>Responda: por que <b>não</b> se deve manter um snapshot por meses numa VM de produção?</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Onde achar o .vdi</h3>
+          <p>No VirtualBox: <b>Ferramentas → Mídias</b> mostra o caminho e o tamanho real. Por padrão fica em:</p>
+          <div class="tbl-wrap" style="margin-top:.4rem;"><table class="cmp">
+            <tr><td>Windows</td><td><span class="code">C:\Users\voce\VirtualBox VMs\ubuntu-lab</span></td></tr>
+            <tr><td>Linux / macOS</td><td><span class="code">~/VirtualBox VMs/ubuntu-lab</span></td></tr>
+          </table></div>
+          <div class="info-box"><b>Dica:</b> o "tamanho virtual" e o "tamanho real" aparecem lado a lado no Gerenciador de Mídias.</div>
+        </div>
+      </div>
+      <div class="deliver animate delay-3"><span>Prazo: 1 semana após a aula</span><span>Entrega no Google Classroom</span><span>Conta na nota de trabalhos</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 28 TRILHA -->
+  <section class="slide tall" id="s-trilha">
+    <div class="slide-inner">
+      <div class="kicker animate">28 · Trilha de estudo</div>
+      <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova e a tarefa; os <span class="req">complementar</span> aprofundam. A última coluna diz o que você deve saber explicar ao terminar.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp trail">
+          <tr><th>#</th><th>Estude</th><th>Onde</th><th>Tempo</th><th>Ao terminar, você sabe…</th></tr>
+          <tr><td>1</td><td>O que é virtualização <span class="req ob">obrigatório</span></td><td><a href="https://www.redhat.com/pt-br/topics/virtualization/what-is-virtualization" target="_blank" rel="noopener">Red Hat: o que é virtualização?</a></td><td>10 min</td><td class="goal">explicar VM, hypervisor, host e guest</td></tr>
+          <tr><td>2</td><td>Virtualização e nuvem <span class="req ob">obrigatório</span></td><td>TANENBAUM, <i>Sistemas Operacionais Modernos</i>: capítulo de virtualização e a nuvem</td><td>40 min</td><td class="goal">diferenciar hypervisor tipo 1 e tipo 2 e citar exemplos</td></tr>
+          <tr><td>3</td><td>Primeiros passos no VirtualBox <span class="req ob">obrigatório</span></td><td><a href="https://www.virtualbox.org/manual/" target="_blank" rel="noopener">Manual do VirtualBox</a>: <i>First Steps</i> e <i>Snapshots</i></td><td>30 min</td><td class="goal">criar VM, tirar e restaurar snapshot, clonar</td></tr>
+          <tr><td>4</td><td>Rede virtual <span class="req ob">obrigatório</span></td><td><a href="https://www.virtualbox.org/manual/" target="_blank" rel="noopener">Manual do VirtualBox</a>: <i>Virtual Networking</i> (tabela de modos)</td><td>20 min</td><td class="goal">escolher NAT, bridge ou somente host para um cenário</td></tr>
+          <tr><td>5</td><td>Instalação do Ubuntu <span class="req">complementar</span></td><td><a href="https://ubuntu.com/tutorials/install-ubuntu-desktop" target="_blank" rel="noopener">Ubuntu: Install Ubuntu Desktop</a> (em inglês; use o tradutor)</td><td>15 min</td><td class="goal">descrever cada etapa do instalador</td></tr>
+          <tr><td>6</td><td>Verificar a ISO <span class="req">complementar</span></td><td><a href="https://ubuntu.com/tutorials/how-to-verify-ubuntu" target="_blank" rel="noopener">Ubuntu: How to verify your Ubuntu download</a></td><td>15 min</td><td class="goal">conferir hash e entender por que ele detecta alterações</td></tr>
+          <tr><td>7</td><td>KVM e Hyper-V <span class="req">complementar</span></td><td><a href="https://www.redhat.com/pt-br/topics/virtualization/what-is-KVM" target="_blank" rel="noopener">Red Hat: o que é KVM?</a> e <a href="https://learn.microsoft.com/pt-br/windows-server/virtualization/hyper-v/" target="_blank" rel="noopener">Microsoft Learn: Hyper-V</a></td><td>30 min</td><td class="goal">explicar por que ambos são tipo 1</td></tr>
+          <tr><td>8</td><td>Linux como administrador <span class="req">complementar</span></td><td>NEMETH et al., <i>Manual Completo do Linux</i>: instalação e virtualização</td><td>30 min</td><td class="goal">planejar partições e pós-instalação de um servidor</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Livros da bibliografia:</b> estão on-line nas bibliotecas virtuais da UNIPAR (portal do aluno). Abra o <b>sumário</b> e procure pelo tema indicado.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 29 BIBLIOTECA -->
+  <section class="slide tall" id="s-fontes">
+    <div class="slide-inner">
+      <div class="kicker animate">29 · Biblioteca da aula</div>
+      <h2 class="stitle animate delay-1">Livros, documentação oficial e ferramentas</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card lib">
+          <h4>📚 Livros da bibliografia</h4>
+          <ul>
+            <li><b>TANENBAUM, A. S.; BOS, H.</b> <i>Sistemas Operacionais Modernos.</i> Pearson (on-line). <span class="find">Procure: virtualização e a nuvem, hypervisors tipo 1 e 2.</span></li>
+            <li><b>DEITEL, H. M.</b> <i>Sistemas Operacionais.</i> Pearson (on-line). <span class="find">Bibliografia básica. Procure: máquinas virtuais.</span></li>
+            <li><b>NEMETH, E. et al.</b> <i>Manual Completo do Linux: guia do administrador.</i> Pearson (on-line). <span class="find">Procure: instalação do sistema e virtualização.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>📘 Documentação oficial</h4>
+          <ul>
+            <li><a href="https://www.virtualbox.org/manual/" target="_blank" rel="noopener">Oracle VirtualBox: User Manual</a> <span class="find">Criação, rede virtual, snapshots, clones e VBoxManage.</span></li>
+            <li><a href="https://learn.microsoft.com/pt-br/windows-server/virtualization/hyper-v/" target="_blank" rel="noopener">Microsoft Learn: Hyper-V</a></li>
+            <li><a href="https://www.redhat.com/pt-br/topics/virtualization/what-is-KVM" target="_blank" rel="noopener">Red Hat: o que é KVM?</a></li>
+            <li><a href="https://ubuntu.com/download" target="_blank" rel="noopener">Ubuntu: downloads oficiais</a> <span class="find">ISOs Desktop e Server, e o arquivo SHA256SUMS.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>🧰 Ferramentas</h4>
+          <ul>
+            <li><a href="https://www.virtualbox.org/wiki/Downloads" target="_blank" rel="noopener">VirtualBox</a> <span class="find">Gratuito. Windows, Linux e macOS.</span></li>
+            <li><a href="https://mac.getutm.app/" target="_blank" rel="noopener">UTM</a> <span class="find">Alternativa gratuita para Mac com chip Apple.</span></li>
+            <li><b>VMware Workstation Pro / Fusion Pro</b> <span class="find">Gratuitos para qualquer uso; download pelo portal da Broadcom (exige cadastro).</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Só baixe ISOs de fontes oficiais.</b> Uma ISO adulterada instala um sistema comprometido desde o primeiro boot. O hash da seção 15 é a sua defesa.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 30 GLOSSÁRIO -->
+  <section class="slide tall" id="s-glossario">
+    <div class="slide-inner">
+      <div class="kicker animate">30 · Glossário da aula</div>
+      <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
+      <dl class="gloss animate delay-2">
+        <div><dt>Virtualização</dt><dd>Camada de software que permite que vários sistemas compartilhem o mesmo hardware, isolados.</dd></div>
+        <div><dt>Máquina virtual (VM)</dt><dd>Computador completo simulado em software, com CPU, memória, disco e rede virtuais.</dd></div>
+        <div><dt>Hypervisor</dt><dd>Software que cria, executa e gerencia VMs.</dd></div>
+        <div><dt>Tipo 1 / tipo 2</dt><dd>Hypervisor direto no hardware (bare-metal) / hypervisor como programa sobre um SO host.</dd></div>
+        <div><dt>Host / guest</dt><dd>Sistema da máquina real (hospedeiro) / sistema dentro da VM (convidado).</dd></div>
+        <div><dt>Contêiner</dt><dd>Isolamento de processos que compartilham o kernel do host. Mais leve que uma VM.</dd></div>
+        <div><dt>VT-x / AMD-V</dt><dd>Instruções do processador que aceleram a virtualização. Ativadas no UEFI/BIOS.</dd></div>
+        <div><dt>vCPU / overcommit</dt><dd>Núcleo virtual / alocar mais recursos virtuais do que existem fisicamente.</dd></div>
+        <div><dt>Disco dinâmico / fixo</dt><dd>Arquivo que cresce conforme o uso / arquivo que reserva todo o espaço na criação.</dd></div>
+        <div><dt>ISO</dt><dd>Arquivo-imagem de um disco de instalação.</dd></div>
+        <div><dt>Hash (SHA-256)</dt><dd>"Impressão digital" de um arquivo: muda completamente se um bit mudar.</dd></div>
+        <div><dt>MBR / GPT</dt><dd>Tabelas de partição: a antiga (até 2 TiB, 4 primárias) e a atual (usada com UEFI).</dd></div>
+        <div><dt>Guest Additions</dt><dd>Drivers do VirtualBox instalados no convidado: tela, área de transferência e pastas.</dd></div>
+        <div><dt>NAT / bridge</dt><dd>VM sai pelo IP do host / VM ganha IP próprio na rede física.</dd></div>
+        <div><dt>Snapshot</dt><dd>Estado salvo da VM para onde se pode voltar. Não é backup.</dd></div>
+        <div><dt>Clone vinculado</dt><dd>Cópia que reaproveita o disco original e grava só as diferenças.</dd></div>
+        <div><dt>OVA</dt><dd>Arquivo único com VM e discos, para exportar, importar e fazer backup.</dd></div>
+        <div><dt>Migração ao vivo</dt><dd>Mover uma VM ligada entre hosts físicos, sem parar o serviço.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================================================ 31 AUTOAVALIAÇÃO -->
+  <section class="slide" id="s-autoavaliacao">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">31 · Autoavaliação</div>
+      <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
+      <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pela seção indicada (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="au7a"><div><div class="ci-t">Explicar VM, hypervisor, host e guest, e diferenciar VM de contêiner</div></div><span class="review-hint">seções 06–07</span></label>
+        <label class="check-item"><input type="checkbox" id="au7b"><div><div class="ci-t">Classificar VirtualBox, VMware, Hyper-V e KVM em tipo 1 ou tipo 2</div></div><span class="review-hint">seções 07–08</span></label>
+        <label class="check-item"><input type="checkbox" id="au7c"><div><div class="ci-t">Conferir se a virtualização está ativa no processador</div></div><span class="review-hint">seção 10</span></label>
+        <label class="check-item"><input type="checkbox" id="au7d"><div><div class="ci-t">Dimensionar vCPU, RAM e disco sem prejudicar o host</div></div><span class="review-hint">seções 11 e 13</span></label>
+        <label class="check-item"><input type="checkbox" id="au7e"><div><div class="ci-t">Escolher o modo de rede adequado a um cenário</div></div><span class="review-hint">seção 12</span></label>
+        <label class="check-item"><input type="checkbox" id="au7f"><div><div class="ci-t">Instalar um sistema operacional numa VM, do hash da ISO ao pós-instalação</div></div><span class="review-hint">seções 15–20</span></label>
+        <label class="check-item"><input type="checkbox" id="au7g"><div><div class="ci-t">Usar snapshot e clone, e explicar por que snapshot não é backup</div></div><span class="review-hint">seções 21–23</span></label>
+      </div>
+      <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 32 QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate">32 · Fixação</div>
+      <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
+      <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Hoje você construiu <span class="accent-b">um computador dentro do computador</span>.<br>Na próxima aula, ele vai <span class="accent">conversar com a rede</span>.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Vimos virtualização, hypervisors tipo 1 e 2, contêineres, VT-x/AMD-V, vCPU, memória, discos dinâmicos e fixos, modos de rede, ISO e hash, MBR e GPT, instalação e pós-instalação do Ubuntu, Guest Additions, snapshots, clones, exportação e migração.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula · <b style="color:var(--text)">Comunicação entre computadores: endereço IP, gateway e DNS</b></span><span class="arrow">→</span></div>
+      <div class="grid-2 animate delay-4" style="margin-top:1.2rem; max-width:820px;">
+        <div class="card"><h3 class="accent">Em até 1 semana</h3><p>Relatório técnico da VM (seção 27) entregue no Google Classroom.</p></div>
+        <div class="card"><h3 class="accent-b">Para a próxima aula</h3><p>Traga a VM funcionando, com o snapshot <span class="code">pos-instalacao</span>. Ela será o nosso laboratório de rede.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const progress = document.getElementById('progress');
+document.getElementById('totalNo').textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('in-view'); }
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.2,.55,1]});
+slides.forEach(s=>io.observe(s));
+slides[0].classList.add('in-view');
+
+document.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const curr = Math.max(0, dots.findIndex(d=>d.classList.contains('active')));
+  if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ===== Gabaritos expansíveis (cards estáticos) ===== */
+function bindQ(root){ root.querySelectorAll('.qcard .qhead').forEach(hd=>{ hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open')); }); }
+document.querySelectorAll('.quiz-list.static').forEach(bindQ);
+
+/* ===== Botões copiar ===== */
+document.querySelectorAll('.codeblock .copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const pre = btn.parentElement.querySelector('pre');
+    const txt = pre.innerText;
+    const done = ()=>{ btn.textContent='copiado ✓'; setTimeout(()=>btn.textContent='copiar',1600); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent='selecionado: Ctrl+C'; setTimeout(()=>btn.textContent='copiar',2200); };
+    try{ navigator.clipboard.writeText(txt).then(done, fallback); }catch(e){ fallback(); }
+  });
+});
+
+/* ===== Checklists com localStorage ===== */
+document.querySelectorAll('.check-list[data-check]').forEach(list=>{
+  const key = 'ambtech-aula07-'+list.dataset.check;
+  const meter = document.getElementById(list.dataset.check+'Meter');
+  const boxes = Array.from(list.querySelectorAll('input[type=checkbox]'));
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  function render(){
+    let n=0; boxes.forEach(b=>{ b.closest('.check-item').classList.toggle('done', b.checked); if(b.checked) n++; });
+    meter.querySelector('span').textContent = n+'/'+boxes.length;
+    meter.querySelector('.check-bar span').style.width = (n/boxes.length*100)+'%';
+  }
+  boxes.forEach(b=>{
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', ()=>{ saved[b.id]=b.checked; try{ localStorage.setItem(key, JSON.stringify(saved)); }catch(e){} render(); });
+  });
+  render();
+});
+
+
+
+/* ===== Dimensionador de VM ===== */
+(function(){
+  const OS={
+    srv:{n:'Ubuntu Server 26.04 LTS', ram:1.5, rec:2, disk:4, drec:25, cpu:1},
+    desk:{n:'Ubuntu Desktop 26.04 LTS', ram:6, rec:6, disk:25, drec:30, cpu:2},
+    desk24:{n:'Ubuntu Desktop 24.04 LTS', ram:4, rec:4, disk:25, drec:30, cpu:2},
+    win11:{n:'Windows 11', ram:4, rec:6, disk:64, drec:80, cpu:2}
+  };
+  const $=id=>document.getElementById(id);
+  const ids=['zHram','zHcpu','zHdisk','zOs','zVcpu','zVram','zVdisk'];
+  const fmt=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
+  function line(cls, t, txt){ return '<div class="sz-line '+cls+'"><b class="t">'+t+'</b>'+txt+'</div>'; }
+  function run(){
+    const hr=+$('zHram').value, hc=+$('zHcpu').value, hd=+$('zHdisk').value||0;
+    const os=OS[$('zOs').value], vc=Math.max(1,+$('zVcpu').value||1), vr=Math.max(0.5,+$('zVram').value||0.5), vd=Math.max(1,+$('zVdisk').value||1);
+    const out=[]; let bad=0;
+    // RAM
+    if(vr<os.ram){ bad++; out.push(line('no','✗ RAM','A VM tem '+fmt(vr)+' GB, mas o '+os.n+' exige no mínimo '+fmt(os.ram)+' GB. O instalador pode falhar ou ficar inutilizável.')); }
+    else out.push(line('ok','✓ RAM','Atende ao mínimo do '+os.n+' ('+fmt(os.ram)+' GB).'));
+    const left=hr-vr;
+    if(left<2){ bad++; out.push(line('no','✗ Host','Sobram só '+fmt(left)+' GB para o host. Ele vai usar swap e travar junto com a VM.')); }
+    else if(left<4) out.push(line('warn','! Host','Sobram '+fmt(left)+' GB para o host. Feche o navegador e outros programas enquanto a VM estiver ligada.'));
+    else out.push(line('ok','✓ Host','Sobram '+fmt(left)+' GB para o host: confortável.'));
+    // CPU
+    if(vc>hc){ bad++; out.push(line('no','✗ vCPU','O host tem '+hc+' threads; o VirtualBox não permite dar '+vc+' vCPUs a uma VM.')); }
+    else if(vc>hc/2) out.push(line('warn','! vCPU',vc+' de '+hc+' threads: passa da metade. O host pode ficar lento quando a VM trabalhar.'));
+    else if(vc<os.cpu) out.push(line('warn','! vCPU','O '+os.n+' recomenda '+os.cpu+' núcleos. Com '+vc+', funciona, mas lento.'));
+    else out.push(line('ok','✓ vCPU',vc+' de '+hc+' threads: equilibrado.'));
+    // Disco
+    if(vd<os.disk){ bad++; out.push(line('no','✗ Disco','O '+os.n+' precisa de pelo menos '+os.disk+' GB.')); }
+    else if(vd<os.drec) out.push(line('warn','! Disco','Instala, mas com '+vd+' GB vai faltar espaço logo. Recomendado: '+os.drec+' GB.'));
+    else out.push(line('ok','✓ Disco',vd+' GB dinâmico: começa pequeno e cresce conforme o uso.'));
+    if(vd>hd) out.push(line('warn','! Espaço no host','O disco dinâmico pode crescer até '+vd+' GB, mas o host só tem '+hd+' GB livres. Se encher, a VM trava.'));
+    // Sugestão
+    let sug;
+    if(hr<=8 && (os===OS.desk)) sug='Com '+hr+' GB no host, o Ubuntu Desktop 26.04 (6 GB) não cabe com folga. Use o <b>Ubuntu Server 26.04</b> com 2 GB, ou o <b>Desktop 24.04</b> com 4 GB num host de 8 GB.';
+    else if(bad) sug='Ajuste os itens em vermelho antes de criar a VM.';
+    else sug='Configuração viável. Registre esses valores na ficha da VM.';
+    out.push(line(bad?'no':'ok', bad?'→':'→', sug));
+    $('zOut').innerHTML=out.join('');
+    // medidor de RAM
+    const vmP=Math.min(vr,hr)/hr*100, hostP=Math.max(0,Math.min(4,hr-vr))/hr*100, overP=vr>hr?0:(left<2?Math.max(0,(2-left))/hr*100:0);
+    const m=$('zMeter').children; m[0].style.width=vmP+'%'; m[1].style.width=hostP+'%'; m[2].style.width=overP+'%';
+    $('zMeterL').textContent='RAM do host: '+hr+' GB';
+  }
+  ids.forEach(i=>{ const e=$(i); e.addEventListener('input',run); e.addEventListener('change',run); e.addEventListener('keydown',ev=>ev.stopPropagation()); });
+  $('zOs').addEventListener('change',()=>{ const o=OS[$('zOs').value]; $('zVram').value=o.rec; $('zVcpu').value=Math.max(o.cpu,2); $('zVdisk').value=o.drec; run(); });
+  run();
+})();
+
+/* ===== Diagnóstico: o que deu errado? ===== */
+(function(){
+  const items=[
+    {q:'Ao ligar a VM: "VT-x is disabled in the BIOS for all CPU modes". No assistente, só aparecem versões 32 bits.', opts:['Virtualização desativada no UEFI/BIOS','ISO corrompida','RAM insuficiente na VM','Rede em modo NAT'], a:0, why:'O processador tem VT-x/AMD-V, mas está desligado no SETUP. Ative <i>Intel Virtualization Technology</i> ou <i>SVM Mode</i> (seção 10).'},
+    {q:'A instalação terminou, a VM reiniciou… e abriu o instalador de novo.', opts:['Disco virtual cheio','A ISO continua conectada e vem antes do disco no boot','Faltam as Guest Additions','Senha de usuário errada'], a:1, why:'A ordem de boot ainda dá prioridade à unidade óptica. Remova a ISO em <i>Dispositivos → Unidades ópticas</i> e reinicie.'},
+    {q:'A tela da VM fica pequena, não acompanha o tamanho da janela, e copiar e colar entre o host e a VM não funciona.', opts:['Placa de vídeo do host com defeito','Pouca vCPU','Faltam as Guest Additions no convidado','Modo de rede errado'], a:2, why:'Esses recursos dependem dos drivers de integração instalados <b>dentro</b> do convidado (seção 20).'},
+    {q:'A VM foi configurada em "Somente host" e não consegue rodar o apt update.', opts:['Repositório do Ubuntu fora do ar','Esse modo não tem acesso à internet','Falta de espaço em disco','Hash da ISO diferente'], a:1, why:'"Somente host" só conecta a VM ao host e a outras VMs. Para a internet, use NAT (ou bridge).'},
+    {q:'No meio da cópia de arquivos, o instalador falha com erro de leitura (squashfs) e não continua.', opts:['ISO corrompida no download','Teclado em layout errado','Pouca vCPU','Guest Additions ausentes'], a:0, why:'Um download incompleto ou corrompido quebra a instalação. Compare o <b>hash SHA-256</b> antes de instalar (seção 15) e baixe de novo se for diferente.'},
+    {q:'O notebook (8 GB de RAM) trava inteiro, inclusive o mouse, quando a VM com 6 GB liga.', opts:['Virtualização desativada','Disco dinâmico em vez de fixo','RAM demais para a VM: o host ficou sem memória','Rede em bridge'], a:2, why:'O host ficou com 2 GB e passou a usar o disco como memória (swap). Reduza a RAM da VM ou use o Ubuntu Server (seção 13).'},
+    {q:'No Windows 11, aparece uma tartaruga verde na barra da VM e tudo está muito lento.', opts:['Hyper-V, WSL2 ou a Integridade de memória estão ativos','ISO de 32 bits','Disco fixo em vez de dinâmico','Faltam atualizações no convidado'], a:0, why:'Com o Hyper-V ativo, o VirtualBox não acessa o VT-x diretamente e roda por cima dele, bem mais lento. Funciona; para velocidade total, desative esses recursos (sabendo que o WSL2 depende deles).'}
+  ];
+  let i=0, ok=0, tot=0, answered=false;
+  const q=document.getElementById('dgQ'), fb=document.getElementById('dgFb'), sc=document.getElementById('dgScore'), ct=document.getElementById('dgCount'), box=document.getElementById('dgBtns');
+  function load(){
+    answered=false; const it=items[i];
+    q.textContent=it.q; ct.textContent='Sintoma '+(i+1)+' de '+items.length;
+    fb.className='verdict'; fb.textContent='Escolha a causa.';
+    box.innerHTML=''; it.opts.forEach((o,k)=>{ const b=document.createElement('button'); b.className='btn ghost'; b.textContent=o; b.addEventListener('click',()=>answer(k)); box.appendChild(b); });
+  }
+  function answer(k){
+    if(answered) return; answered=true; tot++;
+    const it=items[i], right=k===it.a; if(right) ok++;
+    const last=i===items.length-1;
+    fb.className='verdict '+(right?'ok':'no');
+    fb.innerHTML='<b class="t">'+(right?'✓ Diagnóstico certo!':'✗ A causa mais provável é: '+it.opts[it.a]+'.')+'</b> '+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;" id="dgNext">'+(last?'recomeçar ↺':'próximo sintoma →')+'</button>';
+    document.getElementById('dgNext').addEventListener('click',()=>{ if(last){ i=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else i++; load(); });
+    sc.textContent='Acertos: '+ok+' / '+tot; box.querySelectorAll('button').forEach(b=>b.disabled=true);
+  }
+  load();
+})();
+
+/* ===== Simulador de snapshots ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const fmt=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:1, maximumFractionDigits:1})+' GB';
+  let st;
+  function init(){ st={base:9.0, snaps:[], cur:{diff:0, broken:false, apps:0}, backup:null, dead:false, n:0}; }
+  function total(){ return st.base + st.snaps.reduce((s,x)=>s+x.layer,0) + st.cur.diff; }
+  function out(cmd, txt){ $('snTerm').innerHTML='<span class="p">$</span> <span class="c">'+cmd+'</span>\n'+txt; }
+  function render(){
+    const t=$('snTree'); t.innerHTML='';
+    if(st.dead){ t.innerHTML='<span class="snode cur broken">VM perdida<small>disco do host falhou</small></span>'; }
+    else{
+      const add=(h)=>{ if(t.children.length){ const a=document.createElement('span'); a.className='sarrow'; a.textContent='→'; t.appendChild(a);} t.insertAdjacentHTML('beforeend',h); };
+      add('<span class="snode base">disco base<small>'+fmt(st.base)+'</small></span>');
+      st.snaps.forEach(s=>add('<span class="snode snap">📸 '+s.name+'<small>'+(s.broken?'quebrado · ':'')+s.apps+' prog.</small></span>'));
+      add('<span class="snode cur'+(st.cur.broken?' broken':'')+'">estado atual<small>diferenças: '+fmt(st.cur.diff)+'</small></span>');
+    }
+    const s=$('snState'); s.textContent= st.dead?'PERDIDA': st.cur.broken?'QUEBRADA':'OK'; s.style.color= st.dead||st.cur.broken?'var(--red)':'var(--green)';
+    $('snDisk').textContent= st.dead?'—':fmt(total());
+    const b=$('snBkp'); b.textContent= st.backup? 'OVA ('+st.backup.apps+' prog.)':'nenhum'; b.style.color= st.backup?'var(--gold)':'var(--text-faint)';
+  }
+  function act(a){
+    if(a==='reset'){ init(); out('VBoxManage list vms','"ubuntu-lab" · Ubuntu recém-instalado, sem snapshots.\nComece tirando um snapshot.'); render(); return; }
+    if(st.dead && a!=='reset'){ out('VBoxManage startvm ubuntu-lab','<span class="e">Não há VM: o disco do host falhou.</span>'+(st.backup?'\n<span class="y">Mas existe um .ova no HD externo: use ↺ e importe-o (VBoxManage import ubuntu-lab.ova).</span>':'\nRecomece com ↺.')); return; }
+    if(a==='take'){
+      const name='S'+(++st.n);
+      st.snaps.push({name, layer:st.cur.diff, broken:st.cur.broken, apps:st.cur.apps});
+      st.cur={diff:0, broken:st.cur.broken, apps:st.cur.apps};
+      out('VBoxManage snapshot ubuntu-lab take '+name,'Snapshot '+name+' criado. A partir de agora, toda gravação vai para um <b>novo disco de diferenças</b>.\n<span class="y">O snapshot em si ocupa quase nada; o que cresce é o disco de diferenças.</span>');
+    } else if(a==='install'){
+      if(st.cur.broken){ out('sudo apt install …','<span class="e">O sistema está quebrado: nem o apt funciona. Restaure um snapshot.</span>'); return; }
+      st.cur.diff+=0.8; st.cur.apps++;
+      out('sudo apt install …','Programa instalado (+0,8 GB gravados no disco de diferenças).'+(st.snaps.length?'':'\n<span class="y">Sem snapshot: essas gravações vão direto para o disco base.</span>'));
+      if(!st.snaps.length){ st.base+=st.cur.diff; st.cur.diff=0; }
+    } else if(a==='break'){
+      st.cur.broken=true; st.cur.diff+=0.1;
+      out('sudo rm -rf /etc','<span class="e">Arquivos de configuração apagados. A VM não inicia mais direito.</span>\n'+(st.snaps.length?'<span class="y">Calma: existe snapshot. Restaure.</span>':'<span class="y">Sem snapshot… só reinstalando (ou um backup).</span>'));
+    } else if(a==='restore'){
+      if(!st.snaps.length){ out('VBoxManage snapshot ubuntu-lab restore','<span class="e">Não há snapshot para restaurar.</span> Sem ele, a saída é reinstalar o sistema.'); return; }
+      const s=st.snaps[st.snaps.length-1]; const lost=st.cur.diff;
+      st.cur={diff:0, broken:s.broken, apps:s.apps};
+      out('VBoxManage snapshot ubuntu-lab restore '+s.name,'Voltou ao estado de '+s.name+'. O disco de diferenças ('+fmt(lost)+') foi descartado.\n<span class="y">'+(s.broken?'Atenção: esse snapshot foi tirado com o sistema já quebrado!':'Tudo o que foi feito depois do snapshot sumiu: o bom e o ruim.')+'</span>');
+    } else if(a==='merge'){
+      if(!st.snaps.length){ out('excluir snapshots','Não há snapshots.'); return; }
+      st.base=total()-st.cur.diff; st.snaps=[]; st.base+=st.cur.diff; st.cur.diff=0;
+      out('excluir todos os snapshots','Os discos de diferenças foram <b>mesclados</b> ao disco base. O estado atual foi mantido.\n<span class="y">Não há mais para onde voltar, e o espaço não diminuiu: ele foi incorporado ao disco.</span>');
+    } else if(a==='export'){
+      if(st.cur.broken){ out('VBoxManage export ubuntu-lab -o /media/hd-externo/ubuntu-lab.ova','<span class="y">Exportado… mas você exportou um sistema quebrado! Restaure antes de fazer backup.</span>'); }
+      else out('VBoxManage export ubuntu-lab -o /media/hd-externo/ubuntu-lab.ova','Backup criado em <b>outro disco</b>: '+fmt(total()*0.45)+' (o .ova é compactado).');
+      st.backup={apps:st.cur.apps, broken:st.cur.broken};
+    } else if(a==='disk'){
+      st.dead=true;
+      out('# o SSD do notebook parou de responder','<span class="e">A VM, o disco base e TODOS os snapshots estavam no mesmo SSD. Perdidos.</span>\n'+(st.backup?'<span class="y">Mas o .ova está no HD externo: importe-o em outro computador e recupere a VM. Isso é backup.</span>':'<span class="y">Sem .ova em outro disco, não há recuperação. Snapshot não é backup.</span>'));
+    }
+    render();
+  }
+  document.querySelectorAll('[data-sn]').forEach(b=>b.addEventListener('click',()=>act(b.dataset.sn)));
+  init(); act('reset');
+})();
+
+/* ===== Quiz de fixação ===== */
+(function(){
+  const quiz=[
+    {tag:'Conceito', q:'Qual a diferença entre host e guest?', a:'<b>Host</b> é o sistema que roda na máquina física e hospeda o hypervisor tipo 2. <b>Guest</b> é o sistema instalado dentro da VM.'},
+    {tag:'Hypervisor', q:'VirtualBox é tipo 1 ou tipo 2? E o Hyper-V do Windows 11 Pro?', a:'VirtualBox: <b>tipo 2</b> (programa sobre o SO). Hyper-V: <b>tipo 1</b>, mesmo no Windows 11 Pro: ao ser ativado, ele roda por baixo do próprio Windows.'},
+    {tag:'VM × contêiner', q:'Por que um contêiner sobe mais rápido que uma VM?', a:'Porque não inicia um sistema operacional inteiro: compartilha o <b>kernel do host</b> e isola apenas processos. O preço é um isolamento menor.'},
+    {tag:'Recursos', q:'Um disco virtual dinâmico de 25 GB com 8 GB gravados ocupa quanto no host?', a:'Cerca de <b>8 GB</b> (mais alguns metadados). Ele cresce conforme o uso, até o limite de 25 GB.'},
+    {tag:'Rede', q:'Qual modo de rede faz a VM aparecer como mais um computador da rede, com IP próprio?', a:'<b>Bridge</b> (placa em modo bridge). No NAT, a VM sai pelo IP do host e não é alcançável por outros computadores.'},
+    {tag:'Instalação', q:'Para que serve conferir o hash SHA-256 da ISO?', a:'Para garantir que o arquivo está <b>íntegro e não foi alterado</b>: um bit diferente gera um hash totalmente diferente.'},
+    {tag:'Instalação', q:'A VM reinicia e abre o instalador de novo. Qual a causa e a solução?', a:'A <b>ISO continua conectada</b> e vem antes do disco no boot. Remova a mídia da unidade óptica virtual.'},
+    {tag:'Pós-instalação', q:'O que as Guest Additions habilitam?', a:'Tela que se ajusta à janela, copiar e colar entre host e VM, pastas compartilhadas, mouse integrado e melhor desempenho de vídeo.'},
+    {tag:'Gerenciamento', q:'Snapshot substitui backup? Justifique.', a:'<b>Não.</b> O snapshot fica no mesmo disco da VM e depende do disco original; se esse disco falha, tudo se perde. Backup é uma cópia independente em outro lugar (ex.: .ova num HD externo).'},
+    {tag:'Gerenciamento', q:'Clone completo × clone vinculado: qual economiza espaço e qual o custo?', a:'O <b>vinculado</b> economiza, pois grava só as diferenças, mas <b>depende</b> da VM original e do snapshot. O completo é independente e ocupa o tamanho total.'}
+  ];
+  const list=document.getElementById('quizList');
+  quiz.forEach((it,k)=>{
+    const c=document.createElement('div'); c.className='qcard';
+    c.innerHTML='<button class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">Q'+(k+1)+'.</b> '+it.q+'</span><span class="qtag">'+it.tag+'</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">'+it.a+'</div></div>';
+    list.appendChild(c);
+  });
+  bindQ(list);
+})();
+</script>
+
+</body>
+</html>
