@@ -346,6 +346,20 @@ table.trail .goal{color:var(--text);}
 .method .card .icon-chip{font-size:.9rem;}
 .review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
 @media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+/* ============================= REVISÃO: situação, aprofundar, exemplos ============================= */
+.ctx{margin-top:.8rem; padding:.65rem .95rem; border-left:3px solid var(--gold); background:rgba(242,169,59,.07); border-radius:0 10px 10px 0; font-size:.88rem; color:var(--text-dim); line-height:1.55; max-width:95ch;}
+.ctx b{color:var(--text);}
+.ctx b.tag{display:inline-block; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-right:.5rem;}
+.deep{margin-top:.9rem; display:flex; flex-wrap:wrap; gap:.35rem 1rem; align-items:baseline; font-size:.8rem; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:.6rem;}
+.deep > span:first-child{font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue);}
+.deep a{color:var(--blue); text-decoration:none;}
+.deep a:hover{text-decoration:underline;}
+.deep a::after{content:' ↗'; font-size:.75em; color:var(--text-faint);}
+.deep .ref{color:var(--text-dim);}
+.card p.ex{margin-top:.45rem; padding-top:.45rem; border-top:1px dashed var(--border-soft); font-size:.78rem;}
+.card p.ex b{color:var(--gold);}
+.card p.sit{font-size:.78rem; color:var(--text-dim); background:rgba(242,169,59,.06); border-radius:8px; padding:.4rem .55rem; margin:.2rem 0 .45rem;}
+.card p.sit b{color:var(--gold);}
 </style>
 </head>
 <body>
@@ -383,53 +397,54 @@ table.trail .goal{color:var(--text);}
     <div class="slide-inner">
       <div class="kicker animate">Roteiro da aula</div>
       <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
-      <div class="toc animate delay-2" style="margin-top:.8rem;">
+      <p class="subtitle animate delay-2" style="margin-bottom:.4rem;">O número de cada item é o mesmo do canto inferior esquerdo da tela. Clique para ir direto ao slide.</p>
+      <div class="toc animate delay-2" style="margin-top:.6rem;">
         <div>
           <div class="toc-group">Antes de começar</div>
-          <a href="#s-prep"><span class="n">01</span><span class="t">Checklist antes do encontro</span></a>
-          <a href="#s-agenda"><span class="n">02</span><span class="t">Roteiro do encontro de hoje</span></a>
-          <a href="#s-revisao"><span class="n">03</span><span class="t">Revisão relâmpago da Aula 01</span></a>
-          <a href="#s-gancho"><span class="n">04</span><span class="t">"Merge hell": 2 dias de conflitos</span></a>
+          <a href="#s-prep"><span class="n"></span><span class="t">Checklist antes do encontro</span></a>
+          <a href="#s-agenda"><span class="n"></span><span class="t">Roteiro do encontro de hoje</span></a>
+          <a href="#s-revisao"><span class="n"></span><span class="t">Revisão relâmpago da Aula 01</span></a>
+          <a href="#s-gancho"><span class="n"></span><span class="t">Por que integrar cedo</span></a>
           <div class="toc-group">Branches e merge</div>
-          <a href="#s-branch"><span class="n">05</span><span class="t">O que é uma branch</span></a>
-          <a href="#s-sim"><span class="n">06</span><span class="t">Simulador de branches</span></a>
-          <a href="#s-merge"><span class="n">07</span><span class="t">Fast-forward × merge commit</span></a>
+          <a href="#s-branch"><span class="n"></span><span class="t">O que é uma branch</span></a>
+          <a href="#s-sim"><span class="n"></span><span class="t">Simulador de branches</span></a>
+          <a href="#s-merge"><span class="n"></span><span class="t">Os dois tipos de merge</span></a>
+          <a href="#s-conflito"><span class="n"></span><span class="t">🛠️ Resolva um conflito</span></a>
         </div>
         <div>
-          <a href="#s-conflito"><span class="n">08</span><span class="t">🛠️ Resolva um conflito</span></a>
-          <a href="#s-rebase"><span class="n">09</span><span class="t">Rebase e a regra de ouro</span></a>
-          <a href="#s-mergerebase"><span class="n">10</span><span class="t">Merge × rebase</span></a>
-          <a href="#s-kit"><span class="n">11</span><span class="t">stash, cherry-pick e bisect</span></a>
+          <a href="#s-rebase"><span class="n"></span><span class="t">Rebase e a regra de ouro</span></a>
+          <a href="#s-mergerebase"><span class="n"></span><span class="t">Merge ou rebase?</span></a>
+          <a href="#s-kit"><span class="n"></span><span class="t">stash, cherry-pick e bisect</span></a>
           <div class="toc-group">Estratégias e colaboração</div>
-          <a href="#s-estrategias"><span class="n">12</span><span class="t">GitFlow, GitHub Flow, trunk-based</span></a>
-          <a href="#s-mm-estrategia"><span class="n">13</span><span class="t">🛠️ Qual estratégia usar?</span></a>
-          <a href="#s-pr"><span class="n">14</span><span class="t">Pull Request passo a passo</span></a>
-          <a href="#s-review"><span class="n">15</span><span class="t">Code review que ajuda</span></a>
+          <a href="#s-estrategias"><span class="n"></span><span class="t">GitFlow, GitHub Flow, trunk-based</span></a>
+          <a href="#s-mm-estrategia"><span class="n"></span><span class="t">🛠️ Qual estratégia usar?</span></a>
+          <a href="#s-pr"><span class="n"></span><span class="t">Pull Request passo a passo</span></a>
+          <a href="#s-review"><span class="n"></span><span class="t">PR fácil de revisar</span></a>
+          <a href="#s-protecao"><span class="n"></span><span class="t">Proteja a branch main</span></a>
+          <a href="#s-fork"><span class="n"></span><span class="t">Fork ou collaborator</span></a>
         </div>
         <div>
-          <a href="#s-protecao"><span class="n">16</span><span class="t">Proteja a branch main</span></a>
-          <a href="#s-fork"><span class="n">17</span><span class="t">Fork, collaborator e upstream</span></a>
           <div class="toc-group">Autoestudo da semana</div>
-          <a href="#s-pbl"><span class="n">18</span><span class="t">Situação-problema: PagaFácil</span></a>
-          <a href="#s-lab"><span class="n">19</span><span class="t">Laboratório no Killercoda</span></a>
-          <a href="#s-projeto"><span class="n">20</span><span class="t">TaskFlow: checkpoint 2</span></a>
-          <a href="#s-plano"><span class="n">21</span><span class="t">Seu plano da semana</span></a>
-          <a href="#s-trilha"><span class="n">22</span><span class="t">Trilha de estudo da semana</span></a>
-          <a href="#s-fontes"><span class="n">23</span><span class="t">Biblioteca: livros e documentação</span></a>
-          <a href="#s-glossario"><span class="n">24</span><span class="t">Glossário da aula</span></a>
-          <a href="#s-autoavaliacao"><span class="n">25</span><span class="t">Autoavaliação</span></a>
-          <a href="#s-quiz"><span class="n">26</span><span class="t">Quiz de fixação</span></a>
+          <a href="#s-pbl"><span class="n"></span><span class="t">Situação-problema: PagaFácil</span></a>
+          <a href="#s-lab"><span class="n"></span><span class="t">Laboratório no Killercoda</span></a>
+          <a href="#s-projeto"><span class="n"></span><span class="t">TaskFlow: checkpoint 2</span></a>
+          <a href="#s-plano"><span class="n"></span><span class="t">Seu plano da semana</span></a>
+          <a href="#s-trilha"><span class="n"></span><span class="t">Trilha de estudo</span></a>
+          <a href="#s-fontes"><span class="n"></span><span class="t">Biblioteca da semana</span></a>
+          <a href="#s-glossario"><span class="n"></span><span class="t">Glossário</span></a>
+          <a href="#s-autoavaliacao"><span class="n"></span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n"></span><span class="t">Quiz de fixação</span></a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 01 PREP -->
+  <!-- ============================================================ PREP -->
   <section class="slide hands-on" id="s-prep">
     <div class="slide-inner">
-      <div class="kicker animate">01 · Antes do encontro <span class="mm-badge">⏱ 20 min · faça antes de 21/10</span></div>
-      <h2 class="stitle animate delay-1">Chegue com o TaskFlow pronto para colaborar</h2>
-      <p class="subtitle animate delay-2">Hoje a dupla vai trabalhar no mesmo repositório ao mesmo tempo. Confira estes itens antes da aula (fica salvo neste navegador).</p>
+      <div class="kicker animate"><span class="knum"></span>Antes do encontro <span class="mm-badge">⏱ 20 min · faça antes de 21/10</span></div>
+      <h2 class="stitle animate delay-1">Deixe o TaskFlow pronto para a dupla trabalhar junto</h2>
+      <p class="subtitle animate delay-2">Hoje você e seu colega vão mexer no mesmo repositório ao mesmo tempo. Se o colega ainda não tiver acesso ou o projeto não rodar na máquina dele, a aula trava. Confira estes itens antes (fica salvo neste navegador).</p>
       <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
         <div class="check-list" data-check="prep">
           <label class="check-item"><input type="checkbox" id="p2a"><div><div class="ci-t">Checkpoint 1 entregue (tag v0.1)</div><div class="ci-d">Confira em <i>Releases/Tags</i> no GitHub se a tag aparece. Se não: <span class="code">git push --tags</span></div></div></label>
@@ -442,15 +457,16 @@ table.trail .goal{color:var(--text);}
           <p>Ainda não fez o fork? O projeto está em <a href="https://github.com/patrickjcardoso/taskflow" target="_blank" rel="noopener">github.com/patrickjcardoso/taskflow</a>. Faça o fork, clone e siga o checkpoint 1 da Aula 01 antes de começar este.</p>
           <div class="info-box"><b>Dica:</b> deixe o terminal com o TaskFlow aberto durante o encontro. Na demonstração vamos criar uma branch, gerar um conflito e abrir um Pull Request ao vivo.</div>
           <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+          <div class="deep"><span>📖 Ajuda:</span><a href="https://docs.github.com/pt/repositories/managing-your-repositorys-settings-and-features/repository-access-and-collaboration" target="_blank" rel="noopener">GitHub · Acesso e colaboração no repositório</a></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 02 AGENDA -->
+  <!-- ============================================================ AGENDA -->
   <section class="slide" id="s-agenda">
     <div class="slide-inner">
-      <div class="kicker animate">02 · Encontro síncrono · 21/10</div>
+      <div class="kicker animate"><span class="knum"></span>Encontro síncrono · 21/10</div>
       <h2 class="stitle animate delay-1">Como serão os 60 minutos de hoje</h2>
       <div class="agenda animate delay-2">
         <div class="ag"><div class="min">0–10 min</div><h4>Gancho</h4><p>"Merge hell": duas equipes, branches de 3 semanas e 2 dias só resolvendo conflitos. O que deu errado?</p></div>
@@ -462,12 +478,12 @@ table.trail .goal{color:var(--text);}
     </div>
   </section>
 
-  <!-- ============================================================ 03 REVISÃO -->
+  <!-- ============================================================ REVISÃO -->
   <section class="slide" id="s-revisao">
     <div class="slide-inner" style="max-width:960px;">
-      <div class="kicker animate">03 · Revisão da Aula 01</div>
-      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas rápidas</h2>
-      <p class="subtitle animate delay-2">Responda de cabeça e clique para conferir. Se errar mais de uma, revise o material da Aula 01 antes do laboratório.</p>
+      <div class="kicker animate"><span class="knum"></span>Revisão da Aula 01</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas sobre a Aula 01</h2>
+      <p class="subtitle animate delay-2">A aula de hoje usa commits, staging e revert o tempo todo. Responda de cabeça e clique para conferir. Se errar mais de uma, revise a Aula 01 antes do laboratório.</p>
       <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
         <div class="qcard"><button class="qhead"><span class="qtext">Qual a diferença entre <span class="code">git revert</span> e <span class="code">git reset --hard</span>?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>revert</b> cria um commit novo que desfaz outro, sem mexer no histórico: seguro em equipe. <b>reset --hard</b> move o histórico para trás e apaga commits: só em commits locais que ninguém recebeu.</div></div></div>
         <div class="qcard"><button class="qhead"><span class="qtext">Quais são as 3 áreas do Git?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Working directory</b> (sua pasta), <b>staging area</b> (o que vai no próximo commit, via <span class="code">git add</span>) e <b>repositório</b> (o histórico, via <span class="code">git commit</span>).</div></div></div>
@@ -477,32 +493,34 @@ table.trail .goal{color:var(--text);}
     </div>
   </section>
 
-  <!-- ============================================================ 04 GANCHO -->
+  <!-- ============================================================ GANCHO -->
   <section class="slide" id="s-gancho">
     <div class="slide-inner">
-      <div class="kicker animate">04 · Gancho do mundo real</div>
-      <h2 class="stitle animate delay-1">"Merge hell": 3 semanas separados, 2 dias para juntar</h2>
-      <p class="subtitle animate delay-2">Uma equipe de 6 devs dividiu um sistema de vendas em duas frentes: <b>checkout</b> e <b>catálogo</b>. Cada frente trabalhou numa branch própria por 3 semanas, sem integrar com a <span class="code">main</span>. Na véspera do lançamento, chegou a hora de juntar tudo.</p>
+      <div class="kicker animate"><span class="knum"></span>Por que estudar branches</div>
+      <h2 class="stitle animate delay-1">Por que integrar cedo: 3 semanas separados, 2 dias para juntar</h2>
+      <p class="subtitle animate delay-2">Uma equipe de 6 devs dividiu um sistema de vendas em duas frentes: <b>checkout</b> e <b>catálogo</b>. Cada frente trabalhou numa branch própria por 3 semanas, sem integrar com a <span class="code">main</span>. Na véspera do lançamento, chegou a hora de juntar tudo. Esse cenário tem nome no mercado: <b>"merge hell"</b>.</p>
       <div class="timeline animate delay-3">
-        <div class="tl-item"><div class="yr">Semana 1–3</div><p>Cada branch acumula dezenas de commits. Os dois times renomeiam a mesma classe <span class="code">Produto</span> de jeitos diferentes.</p></div>
+        <div class="tl-item"><div class="yr">Semanas 1–3</div><p>Cada branch acumula dezenas de commits. Os dois times renomeiam a mesma classe <span class="code">Produto</span> de jeitos diferentes.</p></div>
         <div class="tl-item warn"><div class="yr">Dia do merge</div><p>87 arquivos em conflito. Ninguém lembra mais por que mudou cada linha.</p></div>
-        <div class="tl-item hot"><div class="yr">+2 dias</div><p>Lançamento adiado. Bugs novos surgem da junção, não de nenhuma das duas frentes.</p></div>
+        <div class="tl-item hot"><div class="yr">+2 dias</div><p>Lançamento adiado. Aparecem bugs que vêm da junção, não de nenhuma das duas frentes.</p></div>
       </div>
-      <div class="info-box animate delay-4"><b>A lição:</b> o problema não é ter branches. É ficar <b>tempo demais</b> sem integrar. Quanto mais longa a branch, maior e mais caro o conflito. Branches curtas (horas ou poucos dias) e integração frequente são a base da <b>Integração Contínua</b>, tema da Semana 3.</div>
+      <div class="info-box animate delay-4"><b>A lição:</b> o problema não é ter branches; é ficar <b>tempo demais</b> sem integrar. Quanto mais longa a branch, maior e mais caro o conflito. Nesta aula você aprende a usar branches curtas, resolver conflitos e revisar cada mudança. Na Semana 3, isso vira <b>Integração Contínua</b>.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://martinfowler.com/articles/branching-patterns.html" target="_blank" rel="noopener">Martin Fowler · Patterns for Managing Source Code Branches (em inglês)</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 05 BRANCH -->
+  <!-- ============================================================ BRANCH -->
   <section class="slide" id="s-branch">
     <div class="slide-inner">
-      <div class="kicker animate">05 · Branches</div>
-      <h2 class="stitle animate delay-1">Uma branch é só um ponteiro para um commit</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>Branches</div>
+      <h2 class="stitle animate delay-1">Branch: uma linha de trabalho isolada, sem copiar o projeto</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você está no meio do filtro por status (o código ainda não funciona) e chega um bug urgente para corrigir na versão que está no ar. Sem branches, você teria de apagar o trabalho pela metade ou entregar código quebrado junto com a correção. Com branches, você deixa o filtro numa linha separada, volta à <span class="code">main</span>, corrige e depois continua de onde parou.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="card">
           <h3 class="accent-b">Como o Git enxerga</h3>
-          <p>Cada commit aponta para o commit anterior (o <b>pai</b>). Uma <b>branch</b> é uma etiqueta móvel que aponta para o último commit de uma linha de trabalho. Criar uma branch é instantâneo: o Git só cria uma etiqueta nova, não copia arquivos.</p>
-          <p style="margin-top:.5rem;"><b>HEAD</b> é a etiqueta que diz "você está aqui": a branch atual. Ao fazer commit, a branch para onde o HEAD aponta avança.</p>
-          <div class="info-box"><b>Analogia:</b> o histórico é uma estrada de commits. Uma branch é um marcador "estou aqui" que avança sozinho a cada commit. Criar uma branch é abrir um desvio para trabalhar sem atrapalhar quem está na estrada principal.</div>
+          <p>Cada commit aponta para o commit anterior (o <b>pai</b>). Uma <b>branch</b> é só uma etiqueta móvel que aponta para o último commit de uma linha de trabalho. Criar uma branch é instantâneo: o Git cria uma etiqueta nova, não copia arquivos.</p>
+          <p style="margin-top:.5rem;"><b>HEAD</b> é a etiqueta "você está aqui": indica a branch atual. A cada commit, a branch para onde o HEAD aponta avança.</p>
+          <div class="info-box"><b>Analogia:</b> o histórico é uma estrada de commits. Uma branch é um desvio onde você trabalha sem atrapalhar quem segue pela estrada principal; depois, o desvio volta a se juntar a ela (merge).</div>
         </div>
         <div class="card">
           <h3 class="accent">Comandos de branch</h3>
@@ -515,18 +533,19 @@ table.trail .goal{color:var(--text);}
             <tr><td><span class="code">git branch -d feature/x</span></td><td>Apaga a branch já integrada.</td></tr>
             <tr><td><span class="code">git push -u origin feature/x</span></td><td>Publica a branch no GitHub.</td></tr>
           </table></div>
-          <p style="margin-top:.6rem; font-size:.78rem;">Você vai ver <span class="code">git checkout</span> em tutoriais antigos. Ele também funciona, mas o <span class="code">git switch</span> (desde o Git 2.23) é mais claro.</p>
+          <p style="margin-top:.6rem; font-size:.78rem;">Tutoriais antigos usam <span class="code">git checkout</span>. Ele também funciona, mas o <span class="code">git switch</span> (desde o Git 2.23) é mais claro.</p>
         </div>
       </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Branches-em-Poucas-Palavras" target="_blank" rel="noopener">Pro Git 3.1 · Branches em poucas palavras</a><a href="https://git-scm.com/docs/git-switch" target="_blank" rel="noopener">Referência do git switch</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 06 SIMULADOR -->
+  <!-- ============================================================ SIMULADOR -->
   <section class="slide" id="s-sim">
     <div class="slide-inner">
-      <div class="kicker animate">06 · Simulador de branches</div>
-      <h2 class="stitle animate delay-1">Crie commits, abra uma branch, faça merge ou rebase</h2>
-      <p class="subtitle animate delay-2">Experimente as duas situações: (1) crie a feature e faça merge <b>sem</b> commit novo na main; (2) recomece, faça commits nas duas branches e compare <b>merge</b> com <b>rebase</b>.</p>
+      <div class="kicker animate"><span class="knum"></span>Simulador de branches</div>
+      <h2 class="stitle animate delay-1">Veja no grafo o que acontece com commits, branches, merge e rebase</h2>
+      <p class="subtitle animate delay-2"><b>Como ler o grafo:</b> cada círculo é um commit; a linha <span class="accent-b">azul</span> é a main e a <span class="accent">dourada</span> é a feature; as etiquetas mostram para onde cada branch aponta, e <b>HEAD →</b> marca onde você está. Faça os dois experimentos: (1) crie a feature, faça commits nela e dê merge <b>sem</b> mexer na main; (2) recomece, faça commits nas duas branches e compare <b>merge</b> com <b>rebase</b>.</p>
       <div class="graph-wrap animate delay-3"><svg id="gSvg" role="img" aria-label="Grafo de commits"></svg></div>
       <div class="git-ctrl animate delay-3">
         <button class="btn" data-b="commit">git commit</button>
@@ -539,40 +558,43 @@ table.trail .goal{color:var(--text);}
         <button class="btn ghost" data-b="reset">↺ recomeçar</button>
       </div>
       <div class="term animate delay-4" id="bTerm" aria-live="polite"></div>
+      <div class="deep animate delay-4"><span>📖 Para praticar mais:</span><a href="https://learngitbranching.js.org/?locale=pt_BR" target="_blank" rel="noopener">Learn Git Branching (pt-br)</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 07 MERGE -->
+  <!-- ============================================================ MERGE -->
   <section class="slide" id="s-merge">
     <div class="slide-inner">
-      <div class="kicker animate">07 · Merge</div>
-      <h2 class="stitle animate delay-1">Os dois tipos de merge</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.8rem;">
+      <div class="kicker animate"><span class="knum"></span>Merge</div>
+      <h2 class="stitle animate delay-1">Os dois tipos de merge: avanço rápido ou commit de junção</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Ana terminou a busca por id e, enquanto isso, ninguém mexeu na <span class="code">main</span>. Bruno terminou o filtro, mas a <span class="code">main</span> já recebeu a mudança da Ana. O Git junta as duas branches de jeitos diferentes, e entender a diferença ajuda a ler o histórico.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem;">
         <div class="card">
-          <h3 class="accent-g">Fast-forward</h3>
+          <h3 class="accent-g">Fast-forward (caso da Ana)</h3>
           <p>A <span class="code">main</span> não andou desde que a feature foi criada. O Git só <b>avança o ponteiro</b> da main até o último commit da feature. Nenhum commit novo é criado.</p>
           <div class="tree" style="margin-top:.6rem;">antes:  A ─ B            ← main
               └─ C ─ D    ← feature
 depois: A ─ B ─ C ─ D   ← main, feature</div>
         </div>
         <div class="card">
-          <h3 class="accent">Merge commit (3-way)</h3>
+          <h3 class="accent">Merge commit, ou 3-way (caso do Bruno)</h3>
           <p>As duas branches andaram. O Git compara 3 versões (o ancestral comum e as duas pontas) e cria um <b>commit de merge</b> com dois pais.</p>
           <div class="tree" style="margin-top:.6rem;">A ─ B ─ E ──────── <b>M</b>   ← main
      └─ C ─ D ───┘       ← feature</div>
         </div>
       </div>
-      <div class="warn-box animate delay-3"><b>Quando dá conflito?</b> Só no merge 3-way, quando as duas branches mudaram <b>as mesmas linhas</b> do mesmo arquivo (ou uma apagou o que a outra editou). Mudanças em arquivos ou trechos diferentes o Git junta sozinho.</div>
+      <div class="warn-box animate delay-4"><b>Quando dá conflito?</b> Só no merge 3-way, quando as duas branches mudaram <b>as mesmas linhas</b> do mesmo arquivo (ou uma apagou o que a outra editou). Mudanças em arquivos ou trechos diferentes o Git junta sozinho.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Ramifica%c3%a7%c3%a3o-Branching-e-Mesclagem-Merging-B%c3%a1sicas" target="_blank" rel="noopener">Pro Git 3.2 · Branching e merge básicos</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 08 CONFLITO -->
+  <!-- ============================================================ CONFLITO -->
   <section class="slide hands-on" id="s-conflito">
     <div class="slide-inner">
-      <div class="kicker animate">🛠️ Mão na Massa · Interativo <span class="mm-badge">⏱ 5 min</span></div>
-      <h2 class="stitle animate delay-1">Resolva o conflito no README do TaskFlow</h2>
-      <p class="subtitle animate delay-2">Ana adicionou a rota de busca por id na <span class="code">main</span>. Bruno, na <span class="code">feature/filtro</span>, adicionou o filtro por status <b>na mesma linha</b> da tabela. Escolha como resolver e finalize o merge.</p>
-      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa · Interativo <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Conflito de merge: quando o Git precisa que você decida</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Ana adicionou a rota de busca por id na <span class="code">main</span>. Bruno, na <span class="code">feature/filtro</span>, adicionou o filtro por status <b>na mesma linha</b> da tabela do README. Ao fazer o merge, o Git não sabe qual versão é a certa e marca o conflito no arquivo. Escolha como resolver e finalize o merge.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="card">
           <h3 class="accent">README.md em conflito</h3>
           <pre class="conflict" id="cfFile"></pre>
@@ -593,19 +615,21 @@ depois: A ─ B ─ C ─ D   ← main, feature</div>
             <li><span class="code">=======</span> separa as duas versões.</li>
             <li><span class="code">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/filtro</span> encerra a versão que está chegando.</li>
           </ul>
-          <p style="margin-top:.5rem;">Resolver = deixar o arquivo como ele <b>deve</b> ficar e apagar os 3 marcadores. O Git não decide por você: só quem entende o código sabe.</p>
+          <p style="margin-top:.5rem;">Resolver = deixar o arquivo como ele <b>deve</b> ficar e apagar os 3 marcadores. O Git não decide por você: só quem entende o código sabe se fica uma, outra ou as duas.</p>
           <div class="verdict" id="cfOut">Escolha uma forma de resolver e depois faça o commit.</div>
+          <div class="deep"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/about-merge-conflicts" target="_blank" rel="noopener">GitHub · Sobre conflitos de merge</a><a href="https://docs.github.com/pt/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-using-the-command-line" target="_blank" rel="noopener">Resolver pela linha de comando</a></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============================================================ 09 REBASE -->
+  <!-- ============================================================ REBASE -->
   <section class="slide" id="s-rebase">
     <div class="slide-inner">
-      <div class="kicker animate">09 · Rebase</div>
-      <h2 class="stitle animate delay-1">Rebase: "reaplicar meus commits por cima da main"</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>Rebase</div>
+      <h2 class="stitle animate delay-1">Rebase: reaplicar seus commits sobre a main atualizada</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você criou sua branch há 3 dias e, desde então, a <span class="code">main</span> recebeu 5 commits. Antes de abrir o PR, você quer testar sua feature com o código mais recente e entregar um histórico limpo, sem os commits "wip" e "agora vai". É para isso que serve o rebase.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="card">
           <h3 class="accent-b">O que acontece</h3>
           <p>Na sua feature, <span class="code">git rebase main</span> pega os commits que só existem na feature e os <b>recria</b>, um a um, depois do último commit da main. O resultado é um histórico em linha reta, como se você tivesse começado a feature agora.</p>
@@ -625,16 +649,18 @@ depois: A ─ B ─ E ─ C' ─ D' ← feature</div>
           <p style="margin-top:.5rem;">Uso típico: transformar "wip", "wip 2" e "agora vai" em um commit limpo <span class="code">feat: adiciona filtro por status</span>.</p>
         </div>
       </div>
-      <div class="warn-box animate delay-3"><b>Regra de ouro do rebase:</b> nunca faça rebase de commits que já estão em uma branch <b>compartilhada</b> (como a main ou uma branch que o colega também usa). Rebase só na sua branch local, antes de publicar ou antes do merge.</div>
+      <div class="warn-box animate delay-4"><b>Regra de ouro do rebase:</b> nunca faça rebase de commits que já estão numa branch <b>compartilhada</b> (a main ou uma branch que o colega também usa). Use rebase só na sua branch, antes de publicar ou antes do merge.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Rebase-Rebasing" target="_blank" rel="noopener">Pro Git 3.6 · Rebase</a><a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Reescrevendo-o-Hist%c3%b3rico" target="_blank" rel="noopener">Pro Git 7.6 · Reescrevendo o histórico</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 10 MERGE x REBASE -->
+  <!-- ============================================================ MERGE x REBASE -->
   <section class="slide" id="s-mergerebase">
     <div class="slide-inner">
-      <div class="kicker animate">10 · Comparação</div>
-      <h2 class="stitle animate delay-1">Merge × rebase</h2>
-      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+      <div class="kicker animate"><span class="knum"></span>Comparação</div>
+      <h2 class="stitle animate delay-1">Merge ou rebase? Cada um tem o seu momento</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> No seu time, metade prefere o histórico "como aconteceu", com todos os merges; a outra metade quer uma linha reta, fácil de ler. As duas visões estão certas, em momentos diferentes: <b>rebase para atualizar a sua branch</b>, <b>merge para integrar na main</b>.</div>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.9rem;">
         <table class="cmp">
           <tr><th>Aspecto</th><th>Merge</th><th>Rebase</th></tr>
           <tr><td>Histórico</td><td>Preserva tudo como aconteceu, com commits de merge</td><td>Linha reta, mais fácil de ler</td></tr>
@@ -644,19 +670,22 @@ depois: A ─ B ─ E ─ C' ─ D' ← feature</div>
           <tr><td>Uso típico</td><td>Integrar uma feature na main (via PR)</td><td>Atualizar sua feature com a main antes do PR</td></tr>
         </table>
       </div>
-      <div class="info-box animate delay-3"><b>No GitHub</b>, o botão de merge do PR oferece 3 opções: <b>Create a merge commit</b>, <b>Squash and merge</b> (junta todos os commits do PR em um só) e <b>Rebase and merge</b>. Muitos times usam <b>squash</b> para manter a main limpa: cada PR vira um commit.</div>
+      <div class="info-box animate delay-4"><b>No GitHub</b>, o botão de merge do PR oferece 3 opções: <b>Create a merge commit</b>, <b>Squash and merge</b> (junta todos os commits do PR em um só) e <b>Rebase and merge</b>. Muitos times usam <b>squash</b> para manter a main limpa: cada PR vira um commit.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://www.atlassian.com/git/tutorials/merging-vs-rebasing" target="_blank" rel="noopener">Atlassian · Merging vs. rebasing (em inglês)</a><a href="https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github" target="_blank" rel="noopener">GitHub · Métodos de merge</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 11 KIT -->
+  <!-- ============================================================ KIT -->
   <section class="slide" id="s-kit">
     <div class="slide-inner">
-      <div class="kicker animate">11 · Caixa de ferramentas</div>
-      <h2 class="stitle animate delay-1">Três comandos que salvam o dia</h2>
-      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+      <div class="kicker animate"><span class="knum"></span>Caixa de ferramentas</div>
+      <h2 class="stitle animate delay-1">stash, cherry-pick e bisect: três comandos para emergências</h2>
+      <p class="subtitle animate delay-2">Cada comando resolve uma situação que todo dev enfrenta. Leia a situação de cada cartão antes do comando.</p>
+      <div class="grid-3 animate delay-3" style="margin-top:.9rem;">
         <div class="card">
           <div class="icon-chip">📦</div><h3>git stash</h3>
-          <p>Guarda as mudanças não commitadas numa "gaveta" e limpa a pasta. Útil quando chega um bug urgente no meio de outra tarefa.</p>
+          <p class="sit"><b>Situação:</b> você está no meio de uma tarefa e precisa trocar de branch para corrigir um bug, mas não quer commitar código pela metade.</p>
+          <p>Guarda as mudanças não commitadas numa "gaveta" e limpa a pasta.</p>
           <div class="tree" style="margin-top:.5rem;">git stash
 git switch main
 <span style="color:var(--text-faint)"># corrige o bug…</span>
@@ -665,13 +694,15 @@ git stash pop</div>
         </div>
         <div class="card">
           <div class="icon-chip">🍒</div><h3>git cherry-pick</h3>
-          <p>Copia <b>um commit específico</b> de outra branch para a atual. Útil para levar só uma correção para uma versão antiga, sem trazer o resto.</p>
+          <p class="sit"><b>Situação:</b> uma correção feita na main também precisa ir para a versão 1.0, mas sem levar as outras mudanças da main.</p>
+          <p>Copia <b>um commit específico</b> de outra branch para a atual.</p>
           <div class="tree" style="margin-top:.5rem;">git switch release/1.0
 git cherry-pick 63fa1c4</div>
         </div>
         <div class="card">
           <div class="icon-chip">🔎</div><h3>git bisect</h3>
-          <p>Busca binária no histórico: você marca um commit bom e um ruim, e o Git vai testando o meio até achar <b>o commit que quebrou</b>.</p>
+          <p class="sit"><b>Situação:</b> algo funcionava na v0.1 e parou de funcionar. Entre as duas versões há 100 commits. Qual quebrou?</p>
+          <p>Busca binária: você marca um commit bom e um ruim, e o Git testa o meio até achar o culpado.</p>
           <div class="tree" style="margin-top:.5rem;">git bisect start
 git bisect bad
 git bisect good v0.1
@@ -679,16 +710,18 @@ git bisect good v0.1
 git bisect reset</div>
         </div>
       </div>
-      <p class="subtitle animate delay-3" style="margin-top:1rem;">Com 100 commits entre o bom e o ruim, o <span class="code">bisect</span> encontra o culpado em no máximo <b>7 testes</b> (2⁷ = 128). Você vai usar os três no laboratório.</p>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">Com 100 commits entre o bom e o ruim, o <span class="code">bisect</span> encontra o culpado em no máximo <b>7 testes</b> (2⁷ = 128). Você vai usar os três no laboratório.</p>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Fazendo-Stash-e-Limpando" target="_blank" rel="noopener">Pro Git 7.3 · Stash</a><a href="https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Depurando-com-Git" target="_blank" rel="noopener">Pro Git 7.10 · Depurando com Git (bisect)</a><a href="https://git-scm.com/docs/git-cherry-pick" target="_blank" rel="noopener">Referência do git cherry-pick</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 12 ESTRATÉGIAS -->
+  <!-- ============================================================ ESTRATÉGIAS -->
   <section class="slide" id="s-estrategias">
     <div class="slide-inner">
-      <div class="kicker animate">12 · Estratégias de branching</div>
-      <h2 class="stitle animate delay-1">Três formas de organizar as branches do time</h2>
-      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+      <div class="kicker animate"><span class="knum"></span>Estratégias de branching</div>
+      <h2 class="stitle animate delay-1">GitFlow, GitHub Flow e trunk-based: três formas de o time organizar branches</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Num time de 6 pessoas sem combinado, cada um cria branches com nomes diferentes, algumas duram semanas e ninguém sabe qual é a versão estável. Uma <b>estratégia de branching</b> é esse combinado: quais branches existem, quanto tempo duram e como o código chega à produção.</div>
+      <div class="grid-3 animate delay-3" style="margin-top:.9rem;">
         <div class="card strat">
           <div class="lbl">mais estruturado</div><h3>GitFlow</h3>
           <div class="tree">main ────●──────────●
@@ -712,16 +745,18 @@ release        └●┘</div>
           <p>Todos integram na <span class="code">main</span> (o "tronco") pelo menos uma vez por dia. Branches duram horas. Exige CI forte e <i>feature flags</i> para esconder o que não está pronto. Usado por times de alta performance.</p>
         </div>
       </div>
-      <p class="subtitle animate delay-3" style="margin-top:1rem;">Não existe estratégia "certa": existe a que combina com a frequência de entrega e a maturidade do time. O que todas compartilham: <b>branches curtas integram com menos dor</b>.</p>
+      <p class="subtitle animate delay-4" style="margin-top:1rem;">Não existe estratégia "certa": existe a que combina com a frequência de entrega e a maturidade do time. Em todas, vale a mesma regra: <b>branches curtas integram com menos dor</b>.</p>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/get-started/using-github/github-flow" target="_blank" rel="noopener">GitHub flow (docs oficiais)</a><a href="https://trunkbaseddevelopment.com/" target="_blank" rel="noopener">trunkbaseddevelopment.com</a><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Fluxos-de-Trabalho-de-Branches-Branching-Workflows" target="_blank" rel="noopener">Pro Git 3.4 · Fluxos de trabalho</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 13 MM ESTRATÉGIA -->
+  <!-- ============================================================ MM ESTRATÉGIA -->
   <section class="slide hands-on" id="s-mm-estrategia">
     <div class="slide-inner" style="max-width:900px;">
-      <div class="kicker animate">🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
-      <h2 class="stitle animate delay-1">Qual estratégia de branching você recomendaria?</h2>
-      <div class="drill animate delay-2" style="margin-top:1rem;">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Teste: qual estratégia de branching você recomendaria?</h2>
+      <p class="subtitle animate delay-2">Use o slide anterior. Para cada cenário, pense em 3 pistas: com que frequência o time entrega, se há versões antigas em suporte e se existe CI forte.</p>
+      <div class="drill animate delay-3" style="margin-top:1rem;">
         <div class="kicker" style="margin-bottom:.4rem;" id="stCount">Cenário 1 de 5</div>
         <div class="drill-q" id="stQ"></div>
         <div class="drill-btns">
@@ -735,12 +770,12 @@ release        └●┘</div>
     </div>
   </section>
 
-  <!-- ============================================================ 14 PR -->
+  <!-- ============================================================ PR -->
   <section class="slide" id="s-pr">
     <div class="slide-inner">
-      <div class="kicker animate">14 · Pull Request</div>
-      <h2 class="stitle animate delay-1">O ciclo de um Pull Request no GitHub Flow</h2>
-      <p class="subtitle animate delay-2">Um <b>Pull Request (PR)</b> é um pedido: "revise minha branch e, se estiver ok, junte na main". No GitLab, o mesmo recurso se chama <b>Merge Request</b>.</p>
+      <div class="kicker animate"><span class="knum"></span>Pull Request</div>
+      <h2 class="stitle animate delay-1">Pull Request: como propor uma mudança e pedir revisão</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Na Aula 01 você fez <span class="code">push</span> direto na main. Funciona sozinho, mas em dupla é arriscado: se o colega enviar um bug direto na main, ninguém vê antes de quebrar. O <b>Pull Request (PR)</b> cria uma parada obrigatória: "revise minha branch e, se estiver ok, junte na main". No GitLab, o mesmo recurso se chama <b>Merge Request</b>.</div>
       <div class="flow animate delay-3">
         <div class="fstep"><div class="fn">1</div><h4>Branch</h4><p><span class="code">git switch -c feature/busca-id</span></p></div>
         <div class="fstep"><div class="fn">2</div><h4>Commits</h4><p>Pequenos, no padrão Conventional Commits.</p></div>
@@ -750,15 +785,17 @@ release        └●┘</div>
         <div class="fstep"><div class="fn">6</div><h4>Merge</h4><p>Aprovado: <i>Squash and merge</i> e apagar a branch.</p></div>
       </div>
       <div class="info-box animate delay-4"><b>Depois do merge</b>, todo mundo atualiza a máquina local: <span class="code">git switch main</span> e <span class="code">git pull</span>. Só então crie a próxima branch, sempre a partir da main atualizada.</div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/pull-requests" target="_blank" rel="noopener">GitHub · Pull requests</a><a href="https://git-scm.com/book/pt-br/v2/GitHub-Contribuindo-para-um-Projeto" target="_blank" rel="noopener">Pro Git 6.2 · Contribuindo para um projeto</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 15 REVIEW -->
+  <!-- ============================================================ REVIEW -->
   <section class="slide" id="s-review">
     <div class="slide-inner">
-      <div class="kicker animate">15 · Code review</div>
-      <h2 class="stitle animate delay-1">Um bom PR e uma boa revisão</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>Code review</div>
+      <h2 class="stitle animate delay-1">Como abrir um PR fácil de revisar e revisar o código do colega</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Um PR com 50 linhas é lido com atenção. Um PR com 1.500 linhas recebe um "LGTM" (<i>looks good to me</i>) em 2 minutos, sem ninguém ter lido de verdade, e o bug passa. Revisão só funciona se o PR for pequeno, bem descrito e se o revisor souber o que procurar.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="codeblock">
           <div class="cb-title">.github/pull_request_template.md</div>
           <button class="copy">copiar</button>
@@ -781,23 +818,25 @@ release        └●┘</div>
           <h3 class="accent">Como revisar o código do colega</h3>
           <ul>
             <li><b>Rode o código:</b> faça checkout da branch e execute os testes.</li>
-            <li><b>Comente a mudança, não a pessoa:</b> "esta função pode retornar None" e não "você esqueceu de novo".</li>
+            <li><b>Comente a mudança, não a pessoa:</b> "esta função pode retornar None", e não "você esqueceu de novo".</li>
             <li><b>Explique o porquê</b> e, se puder, sugira o código (botão <i>Add a suggestion</i>).</li>
             <li><b>Diferencie o obrigatório do opcional:</b> prefixe com "nit:" sugestões pequenas de estilo.</li>
             <li><b>Termine a revisão:</b> <i>Approve</i>, <i>Request changes</i> ou <i>Comment</i>.</li>
           </ul>
-          <div class="info-box"><b>PR pequeno é PR revisado.</b> Um PR com 50 linhas é lido com atenção. Um com 1.500 linhas recebe um "LGTM" (<i>looks good to me</i>) sem ninguém ler.</div>
+          <p style="margin-top:.5rem;">O template ao lado aparece automaticamente em todo PR novo: ele lembra o autor do que o revisor precisa saber.</p>
         </div>
       </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://google.github.io/eng-practices/review/" target="_blank" rel="noopener">Google · Engineering practices: code review (em inglês)</a><a href="https://docs.github.com/pt/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository" target="_blank" rel="noopener">GitHub · Criar um template de PR</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 16 PROTEÇÃO -->
+  <!-- ============================================================ PROTEÇÃO -->
   <section class="slide hands-on" id="s-protecao">
     <div class="slide-inner">
-      <div class="kicker animate">16 · Configuração no GitHub <span class="mm-badge">⏱ 5 min</span></div>
-      <h2 class="stitle animate delay-1">Proteja a main: ninguém faz push direto</h2>
-      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+      <div class="kicker animate"><span class="knum"></span>Configuração no GitHub <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Proteja a main para que nada entre sem revisão</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Às 23h, alguém faz <span class="code">push</span> direto na main: "é só um ajuste rápido". O ajuste tinha um erro de digitação numa rota e a API para de responder. Combinados verbais falham; a <b>proteção de branch</b> faz o GitHub recusar qualquer mudança na main que não venha de um PR aprovado.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
         <div class="card">
           <h3 class="accent">Passo a passo (no seu fork)</h3>
           <ol class="steps">
@@ -817,15 +856,17 @@ release        └●┘</div>
           <div class="warn-box"><b>Repositório privado?</b> No plano gratuito, a proteção de branch só funciona em repositório <b>público</b>. O fork do TaskFlow é público, então funciona. Alunos têm GitHub Pro grátis pelo <a href="https://education.github.com/pack" target="_blank" rel="noopener">GitHub Student Developer Pack</a>.</div>
         </div>
       </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener">GitHub · Sobre branches protegidos</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 17 FORK -->
+  <!-- ============================================================ FORK -->
   <section class="slide" id="s-fork">
     <div class="slide-inner">
-      <div class="kicker animate">17 · Colaboração</div>
-      <h2 class="stitle animate delay-1">Fork, collaborator e upstream</h2>
-      <div class="tbl-wrap animate delay-2" style="margin-top:.8rem;">
+      <div class="kicker animate"><span class="knum"></span>Colaboração</div>
+      <h2 class="stitle animate delay-1">Fork ou collaborator: dois jeitos de contribuir num repositório</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você encontrou um erro de digitação na documentação de um projeto open source e quer corrigir. Você não tem permissão de escrita lá, e nem deveria ter. O <b>fork</b> resolve isso: você cria uma cópia na sua conta, muda o que quiser e envia um PR para o projeto original.</div>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
         <table class="cmp">
           <tr><th>Modelo</th><th>Como funciona</th><th>Quando usar</th></tr>
           <tr><td>Collaborator</td><td>Todos têm permissão de escrita no mesmo repositório e criam branches nele.</td><td>Time pequeno de confiança. <b class="accent">A dupla no TaskFlow.</b></td></tr>
@@ -846,13 +887,14 @@ git merge upstream/main</div>
           <div class="info-box"><b>Atalho:</b> se o professor atualizar o repositório-modelo, use o botão <b>Sync fork</b> na página do seu fork no GitHub.</div>
         </div>
       </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo" target="_blank" rel="noopener">GitHub · Criar um fork</a><a href="https://git-scm.com/book/pt-br/v2/Ramifica%c3%a7%c3%a3o-Branching-no-Git-Branches-Remotos-Remote-Branches" target="_blank" rel="noopener">Pro Git 3.5 · Branches remotos</a></div>
     </div>
   </section>
 
-  <!-- ============================================================ 18 PBL -->
+  <!-- ============================================================ PBL -->
   <section class="slide hands-on" id="s-pbl">
     <div class="slide-inner">
-      <div class="kicker animate">18 · Autoestudo · Situação-problema <span class="mm-badge">⏱ 30 min</span></div>
+      <div class="kicker animate"><span class="knum"></span>Autoestudo · Situação-problema <span class="mm-badge">⏱ 30 min</span></div>
       <h2 class="stitle animate delay-1">Caso PagaFácil: correção de segurança em horas, não em semanas</h2>
       <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
         <div class="card">
@@ -874,10 +916,10 @@ git merge upstream/main</div>
     </div>
   </section>
 
-  <!-- ============================================================ 19 LAB -->
+  <!-- ============================================================ LAB -->
   <section class="slide hands-on" id="s-lab">
     <div class="slide-inner">
-      <div class="kicker animate">19 · Autoestudo · Laboratório <span class="mm-badge">⏱ 1 h</span></div>
+      <div class="kicker animate"><span class="knum"></span>Autoestudo · Laboratório <span class="mm-badge">⏱ 1 h</span></div>
       <h2 class="stitle animate delay-1">Laboratório: conflito, rebase, stash, cherry-pick e bisect</h2>
       <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.25fr 1fr;">
         <div class="codeblock">
@@ -940,10 +982,10 @@ git bisect reset</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 20 PROJETO -->
+  <!-- ============================================================ PROJETO -->
   <section class="slide hands-on" id="s-projeto">
     <div class="slide-inner">
-      <div class="kicker animate">20 · Projeto evolutivo <span class="mm-badge">⏱ 1h20 · em dupla</span></div>
+      <div class="kicker animate"><span class="knum"></span>Projeto evolutivo <span class="mm-badge">⏱ 1h20 · em dupla</span></div>
       <h2 class="stitle animate delay-1">TaskFlow · Checkpoint 2 (tag v0.2): colaboração</h2>
       <p class="subtitle animate delay-2">A partir de agora, <b>nada entra na main sem Pull Request revisado</b>. Cada integrante entrega uma funcionalidade nova em sua própria branch.</p>
       <div class="grid-3 animate delay-3" style="margin-top:.9rem; align-items:start;">
@@ -968,8 +1010,8 @@ git bisect reset</pre>
         <div class="card">
           <h3 class="accent-b">Os dois juntos</h3>
           <ul>
-            <li>Proteção da main ativa (seção 16).</li>
-            <li><span class="code">.github/pull_request_template.md</span> (seção 15).</li>
+            <li>Proteção da main ativa (slide <span class="sref" data-s="s-protecao"></span>).</li>
+            <li><span class="code">.github/pull_request_template.md</span> (slide <span class="sref" data-s="s-review"></span>).</li>
             <li>Cada um abre <b>1 PR</b> e revisa o do colega, com pelo menos 1 comentário.</li>
             <li>O README vai dar <b>conflito</b> de propósito: resolva e conte como foi em <span class="code">docs/conflito.md</span>.</li>
             <li>Links dos PRs no README e tag <span class="code">v0.2</span>.</li>
@@ -980,17 +1022,17 @@ git bisect reset</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 21 PLANO -->
+  <!-- ============================================================ PLANO -->
   <section class="slide" id="s-plano">
     <div class="slide-inner" style="max-width:980px;">
-      <div class="kicker animate">21 · Autoestudo</div>
+      <div class="kicker animate"><span class="knum"></span>Autoestudo</div>
       <h2 class="stitle animate delay-1">Seu plano da Semana 2 (≈ 5h40)</h2>
       <p class="subtitle animate delay-2">Sugestão de ordem. Combine com a dupla os horários do projeto. Marque o que concluir (fica salvo neste navegador).</p>
       <div class="check-list animate delay-3" data-check="week" style="margin-top:.9rem;">
         <label class="check-item"><input type="checkbox" id="w2a"><div><div class="ci-t">Revisar este material</div><div class="ci-d">Refaça o simulador de branches e o resolvedor de conflito.</div></div><span class="ci-time">15 min</span></label>
-        <label class="check-item"><input type="checkbox" id="w2b"><div><div class="ci-t">Trilha de estudo: itens 1 a 6</div><div class="ci-d">Pro Git, GitHub Docs e Jornada DevOps, na ordem da seção 22.</div></div><span class="ci-time">1h50</span></label>
+        <label class="check-item"><input type="checkbox" id="w2b"><div><div class="ci-t">Trilha de estudo: itens 1 a 6</div><div class="ci-d">Pro Git, GitHub Docs e Jornada DevOps, na ordem do slide <span class="sref" data-s="s-trilha"></span>.</div></div><span class="ci-time">1h50</span></label>
         <label class="check-item"><input type="checkbox" id="w2c"><div><div class="ci-t">Learn Git Branching</div><div class="ci-d">Sequências <i>Ramping Up</i> e <i>Moving Work Around</i>.</div></div><span class="ci-time">25 min</span></label>
-        <label class="check-item"><input type="checkbox" id="w2d"><div><div class="ci-t">Laboratório no Killercoda</div><div class="ci-d">Partes 1 a 5 da seção 19 + prints.</div></div><span class="ci-time">1 h</span></label>
+        <label class="check-item"><input type="checkbox" id="w2d"><div><div class="ci-t">Laboratório no Killercoda</div><div class="ci-d">Partes 1 a 5 do slide <span class="sref" data-s="s-lab"></span> + prints.</div></div><span class="ci-time">1 h</span></label>
         <label class="check-item"><input type="checkbox" id="w2e"><div><div class="ci-t">Situação-problema PagaFácil</div><div class="ci-d">docs/pbl-semana2.md, entregue via PR.</div></div><span class="ci-time">30 min</span></label>
         <label class="check-item"><input type="checkbox" id="w2f"><div><div class="ci-t">Projeto TaskFlow: checkpoint 2</div><div class="ci-d">Features, PRs revisados, conflito resolvido e tag v0.2.</div></div><span class="ci-time">1h20</span></label>
         <label class="check-item"><input type="checkbox" id="w2g"><div><div class="ci-t">GitHub Skills: Review pull requests</div><div class="ci-d">Curso curto e interativo, dentro do próprio GitHub.</div></div><span class="ci-time">20 min</span></label>
@@ -999,10 +1041,10 @@ git bisect reset</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 22 TRILHA DE LEITURA -->
+  <!-- ============================================================ TRILHA DE LEITURA -->
   <section class="slide tall" id="s-trilha">
     <div class="slide-inner">
-      <div class="kicker animate">22 · Trilha de estudo da semana</div>
+      <div class="kicker animate"><span class="knum"></span>Trilha de estudo da semana</div>
       <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
       <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova e o checkpoint; os <span class="req">complementar</span> aprofundam e ficam fora das ~5h40 da semana. A última coluna diz o que você deve saber explicar ao terminar.</p>
       <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
@@ -1022,10 +1064,10 @@ git bisect reset</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 23 BIBLIOTECA -->
+  <!-- ============================================================ BIBLIOTECA -->
   <section class="slide tall" id="s-fontes">
     <div class="slide-inner">
-      <div class="kicker animate">23 · Biblioteca da semana</div>
+      <div class="kicker animate"><span class="knum"></span>Biblioteca da semana</div>
       <h2 class="stitle animate delay-1">Livros, documentação oficial e cursos</h2>
       <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
         <div class="card lib">
@@ -1042,7 +1084,7 @@ git bisect reset</pre>
           <ul>
             <li><a href="https://docs.github.com/pt/get-started/using-github/github-flow" target="_blank" rel="noopener">GitHub flow</a></li>
             <li><a href="https://docs.github.com/pt/pull-requests" target="_blank" rel="noopener">Pull requests: criar, revisar, fazer merge</a></li>
-            <li><a href="https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener">Sobre branches protegidos</a> <span class="find">Base da configuração da seção 16.</span></li>
+            <li><a href="https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener">Sobre branches protegidos</a> <span class="find">Base da configuração do slide <span class="sref" data-s="s-protecao"></span>.</span></li>
             <li><a href="https://git-scm.com/docs/git-switch" target="_blank" rel="noopener">git switch</a>, <a href="https://git-scm.com/docs/git-merge" target="_blank" rel="noopener">git merge</a>, <a href="https://git-scm.com/docs/git-rebase" target="_blank" rel="noopener">git rebase</a> <span class="find">Referência completa de cada comando.</span></li>
           </ul>
         </div>
@@ -1056,14 +1098,14 @@ git bisect reset</pre>
           </ul>
         </div>
       </div>
-      <div class="warn-box animate delay-3"><b>Travou num conflito ou num rebase?</b> <span class="code">git merge --abort</span> ou <span class="code">git rebase --abort</span> voltam tudo ao estado anterior. Depois releia a seção 08 e tente de novo com calma.</div>
+      <div class="warn-box animate delay-3"><b>Travou num conflito ou num rebase?</b> <span class="code">git merge --abort</span> ou <span class="code">git rebase --abort</span> voltam tudo ao estado anterior. Depois releia o slide <span class="sref" data-s="s-conflito"></span> e tente de novo com calma.</div>
     </div>
   </section>
 
-  <!-- ============================================================ 24 GLOSSÁRIO -->
+  <!-- ============================================================ GLOSSÁRIO -->
   <section class="slide tall" id="s-glossario">
     <div class="slide-inner">
-      <div class="kicker animate">24 · Glossário da aula</div>
+      <div class="kicker animate"><span class="knum"></span>Glossário da aula</div>
       <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
       <dl class="gloss animate delay-2">
         <div><dt>Branch</dt><dd>Ponteiro móvel para um commit. Representa uma linha de trabalho.</dd></div>
@@ -1084,29 +1126,29 @@ git bisect reset</pre>
     </div>
   </section>
 
-  <!-- ============================================================ 25 AUTOAVALIAÇÃO -->
+  <!-- ============================================================ AUTOAVALIAÇÃO -->
   <section class="slide" id="s-autoavaliacao">
     <div class="slide-inner" style="max-width:980px;">
-      <div class="kicker animate">25 · Autoavaliação</div>
+      <div class="kicker animate"><span class="knum"></span>Autoavaliação</div>
       <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
       <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pela seção indicada (fica salvo neste navegador).</p>
       <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
-        <label class="check-item"><input type="checkbox" id="au2a"><div><div class="ci-t">Explicar o que é uma branch e o que é o HEAD</div></div><span class="review-hint">seção 05</span></label>
-        <label class="check-item"><input type="checkbox" id="au2b"><div><div class="ci-t">Prever se um merge será fast-forward ou merge commit</div></div><span class="review-hint">seções 06–07</span></label>
-        <label class="check-item"><input type="checkbox" id="au2c"><div><div class="ci-t">Resolver um conflito e finalizar o merge</div></div><span class="review-hint">seção 08</span></label>
-        <label class="check-item"><input type="checkbox" id="au2d"><div><div class="ci-t">Dizer quando usar rebase e quando nunca usar</div></div><span class="review-hint">seções 09–10</span></label>
-        <label class="check-item"><input type="checkbox" id="au2e"><div><div class="ci-t">Usar stash, cherry-pick e bisect numa situação real</div></div><span class="review-hint">seção 11</span></label>
-        <label class="check-item"><input type="checkbox" id="au2f"><div><div class="ci-t">Recomendar GitFlow, GitHub Flow ou trunk-based para um cenário</div></div><span class="review-hint">seções 12–13</span></label>
-        <label class="check-item"><input type="checkbox" id="au2g"><div><div class="ci-t">Abrir, revisar e fazer merge de um PR com a main protegida</div></div><span class="review-hint">seções 14–16</span></label>
+        <label class="check-item"><input type="checkbox" id="au2a"><div><div class="ci-t">Explicar o que é uma branch e o que é o HEAD</div></div><span class="review-hint">slide <span class="sref" data-s="s-branch"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au2b"><div><div class="ci-t">Prever se um merge será fast-forward ou merge commit</div></div><span class="review-hint">slides <span class="sref" data-s="s-sim"></span>–<span class="sref" data-s="s-merge"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au2c"><div><div class="ci-t">Resolver um conflito e finalizar o merge</div></div><span class="review-hint">slide <span class="sref" data-s="s-conflito"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au2d"><div><div class="ci-t">Dizer quando usar rebase e quando nunca usar</div></div><span class="review-hint">slides <span class="sref" data-s="s-rebase"></span>–<span class="sref" data-s="s-mergerebase"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au2e"><div><div class="ci-t">Usar stash, cherry-pick e bisect numa situação real</div></div><span class="review-hint">slide <span class="sref" data-s="s-kit"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au2f"><div><div class="ci-t">Recomendar GitFlow, GitHub Flow ou trunk-based para um cenário</div></div><span class="review-hint">slides <span class="sref" data-s="s-estrategias"></span>–<span class="sref" data-s="s-mm-estrategia"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au2g"><div><div class="ci-t">Abrir, revisar e fazer merge de um PR com a main protegida</div></div><span class="review-hint">slides <span class="sref" data-s="s-pr"></span>–<span class="sref" data-s="s-protecao"></span></span></label>
       </div>
       <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
     </div>
   </section>
 
-  <!-- ============================================================ 26 QUIZ -->
+  <!-- ============================================================ QUIZ -->
   <section class="slide" id="s-quiz">
     <div class="slide-inner">
-      <div class="kicker animate">26 · Fixação</div>
+      <div class="kicker animate"><span class="knum"></span>Fixação</div>
       <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
       <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
     </div>
@@ -1146,6 +1188,12 @@ slides.forEach((s,i)=>{
   dotnav.appendChild(b);
 });
 const dots = Array.from(dotnav.children);
+/* Numeração automática: kicker, sumário e referências usam a posição real do slide */
+const pad = n => String(n).padStart(2,'0');
+slides.forEach((s,i)=>{ const k=s.querySelector('.knum'); if(k) k.textContent = pad(i+1)+' · '; });
+document.querySelectorAll('.toc a').forEach(a=>{ const t=document.querySelector(a.getAttribute('href')); const n=a.querySelector('.n'); if(t&&n) n.textContent = pad(slides.indexOf(t)+1); });
+document.querySelectorAll('.sref').forEach(r=>{ const t=document.getElementById(r.dataset.s); if(t) r.textContent = pad(slides.indexOf(t)+1); });
+
 const io = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{
     if(e.isIntersecting){ e.target.classList.add('in-view'); }
