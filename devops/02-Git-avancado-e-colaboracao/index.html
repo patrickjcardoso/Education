@@ -360,6 +360,24 @@ table.trail .goal{color:var(--text);}
 .card p.ex b{color:var(--gold);}
 .card p.sit{font-size:.78rem; color:var(--text-dim); background:rgba(242,169,59,.06); border-radius:8px; padding:.4rem .55rem; margin:.2rem 0 .45rem;}
 .card p.sit b{color:var(--gold);}
+/* ============================= CHECKPOINT PASSO A PASSO ============================= */
+.who{display:inline-block; font-family:var(--mono); font-size:.66rem; font-weight:700; padding:.08rem .45rem; border-radius:6px; margin-right:.3rem; vertical-align:1px;}
+.who.a{background:rgba(47,176,232,.16); color:var(--blue); border:1px solid rgba(47,176,232,.45);}
+.who.b{background:rgba(54,197,143,.14); color:var(--green); border:1px solid rgba(54,197,143,.45);}
+.who.ab{background:rgba(242,169,59,.14); color:var(--gold); border:1px solid rgba(242,169,59,.45);}
+ol.cp-steps{list-style:none; counter-reset:cp; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin-top:.9rem;}
+ol.cp-steps[start="7"]{counter-reset:cp 6; grid-template-columns:1fr; margin-top:0;}
+ol.cp-steps > li{counter-increment:cp; position:relative; background:var(--surface); border:1px solid rgba(242,169,59,.28); border-radius:12px; padding:.7rem .9rem .7rem 2.6rem; min-width:0;}
+ol.cp-steps > li::before{content:counter(cp); position:absolute; left:.75rem; top:.7rem; width:24px; height:24px; border-radius:50%; background:var(--gold); color:#101010; font-weight:800; font-size:.75rem; display:grid; place-items:center;}
+.cp-h{font-family:var(--disp); font-weight:700; font-size:.9rem; color:var(--text); margin-bottom:.3rem;}
+ol.cp-steps p{font-size:.8rem; color:var(--text-dim); line-height:1.5; margin-top:.3rem;}
+ol.cp-steps p a{color:var(--blue);}
+ol.cp-steps .tree{font-size:.72rem; background:#04070c; border:1px solid var(--border); border-radius:8px; padding:.45rem .6rem; margin-top:.35rem; overflow-x:auto;}
+ol.cp-steps p.ok{color:var(--green); font-size:.76rem;}
+.tree .cm2{color:var(--text-faint);}
+@media (min-width:861px){ #s-cp2 ol.cp-steps{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:860px){ ol.cp-steps{grid-template-columns:1fr;} }
+#s-cp-codigo .cb-title{text-transform:none; letter-spacing:.02em;}
 </style>
 </head>
 <body>
@@ -428,6 +446,8 @@ table.trail .goal{color:var(--text);}
           <a href="#s-pbl"><span class="n"></span><span class="t">Situação-problema: PagaFácil</span></a>
           <a href="#s-lab"><span class="n"></span><span class="t">Laboratório no Killercoda</span></a>
           <a href="#s-projeto"><span class="n"></span><span class="t">TaskFlow: checkpoint 2</span></a>
+          <a href="#s-cp1"><span class="n"></span><span class="t">🛠️ Checkpoint 2 passo a passo</span></a>
+          <a href="#s-cp-check"><span class="n"></span><span class="t">Checkpoint 2: conferência</span></a>
           <a href="#s-plano"><span class="n"></span><span class="t">Seu plano da semana</span></a>
           <a href="#s-trilha"><span class="n"></span><span class="t">Trilha de estudo</span></a>
           <a href="#s-fontes"><span class="n"></span><span class="t">Biblioteca da semana</span></a>
@@ -983,7 +1003,7 @@ git bisect reset</pre>
   </section>
 
   <!-- ============================================================ PROJETO -->
-  <section class="slide hands-on" id="s-projeto">
+  <section class="slide hands-on tall" id="s-projeto">
     <div class="slide-inner">
       <div class="kicker animate"><span class="knum"></span>Projeto evolutivo <span class="mm-badge">⏱ 1h20 · em dupla</span></div>
       <h2 class="stitle animate delay-1">TaskFlow · Checkpoint 2 (tag v0.2): colaboração</h2>
@@ -1018,7 +1038,257 @@ git bisect reset</pre>
           </ul>
         </div>
       </div>
+      <div class="ctx animate delay-4"><b class="tag">Como fazer</b> O passo a passo completo, com quem faz cada etapa, o código pronto e o checklist, está nos slides <span class="sref" data-s="s-cp1"></span> a <span class="sref" data-s="s-cp-check"></span>.</div>
       <div class="deliver animate delay-4"><span>Prazo: terça, 27/10/2026, 23h59</span><span>Entregar no AVA: link do repositório</span><span>Vale nota de atividades do 1º bimestre</span></div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ CHECKPOINT 2 · PARTE 1 -->
+  <section class="slide hands-on tall" id="s-cp1">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 2 · passo a passo · parte 1 de 2 <span class="mm-badge">⏱ 40 min</span></div>
+      <h2 class="stitle animate delay-1">Parte 1: proteja a main e programe cada feature numa branch</h2>
+      <p class="subtitle animate delay-2">Cada passo diz <b>quem faz</b>: <span class="who a">A</span> é o dono do fork, <span class="who b">B</span> é o colega, <span class="who ab">A+B</span> são os dois. A partir de agora, <b>ninguém faz commit direto na main</b>: todo trabalho começa com <span class="code">git switch -c</span>.</p>
+      <ol class="cp-steps animate delay-3">
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Sincronize antes de começar</div>
+          <div class="tree">git switch main
+git pull</div>
+          <p class="ok">✓ Confira: <span class="code">git log --oneline -1</span> mostra o mesmo commit nas duas máquinas.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Proteja a main</div>
+          <p>Siga o slide <span class="sref" data-s="s-protecao"></span>: <i>Settings → Branches</i>, regra para <span class="code">main</span> com <b>Require a pull request</b> e <b>1 aprovação</b>.</p>
+          <p class="ok">✓ Confira: um <span class="code">git push</span> direto na main é recusado com "GH006: Protected branch update failed".</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Primeiro PR: o template de Pull Request</div>
+          <div class="tree">git switch -c chore/pr-template
+mkdir -p .github
+<span class="cm2"># crie .github/pull_request_template.md (slide <span class="sref" data-s="s-review"></span>)</span>
+git add .github
+git commit -m "chore: adiciona template de pull request"
+git push -u origin chore/pr-template</div>
+          <p>No GitHub, clique em <b>Compare &amp; pull request</b> → <b>Create pull request</b>. Peça revisão ao B (<i>Reviewers</i>). <span class="who b">B</span> abre o PR, aba <i>Files changed</i> → <b>Review changes → Approve</b>. <span class="who a">A</span> clica em <b>Squash and merge</b>.</p>
+          <p class="ok">✓ Confira: o próximo PR já abre com o template preenchido na descrição.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Atualize a main depois de cada merge</div>
+          <div class="tree">git switch main
+git pull</div>
+          <p>Sempre crie a branch nova <b>a partir da main atualizada</b>. Branch criada de uma main velha gera conflito sem necessidade.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Feature: busca por id</div>
+          <div class="tree">git switch -c feature/busca-id</div>
+          <p>Faça as 3 mudanças do slide <span class="sref" data-s="s-cp-codigo"></span> (rota no <b>fim</b> do <span class="code">app/main.py</span>, arquivo <span class="code">tests/test_busca.py</span> e linha nova no README), uma por commit:</p>
+          <div class="tree">pytest                       <span class="cm2"># os testes passam?</span>
+git commit -am "feat(tasks): adiciona busca por id"
+git add tests/test_busca.py
+git commit -m "test(tasks): cobre busca por id"
+git commit -am "docs: documenta rota de busca por id"</div>
+          <p class="ok">✓ Confira: <span class="code">pytest</span> mostra 5 testes passando.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Feature: filtro por status (ao mesmo tempo que o A)</div>
+          <div class="tree">git switch -c feature/filtro-status</div>
+          <p>Faça as 3 mudanças do slide <span class="sref" data-s="s-cp-codigo"></span> (função <span class="code">list_tasks</span>, arquivo <span class="code">tests/test_filtro.py</span> e linha nova no README), também em 3 commits: <span class="code">feat(tasks): …</span>, <span class="code">test(tasks): …</span> e <span class="code">docs: …</span>.</p>
+          <p class="ok">✓ Confira: <span class="code">pytest</span> mostra 5 testes passando e <span class="code">/docs</span> aceita <span class="code">?done=true</span>.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 2 · PARTE 2 -->
+  <section class="slide hands-on tall" id="s-cp2">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 2 · passo a passo · parte 2 de 2 <span class="mm-badge">⏱ 50 min</span></div>
+      <h2 class="stitle animate delay-1">Parte 2: revise, resolva o conflito e entregue</h2>
+      <div class="ctx animate delay-2"><b class="tag">O que vai acontecer</b> As duas branches mudaram <b>a mesma linha</b> do README (a tabela de rotas). O primeiro PR entra sem problema; o segundo vai acusar conflito. É de propósito: você vai resolver um conflito real, com calma. O código Python das duas branches se junta sozinho.</div>
+      <ol class="cp-steps animate delay-3" start="7">
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Abra o PR da busca por id</div>
+          <div class="tree">git push -u origin feature/busca-id</div>
+          <p>No GitHub: <b>Compare &amp; pull request</b>, preencha o template e peça revisão ao B.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Revise o PR do A</div>
+          <div class="tree">git fetch
+git switch feature/busca-id
+pytest
+git switch feature/filtro-status   <span class="cm2"># volte para a sua branch</span></div>
+          <p>No PR: deixe <b>pelo menos 1 comentário</b> numa linha do código (aba <i>Files changed</i>, botão <b>+</b> ao lado da linha) e aprove. <span class="who a">A</span> responde e clica em <b>Squash and merge</b>.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Abra o seu PR e veja o conflito</div>
+          <div class="tree">git push -u origin feature/filtro-status</div>
+          <p>Ao abrir o PR, o GitHub mostra <b>"This branch has conflicts that must be resolved"</b>. Tire um print: ele vai para o <span class="code">docs/conflito.md</span>.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Resolva o conflito na sua máquina</div>
+          <div class="tree">git switch main && git pull
+git switch feature/filtro-status
+git merge main            <span class="cm2"># CONFLICT in README.md</span>
+<span class="cm2"># abra o README.md, deixe as DUAS linhas novas da tabela</span>
+<span class="cm2"># e apague os marcadores &lt;&lt;&lt;&lt;&lt;&lt;&lt;, =======, &gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+git add README.md
+git commit --no-edit
+pytest                    <span class="cm2"># 7 testes passando</span>
+git push</div>
+          <p class="ok">✓ Confira: o PR deixa de mostrar o conflito. <span class="who a">A</span> revisa, aprova e faz o merge.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Documente e entregue (pelo fluxo de PR)</div>
+          <p>Numa branch <span class="code">docs/checkpoint-2</span>: crie <span class="code">docs/conflito.md</span>, <span class="code">docs/pbl-semana2.md</span> e a seção "Pull Requests" do README com os links dos PRs (modelos no slide <span class="sref" data-s="s-cp-codigo"></span>). Abra o PR, revise e faça o merge.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Tag v0.2 e AVA</div>
+          <div class="tree">git switch main && git pull
+git tag v0.2
+git push --tags</div>
+          <p>Tags não passam pela proteção de branch, então o push funciona. Depois, confira o checklist do slide <span class="sref" data-s="s-cp-check"></span> e os dois integrantes enviam o link no AVA.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 2 · CÓDIGO E MODELOS -->
+  <section class="slide hands-on tall" id="s-cp-codigo">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 2 · código e modelos</div>
+      <h2 class="stitle animate delay-1">O código das duas features e os modelos de documentação</h2>
+      <p class="subtitle animate delay-2">Testado no TaskFlow: as duas features se juntam sem conflito no código Python, e o único conflito é o do README. Cada integrante cria o <b>próprio</b> arquivo de teste para os dois não editarem o mesmo arquivo.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="codeblock"><div class="cb-title"><span class="who a">A</span> app/main.py · cole no FIM do arquivo</div><button class="copy">copiar</button>
+<pre>@app.get("/tasks/{task_id}", response_model=Task)
+def get_task(task_id: int) -> Task:
+    if task_id not in _tasks:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    return _tasks[task_id]</pre></div>
+        <div class="codeblock"><div class="cb-title"><span class="who b">B</span> app/main.py · substitua a função list_tasks</div><button class="copy">copiar</button>
+<pre>@app.get("/tasks", response_model=list[Task])
+def list_tasks(done: bool | None = None) -> list[Task]:
+    tarefas = list(_tasks.values())
+    if done is not None:
+        tarefas = [t for t in tarefas if t.done == done]
+    return tarefas</pre></div>
+        <div class="codeblock"><div class="cb-title"><span class="who a">A</span> tests/test_busca.py (arquivo novo)</div><button class="copy">copiar</button>
+<pre>import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app, reset_db
+
+client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def limpa_banco():
+    reset_db()
+    yield
+    reset_db()
+
+
+def test_busca_tarefa_existente():
+    client.post("/tasks", json={"title": "Estudar Git"})
+    resposta = client.get("/tasks/1")
+    assert resposta.status_code == 200
+    assert resposta.json()["title"] == "Estudar Git"
+
+
+def test_busca_tarefa_inexistente_retorna_404():
+    resposta = client.get("/tasks/99")
+    assert resposta.status_code == 404</pre></div>
+        <div class="codeblock"><div class="cb-title"><span class="who b">B</span> tests/test_filtro.py (arquivo novo)</div><button class="copy">copiar</button>
+<pre>import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app, reset_db
+
+client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def limpa_banco():
+    reset_db()
+    yield
+    reset_db()
+
+
+def test_sem_filtro_lista_todas():
+    client.post("/tasks", json={"title": "A", "done": True})
+    client.post("/tasks", json={"title": "B", "done": False})
+    assert len(client.get("/tasks").json()) == 2
+
+
+def test_filtra_concluidas():
+    client.post("/tasks", json={"title": "A", "done": True})
+    client.post("/tasks", json={"title": "B", "done": False})
+    resposta = client.get("/tasks?done=true")
+    assert resposta.status_code == 200
+    assert [t["title"] for t in resposta.json()] == ["A"]</pre></div>
+        <div class="codeblock"><div class="cb-title">README.md · linha nova logo abaixo de GET /tasks</div><button class="copy">copiar</button>
+<pre><span class="cm"># A adiciona:</span>
+| GET | `/tasks/{id}` | Busca uma tarefa pelo id |
+<span class="cm"># B adiciona (no mesmo lugar, por isso o conflito):</span>
+| GET | `/tasks?done=true` | Filtra tarefas por status |</pre></div>
+        <div class="codeblock"><div class="cb-title">docs/conflito.md</div><button class="copy">copiar</button>
+<pre># Conflito do checkpoint 2
+
+## O que entrou em conflito
+[Arquivo e linhas. Cole o trecho com os marcadores.]
+
+## Por que aconteceu
+[Quem mudou o quê, em qual branch.]
+
+## Como resolvemos
+[O que ficou no arquivo e os comandos usados.]
+
+![PR com conflito](img/pr-conflito.png)</pre></div>
+        <div class="codeblock"><div class="cb-title">README.md · seção nova no fim</div><button class="copy">copiar</button>
+<pre>## Pull Requests
+
+- [#1 Template de PR](https://github.com/USUARIO-A/taskflow/pull/1)
+- [#2 Busca por id](https://github.com/USUARIO-A/taskflow/pull/2)
+- [#3 Filtro por status](https://github.com/USUARIO-A/taskflow/pull/3)</pre></div>
+        <div class="codeblock"><div class="cb-title">docs/pbl-semana2.md</div><button class="copy">copiar</button>
+<pre># Situação-problema: PagaFácil
+
+## 1. Correção de segurança hoje (comandos)
+[hotfix/*, cherry-pick…]
+
+## 2. Problemas do processo atual
+| Problema | Ligação com a aula |
+| --- | --- |
+
+## 3. Estratégia recomendada e justificativa
+
+## 4. O que precisa existir antes de mudar</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 2 · CONFERÊNCIA -->
+  <section class="slide hands-on tall" id="s-cp-check">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 2 · conferência final</div>
+      <h2 class="stitle animate delay-1">Antes de entregar: confira os 8 itens</h2>
+      <p class="subtitle animate delay-2">Faça a conferência com a dupla. Se algum item falhar, volte ao passo correspondente nos slides <span class="sref" data-s="s-cp1"></span> e <span class="sref" data-s="s-cp2"></span>.</p>
+      <div class="card animate delay-3" style="margin-top:.9rem;">
+        <h3 class="accent">Checklist (fica salvo neste navegador)</h3>
+        <div class="check-list" data-check="entrega" style="margin-top:.5rem;">
+          <label class="check-item"><input type="checkbox" id="en1"><div><div class="ci-t">A main está protegida</div><div class="ci-d"><i>Settings → Branches</i> mostra a regra para <span class="code">main</span> com PR obrigatório e 1 aprovação.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en2"><div><div class="ci-t">Template de PR existe</div><div class="ci-d"><span class="code">.github/pull_request_template.md</span> está na main.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en3"><div><div class="ci-t">As duas rotas funcionam</div><div class="ci-d">Na main atualizada, <span class="code">pytest</span> mostra 7 testes passando; em <span class="code">/docs</span>, <span class="code">GET /tasks/{id}</span> e <span class="code">?done=true</span> respondem.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en4"><div><div class="ci-t">Pelo menos 2 PRs revisados, um de cada integrante</div><div class="ci-d">Aba <i>Pull requests → Closed</i>: cada PR tem aprovação ("approved") e ao menos 1 comentário de revisão.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en5"><div><div class="ci-t">Conflito resolvido e documentado</div><div class="ci-d">O README mostra as duas linhas novas e <span class="code">docs/conflito.md</span> explica o conflito, com o print.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en6"><div><div class="ci-t">README com links dos PRs e docs/pbl-semana2.md</div><div class="ci-d">Os links abrem os PRs certos; nenhum texto entre colchetes ficou nos modelos.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en7"><div><div class="ci-t">Tag v0.2 publicada</div><div class="ci-d">Aparece em <b>Tags</b> no GitHub, no último commit da main.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en8"><div><div class="ci-t">Link enviado no AVA pelos dois integrantes</div><div class="ci-d">Até terça, 27/10/2026, 23h59.</div></div></label>
+        </div>
+        <div class="check-meter" id="entregaMeter"><span>0/8</span><div class="check-bar"><span></span></div></div>
+        <div class="deep"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/pull-requests" target="_blank" rel="noopener">GitHub · Pull requests</a><a href="https://docs.github.com/pt/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-using-the-command-line" target="_blank" rel="noopener">GitHub · Resolver conflito pela linha de comando</a></div>
+      </div>
     </div>
   </section>
 
