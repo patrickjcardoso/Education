@@ -422,7 +422,7 @@ operate → monitor</div>
           <label class="check-item"><input type="checkbox" id="prep2"><div><div class="ci-t">Conta no Killercoda</div><div class="ci-d">Entre em <a href="https://killercoda.com/playgrounds" target="_blank" rel="noopener">killercoda.com</a> com o login do GitHub. É grátis e roda Linux no navegador.</div></div></label>
           <label class="check-item"><input type="checkbox" id="prep3"><div><div class="ci-t">Git instalado</div><div class="ci-d">Baixe em <a href="https://git-scm.com/downloads" target="_blank" rel="noopener">git-scm.com/downloads</a>. Teste no terminal: <span class="code">git --version</span></div></div></label>
           <label class="check-item"><input type="checkbox" id="prep4"><div><div class="ci-t">VS Code instalado</div><div class="ci-d">Baixe em <a href="https://code.visualstudio.com/" target="_blank" rel="noopener">code.visualstudio.com</a>. Ele já integra Git e GitHub.</div></div></label>
-          <label class="check-item"><input type="checkbox" id="prep5"><div><div class="ci-t">Python 3.12 instalado</div><div class="ci-d">Necessário para rodar o projeto TaskFlow. Baixe em <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org/downloads</a> e teste <span class="code">python --version</span></div></div></label>
+          <label class="check-item"><input type="checkbox" id="prep5"><div><div class="ci-t">Python 3.12 instalado</div><div class="ci-d">Necessário para rodar o projeto TaskFlow. Baixe em <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org/downloads</a> e teste: <span class="code">python3 --version</span> (Linux/macOS) ou <span class="code">py --version</span> (Windows). No Ubuntu, instale também <span class="code">sudo apt install python3-venv</span></div></div></label>
         </div>
         <div class="card">
           <h3 class="accent">Sem computador próprio ou sem permissão para instalar?</h3>
@@ -1034,7 +1034,7 @@ git log --graph --oneline</pre>
   </section>
 
   <!-- ============================================================ PROJETO -->
-  <section class="slide hands-on" id="s-projeto">
+  <section class="slide hands-on tall" id="s-projeto">
     <div class="slide-inner">
       <div class="kicker animate"><span class="knum"></span>Projeto evolutivo <span class="mm-badge">⏱ 1h30 · em dupla</span></div>
       <h2 class="stitle animate delay-1">TaskFlow · Checkpoint 1 (tag v0.1): versionamento</h2>
@@ -1051,12 +1051,20 @@ git log --graph --oneline</pre>
         <div class="card">
           <h3 class="accent">2. Rode a API localmente</h3>
           <div class="codeblock" style="margin-top:.4rem;"><button class="copy">copiar</button>
-<pre>python -m venv .venv
+<pre><span class="cm"># Linux, macOS ou Killercoda</span>
+python3 -m venv .venv
 source .venv/bin/activate
-<span class="cm"># Windows: .venv\Scripts\activate</span>
+
+<span class="cm"># Windows (Git Bash)</span>
+py -m venv .venv
+source .venv/Scripts/activate
+
+<span class="cm"># Depois de ativar, em qualquer sistema</span>
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 <span class="cm"># abra http://127.0.0.1:8000/docs</span></pre></div>
+          <div class="info-box" style="font-size:.76rem;"><b>Ativou certo?</b> O terminal mostra <span class="code">(.venv)</span> no início da linha. A partir daí, <span class="code">python</span> e <span class="code">pip</span> funcionam em qualquer sistema.</div>
+          <div class="warn-box" style="font-size:.76rem;"><b>Erro no Ubuntu</b> "ensurepip is not available"? Instale o módulo de venv: <span class="code">sudo apt install python3-venv</span> e repita.</div>
         </div>
         <div class="card">
           <h3 class="accent">3. Entregue</h3>
