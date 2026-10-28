@@ -326,6 +326,24 @@ table.trail .goal{color:var(--text);}
 .deep .ref{color:var(--text-dim);}
 .card p.ex{margin-top:.45rem; padding-top:.45rem; border-top:1px dashed var(--border-soft); font-size:.78rem;}
 .card p.ex b{color:var(--gold);}
+
+/* ============================= CHECKPOINT PASSO A PASSO ============================= */
+.who{display:inline-block; font-family:var(--mono); font-size:.66rem; font-weight:700; padding:.08rem .45rem; border-radius:6px; margin-right:.3rem; vertical-align:1px;}
+.who.a{background:rgba(47,176,232,.16); color:var(--blue); border:1px solid rgba(47,176,232,.45);}
+.who.b{background:rgba(54,197,143,.14); color:var(--green); border:1px solid rgba(54,197,143,.45);}
+.who.ab{background:rgba(242,169,59,.14); color:var(--gold); border:1px solid rgba(242,169,59,.45);}
+ol.cp-steps{list-style:none; counter-reset:cp; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin-top:.9rem;}
+ol.cp-steps[start="7"]{counter-reset:cp 6; grid-template-columns:1fr; margin-top:0;}
+ol.cp-steps > li{counter-increment:cp; position:relative; background:var(--surface); border:1px solid rgba(242,169,59,.28); border-radius:12px; padding:.7rem .9rem .7rem 2.6rem; min-width:0;}
+ol.cp-steps > li::before{content:counter(cp); position:absolute; left:.75rem; top:.7rem; width:24px; height:24px; border-radius:50%; background:var(--gold); color:#101010; font-weight:800; font-size:.75rem; display:grid; place-items:center;}
+.cp-h{font-family:var(--disp); font-weight:700; font-size:.9rem; color:var(--text); margin-bottom:.3rem;}
+ol.cp-steps p{font-size:.8rem; color:var(--text-dim); line-height:1.5; margin-top:.3rem;}
+ol.cp-steps p a{color:var(--blue);}
+ol.cp-steps .tree{font-size:.72rem; background:#04070c; border:1px solid var(--border); border-radius:8px; padding:.45rem .6rem; margin-top:.35rem; overflow-x:auto;}
+ol.cp-steps p.ok{color:var(--green); font-size:.76rem;}
+.tree .cm2{color:var(--text-faint);}
+#s-cp2 table .code{white-space:normal; overflow-wrap:anywhere;}
+@media (max-width:860px){ ol.cp-steps{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -399,6 +417,9 @@ operate → monitor</div>
           <a href="#s-pbl"><span class="n"></span><span class="t">Situação-problema: EntregaJá</span></a>
           <a href="#s-lab"><span class="n"></span><span class="t">Laboratório no Killercoda</span></a>
           <a href="#s-projeto"><span class="n"></span><span class="t">Projeto TaskFlow: checkpoint 1</span></a>
+          <a href="#s-cp1"><span class="n"></span><span class="t">Checkpoint 1: passo a passo</span></a>
+          <a href="#s-cp-modelos"><span class="n"></span><span class="t">Modelos prontos</span></a>
+          <a href="#s-cp-check"><span class="n"></span><span class="t">Checklist de entrega</span></a>
           <a href="#s-plano"><span class="n"></span><span class="t">Seu plano da semana</span></a>
           <a href="#s-trilha"><span class="n"></span><span class="t">Trilha de estudo</span></a>
           <a href="#s-fontes"><span class="n"></span><span class="t">Biblioteca da semana</span></a>
@@ -1075,11 +1096,214 @@ uvicorn app.main:app --reload
             <li>Arquivo <span class="code">docs/pbl-semana1.md</span> (situação-problema).</li>
             <li>Tag: <span class="code">git tag v0.1</span> e <span class="code">git push --tags</span></li>
           </ul>
+          <div class="info-box" style="font-size:.78rem;"><b>Como fazer cada item:</b> passo a passo nos slides <span class="sref" data-s="s-cp1"></span> e <span class="sref" data-s="s-cp2"></span>; modelos no slide <span class="sref" data-s="s-cp-modelos"></span> e checklist no slide <span class="sref" data-s="s-cp-check"></span>.</div>
         </div>
       </div>
       <div class="deliver animate delay-4"><span>Prazo: terça, 20/10/2026, 23h59</span><span>Entregar no AVA: link do repositório</span><span>Vale nota de atividades do 1º bimestre</span></div>
     </div>
   </section>
+
+  <!-- ============================================================ CHECKPOINT 1 · PASSO A PASSO (1/2) -->
+  <section class="slide hands-on tall" id="s-cp1">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 1 · passo a passo · parte 1 de 2 <span class="mm-badge">⏱ 40 min</span></div>
+      <h2 class="stitle animate delay-1">Parte 1: prepare o repositório da dupla</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Cada passo diz <b>quem faz</b>: <span class="who a">A</span> é o integrante dono do fork, <span class="who b">B</span> é o colega, <span class="who ab">A+B</span> são os dois. No fim de cada passo, a linha <b>✓ Confira</b> mostra como saber que deu certo.</p>
+      <ol class="cp-steps animate delay-3">
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Faça o fork do repositório-modelo</div>
+          <p>Abra <a href="https://github.com/patrickjcardoso/taskflow" target="_blank" rel="noopener">github.com/patrickjcardoso/taskflow</a>, clique em <b>Fork</b> (canto superior direito) e depois em <b>Create fork</b>. O GitHub cria uma cópia em <span class="code">github.com/USUARIO-A/taskflow</span>.</p>
+          <p class="ok">✓ Confira: o nome do repositório aparece com o seu usuário e, abaixo dele, "forked from patrickjcardoso/taskflow".</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Convide o colega <span class="who b">B</span> Aceite o convite</div>
+          <p>No fork: <i>Settings → Collaborators → Add people</i>, digite o usuário do colega. O colega abre o e-mail do GitHub (ou <a href="https://github.com/notifications" target="_blank" rel="noopener">github.com/notifications</a>) e clica em <b>Accept invitation</b>.</p>
+          <p class="ok">✓ Confira: em <i>Settings → Collaborators</i>, o colega aparece sem a palavra "Pending".</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Clone o fork, cada um na sua máquina</div>
+          <div class="tree">git clone https://github.com/USUARIO-A/taskflow.git
+cd taskflow</div>
+          <p>Os dois clonam o <b>mesmo</b> fork (o do integrante A). Não clone o repositório do professor.</p>
+          <p class="ok">✓ Confira: <span class="code">git remote -v</span> mostra a URL com <span class="code">USUARIO-A</span>.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Rode a API e teste</div>
+          <p>Use os comandos do slide <span class="sref" data-s="s-projeto"></span> (ambiente virtual + <span class="code">uvicorn</span>). Abra <span class="code">http://127.0.0.1:8000/docs</span>, clique em <b>POST /tasks → Try it out</b>, crie uma tarefa e depois rode <b>GET /tasks</b>. Para parar a API: <span class="code">Ctrl+C</span>.</p>
+          <p class="ok">✓ Confira: o GET devolve a tarefa que você criou.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Crie o .gitignore e envie (commit 1)</div>
+          <p>Na pasta do projeto, crie o arquivo <span class="code">.gitignore</span> com o conteúdo do slide <span class="sref" data-s="s-cp-modelos"></span> (ou copie o modelo <a href="https://github.com/github/gitignore/blob/main/Python.gitignore" target="_blank" rel="noopener">Python.gitignore</a>). Depois:</p>
+          <div class="tree">git status            <span class="cm2"># .venv/ NÃO pode aparecer na lista</span>
+git add .gitignore
+git commit -m "chore: adiciona gitignore para Python"
+git push</div>
+          <p class="ok">✓ Confira: o <span class="code">.gitignore</span> aparece no GitHub e a pasta <span class="code">.venv</span> não.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Receba a mudança</div>
+          <div class="tree">git pull</div>
+          <p class="ok">✓ Confira: o <span class="code">.gitignore</span> aparece na pasta do integrante B. A dupla está sincronizada e pronta para a parte 2.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 1 · PASSO A PASSO (2/2) -->
+  <section class="slide hands-on tall" id="s-cp2">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 1 · passo a passo · parte 2 de 2 <span class="mm-badge">⏱ 50 min</span></div>
+      <h2 class="stitle animate delay-1">Parte 2: commits dos dois, README, PBL e tag</h2>
+      <div class="ctx animate delay-2"><b class="tag">Regra para não perder trabalho</b> Nesta semana ainda não usamos branches (isso é a Aula 02), então os dois trabalham na <span class="code">main</span>. Para não sobrescrever o colega: <b>sempre <span class="code">git pull</span> antes de começar</b> e <b>logo depois de cada commit, <span class="code">git push</span></b>. Se o push for recusado com "rejected / fetch first", rode <span class="code">git pull</span> e depois <span class="code">git push</span> de novo.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Divisão sugerida (garante commits dos dois)</h3>
+          <div class="tbl-wrap"><table class="cmp">
+            <tr><th>Commit</th><th>Quem</th><th>O que fazer</th><th>Mensagem</th></tr>
+            <tr><td>1</td><td><span class="who a">A</span></td><td>.gitignore (parte 1)</td><td><span class="code">chore: adiciona gitignore para Python</span></td></tr>
+            <tr><td>2</td><td><span class="who a">A</span></td><td>README: descrição e "Como rodar"</td><td><span class="code">docs: descreve o projeto e como rodar</span></td></tr>
+            <tr><td>3</td><td><span class="who b">B</span></td><td>README: seção "Integrantes"</td><td><span class="code">docs: adiciona integrantes da dupla</span></td></tr>
+            <tr><td>4</td><td><span class="who b">B</span></td><td>Print do laboratório em <span class="code">docs/img/</span> + link no README</td><td><span class="code">docs: adiciona evidência do laboratório</span></td></tr>
+            <tr><td>5</td><td><span class="who a">A</span></td><td><span class="code">docs/pbl-semana1.md</span>: diagnóstico e proposta</td><td><span class="code">docs: adiciona diagnóstico da situação-problema</span></td></tr>
+            <tr><td>6</td><td><span class="who b">B</span></td><td>PBL: recuperação e risco</td><td><span class="code">docs: completa a situação-problema</span></td></tr>
+          </table></div>
+          <p style="margin-top:.5rem;">Use os modelos do slide <span class="sref" data-s="s-cp-modelos"></span> para o README e o PBL. Cada linha da tabela = um commit pequeno.</p>
+        </div>
+        <div>
+          <ol class="cp-steps" start="7">
+            <li>
+              <div class="cp-h"><span class="who b">B</span> Como colocar o print do laboratório no repositório</div>
+              <p>Tire o print do <span class="code">git log --graph --oneline</span> do laboratório (slide <span class="sref" data-s="s-lab"></span>). Crie a pasta <span class="code">docs/img</span> no projeto, salve o arquivo como <span class="code">lab-semana1.png</span> e adicione ao README:</p>
+              <div class="tree">![Log do laboratório](docs/img/lab-semana1.png)</div>
+              <p>Sem terminal à mão? No GitHub: <i>Add file → Upload files</i>, arraste a imagem e confirme. Isso também gera um commit.</p>
+            </li>
+            <li>
+              <div class="cp-h"><span class="who a">A</span> Crie a tag v0.1, só no final</div>
+              <p>Quando tudo da tabela estiver no GitHub:</p>
+              <div class="tree">git pull
+git tag v0.1
+git push --tags</div>
+              <p class="ok">✓ Confira: na página do repositório, clique em <b>Tags</b> e veja <span class="code">v0.1</span>.</p>
+              <p>Criou a tag cedo demais? <span class="code">git tag -d v0.1</span>, <span class="code">git push --delete origin v0.1</span> e crie de novo.</p>
+            </li>
+            <li>
+              <div class="cp-h"><span class="who ab">A+B</span> Confira e entregue</div>
+              <p>Passe pelo checklist do slide <span class="sref" data-s="s-cp-check"></span>. Depois, <b>cada integrante</b> envia no AVA o link do fork (<span class="code">https://github.com/USUARIO-A/taskflow</span>).</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 1 · MODELOS E CONFERÊNCIA -->
+  <section class="slide hands-on tall" id="s-cp-modelos">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 1 · modelos</div>
+      <h2 class="stitle animate delay-1">Modelos prontos para copiar</h2>
+      <p class="subtitle animate delay-2">Copie cada modelo, troque o texto entre colchetes pelo seu e apague as instruções. O <span class="code">.gitignore</span> pode ser usado como está.</p>
+      <div class="grid-3 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="codeblock">
+          <div class="cb-title">.gitignore</div>
+          <button class="copy">copiar</button>
+<pre># Ambiente virtual
+.venv/
+
+# Cache do Python
+__pycache__/
+*.pyc
+
+# Testes
+.pytest_cache/
+.coverage
+
+# Segredos e configurações locais
+.env
+
+# Editores
+.vscode/
+.idea/</pre>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">README.md (substitua o conteúdo)</div>
+          <button class="copy">copiar</button>
+<pre># TaskFlow
+
+API REST de tarefas em Python (FastAPI),
+desenvolvida na disciplina DevOps Tools.
+
+## Como rodar
+
+[Cole aqui os comandos que VOCÊ usou
+para criar o .venv e rodar a API,
+no seu sistema operacional.]
+
+## Como testar
+
+    pytest
+
+## Integrantes
+
+- [Nome completo A] (@usuario-github-a)
+- [Nome completo B] (@usuario-github-b)
+
+## Evidências
+
+### Laboratório da Semana 1
+
+![Log do laboratório](docs/img/lab-semana1.png)</pre>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">docs/pbl-semana1.md</div>
+          <button class="copy">copiar</button>
+<pre># Situação-problema: EntregaJá
+
+## 1. Diagnóstico
+| Problema | Pilar CALMS ou Caminho |
+| --- | --- |
+| [problema 1] | [ex.: Automation] |
+| [problema 2] | [...] |
+| [problema 3] | [...] |
+
+## 2. Fluxo proposto com Git e GitHub
+1. [do git clone…]
+2. [...]
+6. […até a atualização de produção]
+
+## 3. Como recuperar a tela de cupons
+[Comandos e explicação]
+
+## 4. O que o Git sozinho não resolve
+[Ex.: o deploy manual por FTP, porque…]</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 1 · CONFERÊNCIA -->
+  <section class="slide hands-on tall" id="s-cp-check">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 1 · conferência final</div>
+      <h2 class="stitle animate delay-1">Antes de entregar: confira os 7 itens</h2>
+      <p class="subtitle animate delay-2">Faça a conferência com a dupla. Cada item diz <b>como</b> verificar. Se algum falhar, volte ao passo correspondente nos slides <span class="sref" data-s="s-cp1"></span> e <span class="sref" data-s="s-cp2"></span>.</p>
+      <div class="card animate delay-3" style="margin-top:.9rem;">
+        <h3 class="accent">Checklist (fica salvo neste navegador)</h3>
+        <div class="check-list" data-check="entrega" style="margin-top:.5rem;">
+          <label class="check-item"><input type="checkbox" id="en1"><div><div class="ci-t">O fork é público e o colega é collaborator</div><div class="ci-d">Abra o link do fork numa aba anônima: ele precisa abrir sem login.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en2"><div><div class="ci-t">.gitignore funciona</div><div class="ci-d">No GitHub, não aparecem as pastas <span class="code">.venv</span> nem <span class="code">__pycache__</span>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en3"><div><div class="ci-t">5 commits ou mais, dos dois integrantes</div><div class="ci-d">Rode <span class="code">git shortlog -sn</span>: os dois nomes devem aparecer. As mensagens seguem <span class="code">tipo: descrição</span>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en4"><div><div class="ci-t">README completo e a imagem aparece</div><div class="ci-d">Na página inicial do fork, o README mostra descrição, como rodar, integrantes e o print (sem ícone de imagem quebrada).</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en5"><div><div class="ci-t">docs/pbl-semana1.md com as 4 seções</div><div class="ci-d">Abra o arquivo no GitHub e confira se nenhum texto entre colchetes ficou para trás.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en6"><div><div class="ci-t">Tag v0.1 publicada</div><div class="ci-d">Aparece em <b>Tags</b> no GitHub e aponta para o último commit.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en7"><div><div class="ci-t">Link enviado no AVA pelos dois integrantes</div><div class="ci-d">Até terça, 20/10/2026, 23h59.</div></div></label>
+        </div>
+        <div class="check-meter" id="entregaMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+        <div class="deep"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax" target="_blank" rel="noopener">GitHub · Sintaxe básica de Markdown (README)</a><a href="https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Criando-Tags" target="_blank" rel="noopener">Pro Git 2.6 · Criando tags</a></div>
+      </div>
+    </div>
+</section>
+
 
   <!-- ============================================================ PLANO -->
   <section class="slide" id="s-plano">
