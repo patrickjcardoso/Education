@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Ambientação Tech · Aula 08: comunicação entre computadores. Endereço IP, máscara, gateway padrão e DNS, com a VM como laboratório: ping, traceroute, nslookup e diagnóstico de rede.">
+<title>Ambientação Tech · Aula 08</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@600;700;800&display=swap">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — herdado das aulas do Prof. Patrick (mesmo padrão visual
+   de Redes e DevOps Tools). Deck vertical com scroll-snap, tema dark-tech.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12; --bg-2:#0c131d; --surface:#121b27; --surface-2:#182434;
+  --border:#223049; --border-soft:#1a2436;
+  --text:#eef3f8; --text-dim:#9fb0c3; --text-faint:#62768a;
+  --blue:#2fb0e8; --blue-dim:#12719e; --navy:#0b3556;
+  --gold:#f2a93b; --green:#36c58f; --red:#ef5b5b;
+  --mono:'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --disp:'Sora', 'Inter', sans-serif;
+  --radius:16px; --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+a{color:var(--blue);}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto; min-width:0;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); font-weight:600;
+  display:flex; align-items:center; gap:.6em; margin-bottom:.8rem; flex-wrap:wrap;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em; text-wrap:balance;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem; text-wrap:balance;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:70ch; line-height:1.55;}
+.subtitle b, .card p b, ol.steps b{color:var(--text);}
+.accent{color:var(--gold);} .accent-b{color:var(--blue);} .accent-g{color:var(--green);} .accent-r{color:var(--red);}
+
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease);}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;} .delay-4{transition-delay:.32s;}
+@media (prefers-reduced-motion: reduce){ .animate{opacity:1; transform:none; transition:none;} .deck{scroll-behavior:auto;} }
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem; min-width:0;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p, .card li{color:var(--text-dim); font-size:.84rem; line-height:1.5;}
+.card ul{padding-left:1.1rem; display:grid; gap:.25rem;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+.grid-5{display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+.icon-chip.g{background:rgba(242,169,59,.12); color:var(--gold);}
+
+.tbl-wrap{overflow-x:auto; min-width:0;}
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.1rem; cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn.gold{background:linear-gradient(180deg,var(--gold),#c98520);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue); white-space:nowrap;}
+
+/* ============================= CAPA ============================= */
+#s-capa{align-items:flex-start;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem; flex-wrap:wrap;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.16);
+  font-size:1rem; line-height:1.75; text-align:right; user-select:none; pointer-events:none; white-space:pre;}
+
+/* ============================= SUMÁRIO ============================= */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.76rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.82rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= CHECKLIST / AGENDA ============================= */
+.check-list{display:grid; gap:.5rem;}
+.check-item{display:flex; gap:.75rem; align-items:flex-start; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; cursor:pointer; transition:border-color .2s, background .2s;}
+.check-item input{appearance:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border); flex:none; margin-top:.1rem; display:grid; place-items:center; cursor:pointer; background:var(--surface-2);}
+.check-item input:checked{background:var(--green); border-color:var(--green);}
+.check-item input:checked::after{content:'✓'; color:#062014; font-weight:800; font-size:.8rem;}
+.check-item.done{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.05);}
+.check-item.done .ci-t{text-decoration:line-through; color:var(--text-faint);}
+.ci-t{font-size:.86rem; color:var(--text); font-weight:600;}
+.ci-d{font-size:.78rem; color:var(--text-dim); margin-top:.15rem; line-height:1.45;}
+.ci-time{margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--gold); flex:none; padding-top:.15rem;}
+.check-meter{display:flex; align-items:center; gap:.8rem; margin-top:.8rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);}
+.check-bar{flex:1; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.check-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--blue)); transition:width .4s var(--ease);}
+
+.agenda{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:1rem;}
+.ag{border-top:3px solid var(--blue); background:var(--surface); border-radius:0 0 12px 12px; padding:.75rem .9rem;}
+.ag .min{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.86rem;}
+.ag h4{font-family:var(--disp); font-size:.9rem; margin:.25rem 0; color:var(--text);}
+.ag p{font-size:.78rem; color:var(--text-dim); line-height:1.45;}
+.ag:nth-child(2){border-color:var(--gold);} .ag:nth-child(2) .min{color:var(--gold);}
+.ag:nth-child(3){border-color:var(--green);} .ag:nth-child(3) .min{color:var(--green);}
+.ag:nth-child(4){border-color:var(--text-faint);} .ag:nth-child(4) .min{color:var(--text-dim);}
+
+/* ============================= TIMELINE ============================= */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem; min-width:0;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.92rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item.hot{border-color:var(--red);} .tl-item.hot .yr{color:var(--red);}
+.tl-item.warn{border-color:var(--gold);} .tl-item.warn .yr{color:var(--gold);}
+.bignum-row{display:flex; gap:2.2rem; margin-top:1.2rem; flex-wrap:wrap;}
+.bignum .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); color:var(--red); line-height:1;}
+.bignum .l{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* ============================= MURO DA CONFUSÃO ============================= */
+.wall{display:grid; grid-template-columns:1fr 70px 1fr; gap:1rem; align-items:stretch; margin-top:1.1rem;}
+.wall .side{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1rem 1.1rem;}
+.wall .side h3{font-family:var(--disp); font-size:1rem; margin-bottom:.5rem;}
+.wall .side.dev h3{color:var(--blue);} .wall .side.ops h3{color:var(--gold);}
+.wall .side li{font-size:.84rem; color:var(--text-dim); line-height:1.5; margin-left:1rem;}
+.wall .brick{border-radius:10px; background:repeating-linear-gradient(0deg, var(--surface-2) 0 18px, var(--border) 18px 20px), var(--surface-2);
+  display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; font-family:var(--mono); font-size:.68rem; color:var(--text-dim); letter-spacing:.12em; text-transform:uppercase;}
+
+/* ============================= CALMS / 3 CAMINHOS ============================= */
+.calms .card .letter{font-family:var(--disp); font-weight:800; font-size:2rem; color:var(--blue); line-height:1;}
+.calms .card:nth-child(even) .letter{color:var(--gold);}
+.ways{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; margin-top:1rem;}
+.way svg{width:100%; height:70px; display:block; margin-bottom:.6rem;}
+.way .lbl{font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);}
+
+/* ============================= CICLO DEVOPS ============================= */
+.loop-wrap{display:grid; grid-template-columns:1.25fr 1fr; gap:1.4rem; align-items:center; margin-top:.8rem;}
+.loop-svg{width:100%; height:auto; display:block;}
+.loop-svg .seg{cursor:pointer;}
+.loop-svg .seg rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1; transition:all .25s;}
+.loop-svg .seg text{font-family:var(--mono); font-size:11px; fill:var(--text-dim); text-anchor:middle; pointer-events:none;}
+.loop-svg .seg:hover rect, .loop-svg .seg:focus rect{stroke:var(--blue);}
+.loop-svg .seg.dev.active rect{fill:rgba(47,176,232,.2); stroke:var(--blue);}
+.loop-svg .seg.ops.active rect{fill:rgba(242,169,59,.18); stroke:var(--gold);}
+.loop-svg .seg.active text{fill:var(--text); font-weight:700;}
+.loop-svg .path{fill:none; stroke:var(--border); stroke-width:2; stroke-dasharray:5 6;}
+.loop-svg .side-l{font-family:var(--mono); font-size:10px; letter-spacing:.12em; fill:var(--text-faint); text-anchor:middle;}
+.phase-panel{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.3rem; min-height:230px;}
+.phase-panel h4{font-family:var(--disp); color:var(--gold); font-size:1.05rem; margin-bottom:.1rem;}
+.phase-panel .tag{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:block; margin-bottom:.7rem;}
+.phase-panel p{font-size:.84rem; color:var(--text-dim); line-height:1.5;}
+.phase-panel .tools{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.7rem;}
+.phase-panel .tools span{font-family:var(--mono); font-size:.7rem; padding:.2rem .55rem; border-radius:99px; border:1px solid var(--border); color:var(--blue);}
+.phase-panel .week{margin-top:.8rem; font-size:.78rem; color:var(--green); font-family:var(--mono);}
+
+/* ============================= HANDS-ON ============================= */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.5rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+
+/* ============================= QUIZ / GABARITOS ============================= */
+.quiz-list{display:flex; flex-direction:column; gap:.5rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; cursor:pointer; gap:1rem; width:100%; background:none; border:none; text-align:left; color:inherit; font:inherit;}
+.qcard .qhead .qtext{font-size:.85rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.62rem; color:var(--text-faint); flex-shrink:0; margin-left:auto;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:280px;}
+.qcard .qanswer{padding:.6rem 1rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft);}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= DRILL: É DEVOPS? ============================= */
+.drill{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid rgba(242,169,59,.28); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+.drill-q{font-family:var(--disp); font-size:clamp(1rem,1.7vw,1.3rem); font-weight:700; color:var(--text); min-height:3.2em; line-height:1.35;}
+.drill-btns{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+.verdict{margin-top:.9rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.4em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.ok{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.ok b.t{color:var(--green);}
+.verdict.no{border-color:rgba(239,91,91,.5); background:rgba(239,91,91,.07);} .verdict.no b.t{color:var(--red);}
+.verdict.warn{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.warn b.t{color:var(--gold);}
+.drill-score{font-family:var(--mono); font-size:.76rem; color:var(--gold); margin-top:.6rem;}
+
+/* ============================= GIT 3 ÁREAS ============================= */
+.areas{display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-top:.9rem;}
+.area{background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:.8rem .9rem; min-height:150px; transition:box-shadow .3s;}
+.area h4{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.15rem;}
+.area .sub{font-size:.72rem; color:var(--text-faint); margin-bottom:.6rem;}
+.area.wd h4{color:var(--red);} .area.st h4{color:var(--gold);} .area.rp h4{color:var(--green);}
+.area.flash{box-shadow:0 0 0 3px rgba(47,176,232,.25);}
+.fchip{display:inline-flex; align-items:center; gap:.35em; font-family:var(--mono); font-size:.72rem; padding:.25rem .55rem; border-radius:7px; margin:0 .3rem .3rem 0; border:1px solid var(--border);}
+.fchip.m{color:var(--red); border-color:rgba(239,91,91,.45); background:rgba(239,91,91,.07);}
+.fchip.s{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.07);}
+.commit-row{font-family:var(--mono); font-size:.7rem; color:var(--text-dim); padding:.2rem 0; border-bottom:1px solid var(--border-soft);}
+.commit-row .h{color:var(--gold);}
+.empty{font-size:.74rem; color:var(--text-faint); font-style:italic;}
+.git-ctrl{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;}
+.term{margin-top:.8rem; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim); min-height:3.6em; white-space:pre-wrap; overflow-x:auto;}
+.term .p{color:var(--green);} .term .c{color:var(--text);} .term .e{color:var(--red);} .term .y{color:var(--gold);}
+
+/* ============================= CODE BLOCK ============================= */
+.codeblock{position:relative; background:#04070c; border:1px solid var(--border); border-radius:12px; min-width:0;}
+.codeblock pre{font-family:var(--mono); font-size:.74rem; line-height:1.6; color:var(--text); padding:.8rem 1rem; overflow:auto; max-height:52vh;}
+.codeblock pre .cm{color:var(--text-faint);}
+.codeblock .copy{position:absolute; top:.5rem; right:.5rem; font-family:var(--mono); font-size:.66rem; padding:.25rem .6rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer;}
+.codeblock .copy:hover{color:var(--blue); border-color:var(--blue);}
+.codeblock .cb-title{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); padding:.5rem 1rem 0; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ============================= COMMIT CHECKER ============================= */
+.ip-input{font-family:var(--mono); font-size:.88rem; padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.input-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;}
+.input-row .ip-input{flex:1; min-width:200px;}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+.types{display:grid; grid-template-columns:repeat(2,1fr); gap:.25rem .9rem; font-size:.78rem; color:var(--text-dim);}
+.types b{font-family:var(--mono); color:var(--blue); font-weight:600;}
+
+/* ============================= MISC ============================= */
+.warn-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.warn-box b{color:var(--gold);}
+.info-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(47,176,232,.07); border:1px solid rgba(47,176,232,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.info-box b{color:var(--blue);}
+.refs-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem 1rem; min-width:0;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.5rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.4rem;}
+.refs-box a, .refs-box span.ref{color:var(--text-dim); text-decoration:none; font-size:.8rem; display:flex; align-items:baseline; gap:.5em; line-height:1.4;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box .ext{color:var(--text-faint); font-family:var(--mono); font-size:.66rem; flex:none;}
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border); background:var(--surface); margin-top:1.4rem; flex-wrap:wrap;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+.deliver{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;}
+.deliver span{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid rgba(54,197,143,.4); background:rgba(54,197,143,.07); color:var(--green);}
+.tree{font-family:var(--mono); font-size:.76rem; line-height:1.6; color:var(--text-dim); white-space:pre; overflow-x:auto;}
+.tree b{color:var(--gold); font-weight:600;}
+
+/* ============================= RESPONSIVO ============================= */
+@media (max-width:860px){
+  html,body{overflow:auto;}
+  .deck{height:auto; overflow:visible; scroll-snap-type:none;}
+  .slide{height:auto; min-height:auto; padding:3.5rem 16px; overflow:visible;}
+  .grid-3,.grid-2,.grid-4,.grid-5,.ways,.loop-wrap,.areas,.agenda,.wall,.types{grid-template-columns:1fr;}
+  .wall .brick{writing-mode:horizontal-tb; padding:.5rem;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits,.hint,.slide-no{display:none;}
+  .timeline{flex-direction:column;}
+  .animate{opacity:1; transform:none;}
+}
+
+
+/* ============================= AUTOESTUDO (trilha, biblioteca, glossário, autoavaliação) ============================= */
+.slide.tall{justify-content:flex-start; overflow-y:auto; padding-top:6vh; padding-bottom:10vh;}
+table.trail td:nth-child(4){white-space:nowrap;}
+table.trail td{font-size:.8rem; line-height:1.45;}
+table.trail td:first-child{font-family:var(--mono); color:var(--text-faint); font-weight:600; width:2.2em;}
+table.trail td a{color:var(--blue); text-decoration:none;}
+table.trail td a:hover{text-decoration:underline;}
+table.trail .goal{color:var(--text);}
+.req{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; padding:.1rem .45rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); white-space:nowrap; margin-left:.3rem; vertical-align:1px;}
+.req.ob{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+.lib h4{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:.2rem 0 .45rem;}
+.lib ul{list-style:none; display:grid; gap:.45rem;}
+.lib li{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.lib li b{color:var(--text);}
+.lib li a{color:var(--blue); text-decoration:none;}
+.lib li a:hover{text-decoration:underline;}
+.lib .find{display:block; font-size:.74rem; color:var(--text-faint); margin-top:.1rem;}
+.gloss{display:grid; grid-template-columns:repeat(2,1fr); gap:.2rem 1.6rem; margin-top:.8rem;}
+.gloss div{border-bottom:1px solid var(--border-soft); padding:.4rem 0; min-width:0;}
+.gloss dt{font-family:var(--mono); color:var(--blue); font-size:.78rem; font-weight:600;}
+.gloss dd{font-size:.78rem; color:var(--text-dim); line-height:1.45; margin-top:.1rem;}
+.method{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem;}
+.method .card .icon-chip{font-size:.9rem;}
+.review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
+@media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+
+/* ============================= AMBIENTAÇÃO TECH · AULA 06 — componentes novos ============================= */
+.agenda.six{grid-template-columns:repeat(3,1fr);}
+.agenda.six .ag:nth-child(3){border-color:var(--text-faint);} .agenda.six .ag:nth-child(3) .min{color:var(--text-dim);}
+.agenda.six .ag:nth-child(4){border-color:var(--green);} .agenda.six .ag:nth-child(4) .min{color:var(--green);}
+.agenda.six .ag:nth-child(5){border-color:var(--gold);} .agenda.six .ag:nth-child(5) .min{color:var(--gold);}
+table.cmp td.accent-r{color:var(--red);} table.cmp td.accent-g{color:var(--green);}
+.agenda.six .ag:nth-child(6){border-color:var(--blue);} .agenda.six .ag:nth-child(6) .min{color:var(--blue);}
+.agenda.six .ag.pause{opacity:.7;}
+
+/* permissões rwx ↔ octal */
+.perm{width:100%; border-collapse:collapse; font-size:.82rem;}
+.perm th{font-family:var(--mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.35rem .5rem; text-align:center; border-bottom:1px solid var(--border);}
+.perm th:first-child{text-align:left;}
+.perm td{padding:.45rem .5rem; text-align:center; border-bottom:1px solid var(--border-soft); color:var(--text-dim);}
+.perm td:first-child{text-align:left; color:var(--text); font-weight:600;}
+.perm td.oct{font-family:var(--mono); color:var(--gold); font-weight:700;}
+.perm input{appearance:none; width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border); background:var(--surface-2); cursor:pointer; display:inline-grid; place-items:center; vertical-align:middle;}
+.perm input:checked{background:var(--blue); border-color:var(--blue);}
+.perm input:checked::after{content:'✓'; color:#04121b; font-weight:800; font-size:.8rem;}
+.perm-out{display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-end; margin-top:.8rem;}
+.perm-out .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); line-height:1; color:var(--gold);}
+.perm-out .n.sym{font-family:var(--mono); font-size:clamp(1.1rem,2vw,1.5rem); color:var(--blue);}
+.perm-out .l{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* saída anotada do stat */
+pre.stat{font-family:var(--mono); font-size:.74rem; line-height:1.7; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; color:var(--text-dim); overflow-x:auto; white-space:pre;}
+pre.stat .hl{color:var(--text); background:rgba(47,176,232,.14); border-radius:4px; padding:0 .2rem;}
+pre.stat .hg{color:var(--text); background:rgba(242,169,59,.16); border-radius:4px; padding:0 .2rem;}
+pre.stat .hr{color:var(--text); background:rgba(239,91,91,.16); border-radius:4px; padding:0 .2rem;}
+.legend{display:grid; gap:.45rem;}
+.legend div{font-size:.8rem; color:var(--text-dim); line-height:1.45; padding-left:.7rem; border-left:3px solid var(--blue);}
+.legend div.g{border-color:var(--gold);} .legend div.r{border-color:var(--red);}
+.legend b{color:var(--text);}
+
+/* calculadora de blocos */
+.calc-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem;}
+.calc-row label{font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:.3rem;}
+select.ip-input{cursor:pointer;}
+.calc-out{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:.9rem;}
+.calc-out .bignum{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .8rem; min-width:0;}
+.calc-out .bignum .n{color:var(--blue); font-size:clamp(1.1rem,2vw,1.6rem); overflow-wrap:anywhere;}
+.calc-out .bignum.w .n{color:var(--red);} .calc-out .bignum.ok .n{color:var(--green);}
+.blocks-bar{display:flex; flex-wrap:wrap; gap:4px; margin-top:.8rem;}
+.blocks-bar span{position:relative; width:46px; height:22px; border-radius:5px; border:1px solid var(--border); background:var(--surface-2); overflow:hidden;}
+.blocks-bar span i{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,var(--blue),var(--blue-dim));}
+.blocks-bar .more{width:auto; border:none; background:none; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); padding:.2rem;}
+
+/* simulador de alocação */
+.disk{display:grid; grid-template-columns:repeat(8,1fr); gap:5px; margin-top:.2rem;}
+.blk{position:relative; aspect-ratio:1.7/1; border-radius:7px; border:1px solid var(--border-soft); background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--mono); min-width:0; transition:background .25s, border-color .25s;}
+.blk .ix{position:absolute; top:2px; left:5px; font-size:.56rem; color:var(--text-faint);}
+.blk .lb{font-size:.74rem; font-weight:700; color:var(--text);}
+.blk .pt{font-size:.58rem; color:var(--text-dim);}
+.blk.busy{background:repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--border-soft) 6px 12px); border-color:var(--border);}
+.blk.busy .lb{color:var(--text-faint); font-weight:400; font-size:.6rem;}
+.blk.file{background:rgba(47,176,232,.18); border-color:var(--blue);}
+.blk.idx{background:rgba(242,169,59,.2); border-color:var(--gold);}
+.blk.newb{background:rgba(54,197,143,.2); border-color:var(--green);}
+.blk.fail{border-color:var(--red); box-shadow:0 0 0 2px rgba(239,91,91,.35);}
+.blk.read{box-shadow:0 0 0 3px rgba(242,169,59,.55);}
+.disk-legend{display:flex; gap:1rem; flex-wrap:wrap; margin-top:.6rem; font-family:var(--mono); font-size:.66rem; color:var(--text-faint);}
+.disk-legend i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:.3rem; border:1px solid var(--border);}
+
+.fs-card .lbl{font-family:var(--mono); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:.15rem;}
+.fs-card .big{font-family:var(--disp); font-weight:800; font-size:1.5rem; line-height:1.1; margin-bottom:.4rem;}
+.fs-card ul{margin-top:.4rem;}
+.new-tag{display:inline-block; font-family:var(--mono); font-size:.58rem; letter-spacing:.04em; padding:.08rem .4rem; border-radius:99px; border:1px solid rgba(54,197,143,.45); color:var(--green); background:rgba(54,197,143,.08); vertical-align:2px; margin-left:.3rem;}
+
+@media (max-width:860px){
+  .agenda.six,.calc-row,.calc-out{grid-template-columns:1fr;}
+  .disk{grid-template-columns:repeat(4,1fr);}
+}
+
+/* ============================= AULA 07 — componentes novos ============================= */
+.flow{display:grid; grid-template-columns:repeat(6,1fr); gap:.6rem; margin-top:1rem;}
+.fstep{position:relative; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.75rem .8rem; min-width:0;}
+.fstep .fn{width:26px; height:26px; border-radius:50%; background:rgba(47,176,232,.15); color:var(--blue); font-family:var(--mono); font-weight:700; font-size:.78rem; display:grid; place-items:center; margin-bottom:.4rem;}
+.fstep:nth-child(5) .fn,.fstep:nth-child(6) .fn{background:rgba(242,169,59,.15); color:var(--gold);}
+.fstep h4{font-family:var(--disp); font-size:.88rem; margin-bottom:.2rem;}
+.fstep p{font-size:.74rem; color:var(--text-dim); line-height:1.45; overflow-wrap:anywhere;}
+.fstep:not(:last-child)::after{content:'→'; position:absolute; right:-.55rem; top:50%; transform:translateY(-50%); color:var(--text-faint); font-family:var(--mono); font-size:.8rem;}
+
+/* pilhas de camadas (hypervisor tipo 1 / tipo 2 / contêiner) */
+.stack{display:flex; flex-direction:column; gap:4px; margin:.6rem 0 .7rem;}
+.stack .row{display:flex; gap:4px;}
+.stack .lay{flex:1; text-align:center; font-family:var(--mono); font-size:.68rem; padding:.42rem .3rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); min-width:0;}
+.stack .lay.vm{background:rgba(47,176,232,.14); border-color:rgba(47,176,232,.5); color:var(--text);}
+.stack .lay.hv{background:rgba(242,169,59,.16); border-color:rgba(242,169,59,.55); color:var(--gold); font-weight:700;}
+.stack .lay.os{background:rgba(54,197,143,.1); border-color:rgba(54,197,143,.45); color:var(--green);}
+.stack .lay.hw{background:var(--bg-2); color:var(--text-faint);}
+
+/* dimensionador */
+.sz-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem;}
+.sz-grid label{font-family:var(--mono); font-size:.64rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); display:block; margin-bottom:.25rem;}
+.sz-out{display:grid; gap:.4rem; margin-top:.2rem;}
+.sz-line{font-size:.8rem; color:var(--text-dim); line-height:1.45; padding:.45rem .7rem; border-radius:9px; border:1px solid var(--border-soft); background:var(--surface);}
+.sz-line b.t{font-family:var(--mono); font-size:.74rem; margin-right:.35rem;}
+.sz-line.ok{border-color:rgba(54,197,143,.45);} .sz-line.ok b.t{color:var(--green);}
+.sz-line.warn{border-color:rgba(242,169,59,.45);} .sz-line.warn b.t{color:var(--gold);}
+.sz-line.no{border-color:rgba(239,91,91,.5);} .sz-line.no b.t{color:var(--red);}
+.meter{height:10px; border-radius:99px; background:var(--surface-2); overflow:hidden; display:flex; margin-top:.35rem;}
+.meter span{display:block; height:100%;}
+.meter .m-vm{background:var(--blue);} .meter .m-host{background:var(--gold);} .meter .m-over{background:var(--red);}
+.meter-l{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.64rem; color:var(--text-faint); margin-top:.25rem;}
+
+/* simulador de snapshots */
+.snap-tree{display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; margin:.4rem 0 .2rem;}
+.snode{font-family:var(--mono); font-size:.72rem; padding:.35rem .6rem; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim);}
+.snode.base{border-color:rgba(47,176,232,.5); color:var(--blue);}
+.snode.snap{border-color:rgba(242,169,59,.55); color:var(--gold);}
+.snode.cur{border-color:rgba(54,197,143,.55); color:var(--green); font-weight:700;}
+.snode.cur.broken{border-color:rgba(239,91,91,.6); color:var(--red);}
+.snode small{display:block; font-size:.6rem; color:var(--text-faint); font-weight:400;}
+.sarrow{color:var(--text-faint); font-family:var(--mono);}
+.vm-status{display:flex; gap:1.6rem; flex-wrap:wrap; margin-top:.6rem;}
+.vm-status .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.1rem,2vw,1.5rem); line-height:1.1;}
+.vm-status .l{font-family:var(--mono); font-size:.64rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.2rem;}
+
+.codeblock pre.wrap{white-space:pre-wrap; overflow-wrap:anywhere;}
+@media (max-width:860px){
+  .flow,.sz-grid{grid-template-columns:1fr;} .fstep::after{display:none;}
+}
+
+/* ============================= AULA 08 — componentes novos ============================= */
+/* visualizador binário (IP × máscara) */
+.bin{display:grid; gap:.35rem; margin-top:.6rem;}
+.bin-row{display:grid; grid-template-columns:5.6rem 1fr 7.2rem; gap:.5rem; align-items:center; font-family:var(--mono); font-size:.72rem; min-width:0;}
+.bin-row .bl{color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; font-size:.62rem;}
+.bin-row .bd{color:var(--text); text-align:right; overflow-wrap:anywhere;}
+.bits{display:flex; flex-wrap:nowrap; gap:.25rem; min-width:0;}
+.oct{display:inline-flex; gap:1px;}
+.oct i{font-style:normal; width:.88em; font-size:.95em; text-align:center; border-radius:3px; padding:.05rem 0;}
+.oct i.nb{background:rgba(242,169,59,.16); color:var(--gold);}
+.oct i.hb{background:rgba(47,176,232,.12); color:var(--blue);}
+.bin-row.res .bd{color:var(--green); font-weight:700;}
+.bin-sep{height:1px; background:var(--border-soft); margin:.2rem 0;}
+.bin-legend{display:flex; gap:1rem; flex-wrap:wrap; font-family:var(--mono); font-size:.64rem; color:var(--text-faint); margin-top:.4rem;}
+.bin-legend b{display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:.3rem;}
+
+/* zonas de rede (VM → VirtualBox → host → roteador → internet) */
+.zones{display:grid; grid-template-columns:1fr 1.35fr .9fr; gap:.7rem; margin-top:1rem; align-items:stretch;}
+.zone{position:relative; border:1px dashed var(--border); border-radius:var(--radius); padding:.75rem .8rem .8rem; background:rgba(255,255,255,.012); min-width:0;}
+.zone .zl{font-family:var(--mono); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); margin-bottom:.55rem;}
+.zone .zl b{color:var(--blue); font-weight:600;}
+.zone.z2 .zl b{color:var(--green);} .zone.z3 .zl b{color:var(--gold);}
+.znodes{display:flex; gap:.5rem; align-items:stretch;}
+.znode{flex:1; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.55rem .6rem; min-width:0; position:relative;}
+.znode h4{font-family:var(--disp); font-size:.82rem; margin-bottom:.2rem;}
+.znode .ip{font-family:var(--mono); font-size:.72rem; color:var(--blue); display:block; overflow-wrap:anywhere;}
+.znode p{font-size:.7rem; color:var(--text-dim); line-height:1.4; margin-top:.25rem;}
+.znode.gw{border-color:rgba(242,169,59,.5);} .znode.gw .ip{color:var(--gold);}
+.zone + .zone::before{content:'NAT →'; position:absolute; left:-.62rem; top:50%; transform:translate(-50%,-50%) rotate(-90deg); font-family:var(--mono); font-size:.58rem; letter-spacing:.08em; color:var(--gold); background:var(--bg); padding:0 .2rem;}
+.zone.z3::before{content:'→' !important; transform:translate(-50%,-50%) !important;}
+
+/* simulador DNS */
+.dns-path{display:grid; grid-template-columns:repeat(6,1fr); gap:.45rem; margin:.3rem 0 .2rem;}
+.dnode{position:relative; text-align:center; font-family:var(--mono); font-size:.68rem; padding:.5rem .3rem; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); transition:all .25s var(--ease); min-width:0;}
+.dnode small{display:block; font-size:.58rem; color:var(--text-faint); margin-top:.15rem; overflow-wrap:anywhere;}
+.dnode.on{border-color:var(--blue); background:rgba(47,176,232,.16); color:var(--text);}
+.dnode.hit{border-color:var(--green); background:rgba(54,197,143,.16); color:var(--green); font-weight:700;}
+.dnode.fail{border-color:var(--red); background:rgba(239,91,91,.14); color:var(--red); font-weight:700;}
+.dnode.down{opacity:.55; border-style:dashed;}
+
+@media (max-width:860px){
+  .zones,.dns-path{grid-template-columns:1fr;}
+  .znodes{flex-direction:column;}
+  .zone + .zone::before{display:none;}
+  .bin-row{grid-template-columns:1fr; gap:.2rem;} .bin-row .bd{text-align:left;} .bits{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">--</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> AMBIENTAÇÃO TECH · ADS 5º PERÍODO · AULA 08 · 2026/2</div>
+      <h1 class="title animate delay-1">Comunicação entre computadores:<br>como um pacote <span class="accent-b">encontra o caminho</span> até o <span class="accent">destino</span></h1>
+      <p class="subtitle animate delay-2" style="margin-top:1.1rem;">Endereço IP, máscara, gateway padrão e DNS: as quatro peças que todo computador precisa para conversar com outro. Hoje você vai encontrá-las no seu computador e na sua VM, seguir um pacote até a internet e, por fim, quebrar e consertar a rede de propósito.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas · UNIPAR</div>
+        <div><b>Unidade II · Comunicação entre computadores</b><br>3 h presenciais · metodologia ativa</div>
+        <div><b>Traga</b><br>a VM <span class="code">ubuntu-lab</span> da Aula 07 funcionando</div>
+      </div>
+    </div>
+    <div class="capa-bits">$ ip -br a
+enp0s3   UP   10.0.2.15/24
+
+$ ip route
+default via 10.0.2.2 dev enp0s3
+
+$ ping -c 1 8.8.8.8
+1 packets transmitted, 1 received</div>
+  </section>
+
+  <!-- ============================================================ SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
+      <div class="toc animate delay-2" style="margin-top:.8rem;">
+        <div>
+          <div class="toc-group">Antes de começar</div>
+          <a href="#s-prep"><span class="n">01</span><span class="t">Checklist antes da aula</span></a>
+          <a href="#s-agenda"><span class="n">02</span><span class="t">Roteiro da noite</span></a>
+          <a href="#s-metodo"><span class="n">03</span><span class="t">Como vamos trabalhar hoje</span></a>
+          <a href="#s-revisao"><span class="n">04</span><span class="t">Revisão relâmpago da Aula 07</span></a>
+          <a href="#s-gancho"><span class="n">05</span><span class="t">O dia em que o WhatsApp sumiu</span></a>
+          <div class="toc-group">Abertura · mini-aula</div>
+          <a href="#s-conceitos"><span class="n">06</span><span class="t">3 ideias essenciais</span></a>
+          <a href="#s-ipv4"><span class="n">07</span><span class="t">Anatomia do endereço IPv4</span></a>
+          <a href="#s-decisao"><span class="n">08</span><span class="t">Do nome ao destino</span></a>
+          <a href="#s-sondagem"><span class="n">09</span><span class="t">🛠️ Sondagem técnica</span></a>
+          <div class="toc-group">Bloco 1 · Raio-X da rede</div>
+          <a href="#s-comandos"><span class="n">10</span><span class="t">Onde ver IP, gateway e DNS</span></a>
+        </div>
+        <div>
+          <a href="#s-raiox"><span class="n">11</span><span class="t">🛠️ Raio-X: host × VM</span></a>
+          <a href="#s-duasredes"><span class="n">12</span><span class="t">Sua VM atrás de dois NATs</span></a>
+          <a href="#s-localremoto"><span class="n">13</span><span class="t">Local ou remoto?</span></a>
+          <div class="toc-group">Bloco 2 · Seguir o pacote</div>
+          <a href="#s-rotas"><span class="n">14</span><span class="t">Gateway e tabela de rotas</span></a>
+          <a href="#s-dns"><span class="n">15</span><span class="t">DNS: de nome a IP</span></a>
+          <a href="#s-dnssim"><span class="n">16</span><span class="t">Simulador de consulta DNS</span></a>
+          <a href="#s-testes"><span class="n">17</span><span class="t">🛠️ ping, traceroute e nslookup</span></a>
+          <a href="#s-hosts"><span class="n">18</span><span class="t">🛠️ O arquivo hosts</span></a>
+          <div class="toc-group">Bloco 3 · Quebre e conserte</div>
+          <a href="#s-escada"><span class="n">19</span><span class="t">Diagnóstico de baixo para cima</span></a>
+          <a href="#s-quebre"><span class="n">20</span><span class="t">🛠️ Quebre o gateway e o DNS</span></a>
+        </div>
+        <div>
+          <a href="#s-drill"><span class="n">21</span><span class="t">🛠️ Qual peça falhou?</span></a>
+          <a href="#s-problemas"><span class="n">22</span><span class="t">Situações-problema</span></a>
+          <div class="toc-group">Bloco 4 · Síntese e depois da aula</div>
+          <a href="#s-sintese"><span class="n">23</span><span class="t">O que vimos e o que vem</span></a>
+          <a href="#s-avaliacao"><span class="n">24</span><span class="t">🛠️ Quiz técnico e exit ticket</span></a>
+          <a href="#s-tarefa"><span class="n">25</span><span class="t">Tarefa: laudo de conectividade</span></a>
+          <a href="#s-trilha"><span class="n">26</span><span class="t">Trilha de estudo</span></a>
+          <a href="#s-fontes"><span class="n">27</span><span class="t">Biblioteca</span></a>
+          <a href="#s-glossario"><span class="n">28</span><span class="t">Glossário</span></a>
+          <a href="#s-autoavaliacao"><span class="n">29</span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n">30</span><span class="t">Quiz de fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 01 PREP -->
+  <section class="slide hands-on" id="s-prep">
+    <div class="slide-inner">
+      <div class="kicker animate">01 · Antes da aula <span class="mm-badge">⏱ 20 min · faça em casa</span></div>
+      <h2 class="stitle animate delay-1">Chegue com a VM ligando e a rede funcionando</h2>
+      <p class="subtitle animate delay-2">Hoje a VM da Aula 07 é o nosso laboratório de rede. Sem ela pronta, você perde a parte mais divertida: quebrar e consertar (fica salvo neste navegador).</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="check-list" data-check="prep">
+          <label class="check-item"><input type="checkbox" id="p8a"><div><div class="ci-t">A VM <span class="code">ubuntu-lab</span> liga e você consegue fazer login</div><div class="ci-d">Não terminou a instalação? Siga as seções 14 a 17 da <a href="../07-Maquinas-virtuais/">Aula 07</a> antes da aula.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p8b"><div><div class="ci-t">O snapshot <span class="code">pos-instalacao</span> existe</div><div class="ci-d">Ele é a sua rede de segurança. No Bloco 3 você vai criar outro, <span class="code">antes-aula08</span>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p8c"><div><div class="ci-t">Dentro da VM, <span class="code">ping -c 2 8.8.8.8</span> responde</div><div class="ci-d">Se falhar, confira em <i>Configurações → Rede</i> se o Adaptador 1 está em <b>NAT</b> e com o cabo conectado.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p8d"><div><div class="ci-t">Sabe abrir o terminal do seu computador (host)</div><div class="ci-d">Windows: <b>PowerShell</b> ou Prompt de Comando. macOS e Linux: <b>Terminal</b>.</div></div></label>
+        </div>
+        <div class="card">
+          <h3 class="accent">Casos especiais</h3>
+          <ul>
+            <li><b>Mac com chip Apple usando UTM:</b> o modo de rede "Compartilhado" equivale ao NAT, mas a faixa é outra (algo como <span class="code">192.168.64.x</span>). A lógica da aula é a mesma; só os números mudam.</li>
+            <li><b>Sem VM:</b> faça os exercícios no próprio computador (host) e use o computador do laboratório no Bloco 3. Avise o professor.</li>
+            <li><b>Leitura opcional (10 min):</b> <a href="https://www.cloudflare.com/pt-br/learning/dns/what-is-dns/" target="_blank" rel="noopener">Cloudflare: o que é DNS?</a></li>
+          </ul>
+          <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 AGENDA -->
+  <section class="slide" id="s-agenda">
+    <div class="slide-inner">
+      <div class="kicker animate">02 · Encontro presencial · 3 h</div>
+      <h2 class="stitle animate delay-1">Como serão as 3 horas de hoje</h2>
+      <div class="agenda six animate delay-2">
+        <div class="ag"><div class="min">20 min</div><h4>Abertura</h4><p>Mini-aula com 3 ideias essenciais (15 min) e sondagem técnica com a turma (5 min).</p></div>
+        <div class="ag"><div class="min">35 min</div><h4>Bloco 1 · Raio-X da rede</h4><p>Encontrar IP, máscara, gateway e DNS no host e na VM, entender os dois NATs e decidir: local ou remoto?</p></div>
+        <div class="ag pause"><div class="min">10 min</div><h4>Intervalo</h4><p>Deixe a ficha do Raio-X preenchida antes de sair.</p></div>
+        <div class="ag"><div class="min">45 min</div><h4>Bloco 2 · Seguir o pacote</h4><p>Tabela de rotas, DNS passo a passo, ping, traceroute, nslookup e o arquivo hosts.</p></div>
+        <div class="ag"><div class="min">50 min</div><h4>Bloco 3 · Quebre e conserte</h4><p>Método de diagnóstico, quebrar gateway e DNS da VM, "qual peça falhou?" e situações-problema.</p></div>
+        <div class="ag"><div class="min">20 min</div><h4>Bloco 4 · Síntese</h4><p>Síntese coletiva, quiz técnico no Classroom e exit ticket.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pergunta para pensar antes da aula:</b> quando você digita <span class="code">unipar.br</span> no navegador, o seu computador não sabe onde esse site está. Quem ele pergunta, e por onde a pergunta sai?</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 03 MÉTODO -->
+  <section class="slide" id="s-metodo">
+    <div class="slide-inner">
+      <div class="kicker animate">03 · Metodologia ativa</div>
+      <h2 class="stitle animate delay-1">Como vamos trabalhar hoje</h2>
+      <div class="method animate delay-2">
+        <div class="card"><div class="icon-chip">01</div><h3>Mini-aula direta</h3><p>Só o essencial, em 15 minutos. O resto do tempo é terminal aberto.</p></div>
+        <div class="card"><div class="icon-chip g">02</div><h3>Investigação individual</h3><p>Cada um examina a rede do próprio computador e da própria VM, registrando tudo numa ficha.</p></div>
+        <div class="card"><div class="icon-chip">03</div><h3>Discussão coletiva</h3><p>Redes diferentes (casa, laboratório, 4G) geram resultados diferentes: é isso que alimenta o debate.</p></div>
+        <div class="card"><div class="icon-chip g">04</div><h3>Avaliação contínua</h3><p>Contam a ficha preenchida, o "quebre e conserte" resolvido, as contribuições no debate e o quiz final.</p></div>
+      </div>
+      <div class="info-box animate delay-3"><b>Regra de ouro de hoje:</b> mudanças arriscadas só <b>dentro da VM</b>, nunca no seu computador. Se algo travar, o snapshot resolve em segundos.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 REVISÃO -->
+  <section class="slide" id="s-revisao">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">04 · Revisão da Aula 07</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas rápidas</h2>
+      <p class="subtitle animate delay-2">Responda de cabeça e clique para conferir. Todas voltam a aparecer hoje.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Em que modo de rede a VM <span class="code">ubuntu-lab</span> foi criada, e o que ele permite?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>NAT.</b> A VM acessa a internet "pelas costas" do host, mas outros computadores não a alcançam. Hoje você vai ver que, nesse modo, o VirtualBox se comporta como um pequeno <b>roteador</b>.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Que IP apareceu no <span class="code">ip -br a</span> da VM?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>10.0.2.15</b>, o padrão do NAT do VirtualBox. Toda a turma viu o mesmo número, e ninguém teve conflito. A seção 12 explica por quê.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual modo de rede dá à VM um IP próprio na rede física?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Bridge</b> (placa em modo bridge). A VM vira "mais um computador" da rede e recebe IP do mesmo roteador que o host.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">O que fazer antes de uma mudança arriscada na VM?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Tirar um <b>snapshot</b>. No Bloco 3 você vai apagar a rota padrão e o DNS da VM de propósito; o snapshot <span class="code">antes-aula08</span> garante a volta.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 GANCHO -->
+  <section class="slide" id="s-gancho">
+    <div class="slide-inner">
+      <div class="kicker animate">05 · Gancho · caso real</div>
+      <h2 class="stitle animate delay-1">4 de outubro de 2021: o dia em que o WhatsApp sumiu</h2>
+      <p class="subtitle animate delay-2">Numa segunda-feira, Facebook, Instagram e WhatsApp ficaram fora do ar no mundo inteiro por cerca de <b>6 horas</b>. Os servidores continuavam ligados. O problema estava no caminho e no nome.</p>
+      <div class="timeline animate delay-3">
+        <div class="tl-item"><div class="yr">≈ 12h40</div><p>Durante uma manutenção, um comando derruba por engano todas as conexões do backbone que liga os data centers da empresa à internet.</p></div>
+        <div class="tl-item warn"><div class="yr">em seguida</div><p>Isolados, os servidores DNS da empresa param de anunciar suas rotas. O resto da internet não consegue mais descobrir o IP de <span class="code">facebook.com</span>.</p></div>
+        <div class="tl-item hot"><div class="yr">≈ 6 horas</div><p>As ferramentas internas também dependiam do DNS. Engenheiros precisaram ir fisicamente aos data centers para religar tudo.</p></div>
+      </div>
+      <div class="info-box animate delay-4"><b>A lição:</b> para dois computadores conversarem, não basta estarem ligados. É preciso um <b>endereço</b> (IP), um <b>caminho</b> (gateway e rotas) e um jeito de achar o endereço a partir do <b>nome</b> (DNS). Hoje você vai examinar e testar cada uma dessas peças. Fonte: <a href="https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/" target="_blank" rel="noopener">relato técnico da Meta</a> (horário de Brasília aproximado).</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 06 CONCEITOS -->
+  <section class="slide" id="s-conceitos">
+    <div class="slide-inner">
+      <div class="kicker animate">06 · Mini-aula · 15 min</div>
+      <h2 class="stitle animate delay-1">O mínimo para começar: 3 ideias</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>Endereço IP e máscara</h3><p>O <b>IP</b> identifica cada interface de rede, como o endereço de uma casa. A <b>máscara</b> diz que parte do endereço é a <b>rede</b> (o "bairro") e que parte é o <b>host</b> (a "casa"). Mesmo bairro: entrega direta.</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Gateway padrão</h3><p>O roteador da rede local: a <b>porta de saída</b>. Todo pacote para um endereço de <b>outra rede</b> é entregue a ele, que o encaminha adiante. Sem gateway, o computador só fala com o próprio bairro.</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>DNS</h3><p>O sistema que traduz <b>nomes</b> (<span class="code">unipar.br</span>) em <b>endereços IP</b>. Sem DNS a rede funciona, mas você teria que decorar números para cada site.</p></div>
+      </div>
+      <p class="subtitle animate delay-3" style="margin-top:1rem;">Conexão com a Aula 02: um endereço IPv4 tem <b>32 bits</b>, escritos como 4 números de 0 a 255. Conexão com a Aula 07: a VM tem uma <b>placa de rede virtual</b> e recebe IP, gateway e DNS do VirtualBox, exatamente como um notebook recebe do roteador Wi-Fi.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ 07 IPv4 -->
+  <section class="slide" id="s-ipv4">
+    <div class="slide-inner">
+      <div class="kicker animate">07 · Mini-aula · endereçamento</div>
+      <h2 class="stitle animate delay-1">Anatomia de um endereço IPv4</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.15fr 1fr;">
+        <div class="card">
+          <h3 class="accent">192.168.0.25/24, bit a bit</h3>
+          <div class="bin" id="ipv4Static"></div>
+          <div class="bin-legend"><span><b style="background:rgba(242,169,59,.5)"></b>bits de rede</span><span><b style="background:rgba(47,176,232,.45)"></b>bits de host</span></div>
+          <ul style="margin-top:.6rem;">
+            <li><b>/24</b> = os 24 primeiros bits são de rede = máscara <span class="code">255.255.255.0</span>.</li>
+            <li><b>Rede:</b> <span class="code">192.168.0.0</span> · <b>broadcast:</b> <span class="code">192.168.0.255</span> (fala com todos).</li>
+            <li><b>Hosts possíveis:</b> de .1 a .254 = 2<sup>8</sup> − 2 = <b>254</b> endereços.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Faixas que você precisa reconhecer</h3>
+          <div class="tbl-wrap" style="margin-top:.4rem;"><table class="cmp">
+            <tr><th>Faixa</th><th>Significado</th></tr>
+            <tr><td>10.0.0.0/8<br>172.16.0.0/12<br>192.168.0.0/16</td><td><b>Privadas</b>: redes internas (casa, empresa, VM). Não circulam na internet.</td></tr>
+            <tr><td>127.0.0.0/8</td><td><b>Loopback</b>: o próprio computador (<span class="code">127.0.0.1</span> = localhost).</td></tr>
+            <tr><td>169.254.0.0/16</td><td><b>Link-local</b>: o sistema se deu um IP sozinho porque o DHCP não respondeu.</td></tr>
+            <tr><td>100.64.0.0/10</td><td><b>CGNAT</b>: faixa usada por provedores que compartilham um IP público entre clientes.</td></tr>
+            <tr><td>Demais</td><td><b>Públicas</b>: únicas na internet (ex.: <span class="code">8.8.8.8</span>).</td></tr>
+          </table></div>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Por que tanto endereço privado?</b> 32 bits dão cerca de 4,3 bilhões de endereços, e eles acabaram. A saída foi o <b>NAT</b> (muitos IPs privados atrás de um público) e o <b>IPv6</b>, com 128 bits. Sub-redes e IPv6 em profundidade ficam para Fundamentos de Redes.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 08 DECISÃO -->
+  <section class="slide" id="s-decisao">
+    <div class="slide-inner">
+      <div class="kicker animate">08 · Mini-aula · processo</div>
+      <h2 class="stitle animate delay-1">Do nome ao destino: o que acontece quando você abre um site</h2>
+      <div class="flow animate delay-2">
+        <div class="fstep"><div class="fn">1</div><h4>Nome</h4><p>O navegador precisa falar com <span class="code">unipar.br</span>, mas a rede só entende endereços IP.</p></div>
+        <div class="fstep"><div class="fn">2</div><h4>DNS</h4><p>O sistema pergunta ao servidor DNS configurado e recebe o IP do site.</p></div>
+        <div class="fstep"><div class="fn">3</div><h4>Comparar</h4><p>Aplica a <b>máscara</b> ao IP de destino e ao seu: estão na mesma rede?</p></div>
+        <div class="fstep"><div class="fn">4</div><h4>Entregar</h4><p><b>Mesma rede:</b> envia direto ao destino. <b>Outra rede:</b> envia ao <b>gateway</b>.</p></div>
+        <div class="fstep"><div class="fn">5</div><h4>Roteadores</h4><p>Cada roteador no caminho consulta a sua tabela de rotas e passa o pacote adiante (um <b>salto</b>).</p></div>
+        <div class="fstep"><div class="fn">6</div><h4>Resposta</h4><p>O servidor responde para o seu IP, e o caminho se repete no sentido inverso.</p></div>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem;">
+        <div class="info-box" style="margin-top:0;"><b>Dentro da mesma rede</b>, a entrega final usa o <b>MAC</b>, o endereço físico da placa. O protocolo <b>ARP</b> descobre o MAC a partir do IP. Por isso o computador precisa saber se o destino é local: se não for, ele procura o MAC do gateway.</div>
+        <div class="warn-box" style="margin-top:0;"><b>Repare:</b> o IP de destino não muda durante a viagem; o que muda a cada salto é o MAC de quem entrega. É como uma encomenda: o endereço final fica na etiqueta, mas cada transportadora entrega à próxima.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 09 SONDAGEM -->
+  <section class="slide hands-on" id="s-sondagem">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate">🛠️ Sondagem técnica · turma toda <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Conectando com a prática</h2>
+      <p class="subtitle animate delay-2">Discussão oral, mediada pelo professor. Levante hipóteses: o laboratório de hoje vai testá-las.</p>
+      <div class="card animate delay-3" style="margin-top:1rem;">
+        <ol class="steps">
+          <li><span>Em casa, o celular e o notebook estão no mesmo Wi-Fi. Quem decidiu o IP de cada um? Eles podem ter o mesmo IP?</span></li>
+          <li><span>Na Aula 07, todos viram <span class="code">10.0.2.15</span> na VM. Por que não houve conflito de endereço na turma?</span></li>
+          <li><span>"A internet caiu, mas o WhatsApp funciona." Que <b>hipóteses técnicas</b> explicam isso? Como você testaria cada uma?</span></li>
+        </ol>
+      </div>
+      <div class="info-box animate delay-4"><b>Spoiler da pergunta 3:</b> no Bloco 3 você vai quebrar de propósito o gateway e o DNS da VM e observar exatamente quais sintomas cada falha produz.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 10 COMANDOS -->
+  <section class="slide" id="s-comandos">
+    <div class="slide-inner">
+      <div class="kicker animate">10 · Bloco 1 · Instrumental</div>
+      <h2 class="stitle animate delay-1">Onde ver IP, máscara, gateway e DNS em cada sistema</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>Informação</th><th>Windows</th><th>Linux (a VM Ubuntu)</th><th>macOS</th></tr>
+          <tr><td>IP e máscara</td><td><span class="code">ipconfig</span></td><td><span class="code">ip -br a</span> (mostra IP/prefixo)</td><td><span class="code">ifconfig en0</span></td></tr>
+          <tr><td>Gateway padrão</td><td><span class="code">ipconfig</span> · <span class="code">route print</span></td><td><span class="code">ip route</span> (linha <i>default via</i>)</td><td><span class="code">route -n get default</span></td></tr>
+          <tr><td>Servidores DNS</td><td><span class="code">ipconfig /all</span></td><td><span class="code">resolvectl dns</span></td><td><span class="code">scutil --dns</span></td></tr>
+          <tr><td>Endereço MAC</td><td><span class="code">ipconfig /all</span> (Endereço Físico)</td><td><span class="code">ip -br link</span></td><td><span class="code">ifconfig en0</span> (ether)</td></tr>
+          <tr><td>Testar alcance</td><td><span class="code">ping 8.8.8.8</span></td><td><span class="code">ping -c 4 8.8.8.8</span></td><td><span class="code">ping -c 4 8.8.8.8</span></td></tr>
+          <tr><td>Ver o caminho</td><td><span class="code">tracert -d 8.8.8.8</span></td><td><span class="code">tracepath -n 8.8.8.8</span></td><td><span class="code">traceroute -n 8.8.8.8</span></td></tr>
+          <tr><td>Resolver um nome</td><td><span class="code">nslookup unipar.br</span></td><td><span class="code">resolvectl query unipar.br</span></td><td><span class="code">nslookup unipar.br</span></td></tr>
+        </table>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem;">
+        <div class="info-box" style="margin-top:0;"><b>No Ubuntu, o <span class="code">/etc/resolv.conf</span> mostra <span class="code">127.0.0.53</span>.</b> Não é o seu DNS: é o <i>systemd-resolved</i>, um intermediário local com cache. O DNS de verdade aparece em <span class="code">resolvectl dns</span>.</div>
+        <div class="warn-box" style="margin-top:0;"><b>Qual adaptador olhar?</b> No Windows, o que está em uso (Wi-Fi ou Ethernet); ignore os virtuais, como <i>VirtualBox Host-Only</i> e <i>vEthernet</i>. No Mac, o Wi-Fi costuma ser <span class="code">en0</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 11 RAIO-X -->
+  <section class="slide hands-on" id="s-raiox">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 15 min</span></div>
+      <h2 class="stitle animate delay-1">Raio-X da rede: o seu computador × a sua VM</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.1fr;">
+        <div class="card">
+          <h3 class="accent">Roteiro</h3>
+          <ol class="steps">
+            <li><span>No <b>host</b>, use os comandos da seção 10 e preencha a coluna "Host" da ficha.</span></li>
+            <li><span>Ligue a VM e rode os comandos ao lado. Preencha a coluna "VM".</span></li>
+            <li><span>Calcule o <b>endereço da rede</b> de cada um (aplique a máscara; a seção 13 confere).</span></li>
+            <li><span>Responda: host e VM estão na <b>mesma rede</b>? Os gateways são iguais? Cada IP é <b>privado ou público</b> (seção 07)?</span></li>
+          </ol>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Dentro da VM (Ubuntu)</div>
+          <button class="copy">copiar</button>
+<pre>ip -br a           <span class="cm"># interface, estado e IP/prefixo</span>
+ip -br link        <span class="cm"># endereço MAC de cada interface</span>
+ip route           <span class="cm"># a linha "default via" é o gateway</span>
+resolvectl dns     <span class="cm"># servidores DNS de cada interface</span>
+cat /etc/resolv.conf   <span class="cm"># repare no 127.0.0.53</span></pre>
+        </div>
+      </div>
+      <div class="codeblock animate delay-3" style="margin-top:.8rem;">
+        <div class="cb-title">Ficha do Raio-X · copie para suas anotações (você vai usá-la no Bloco 3)</div>
+        <button class="copy">copiar</button>
+<pre>| Item                  | Host (seu computador) | VM ubuntu-lab |
+| --------------------- | --------------------- | ------------- |
+| Interface (nome)      |                       |               |
+| Endereço IP / prefixo |                       |               |
+| Máscara               |                       |               |
+| Endereço da rede      |                       |               |
+| Gateway padrão        |                       |               |
+| Servidor(es) DNS      |                       |               |
+| MAC                   |                       |               |
+| Privado ou público?   |                       |               |</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 12 DUAS REDES -->
+  <section class="slide" id="s-duasredes">
+    <div class="slide-inner">
+      <div class="kicker animate">12 · Bloco 1 · Topologia</div>
+      <h2 class="stitle animate delay-1">Sua VM está atrás de dois NATs</h2>
+      <p class="subtitle animate delay-2">No modo NAT, o VirtualBox cria uma <b>rede privada só da VM</b> e faz o papel de roteador. O host, por sua vez, está atrás do roteador da sua casa ou do laboratório. Os números da rede do host são exemplos; use os da sua ficha.</p>
+      <div class="zones animate delay-3">
+        <div class="zone z1"><div class="zl"><b>Rede NAT do VirtualBox</b> · 10.0.2.0/24</div>
+          <div class="znodes">
+            <div class="znode"><h4>VM ubuntu-lab</h4><span class="ip">10.0.2.15</span><p>Recebe IP, gateway e DNS por DHCP do VirtualBox.</p></div>
+            <div class="znode gw"><h4>VirtualBox</h4><span class="ip">gw 10.0.2.2</span><span class="ip">dns 10.0.2.3</span><p>Roteador e intermediário de DNS virtuais.</p></div>
+          </div>
+        </div>
+        <div class="zone z2"><div class="zl"><b>Sua rede local</b> · ex.: 192.168.0.0/24</div>
+          <div class="znodes">
+            <div class="znode"><h4>Host (notebook)</h4><span class="ip">192.168.0.25</span><p>O tráfego da VM sai com o IP do host.</p></div>
+            <div class="znode"><h4>Celular, TV…</h4><span class="ip">192.168.0.x</span><p>Mesma rede do host; não enxergam a VM.</p></div>
+            <div class="znode gw"><h4>Roteador Wi-Fi</h4><span class="ip">gw 192.168.0.1</span><p>Gateway da casa; faz NAT para o IP público.</p></div>
+          </div>
+        </div>
+        <div class="zone z3"><div class="zl"><b>Internet</b></div>
+          <div class="znodes">
+            <div class="znode"><h4>Provedor e roteadores</h4><span class="ip">IP público</span><p>Vários saltos até o destino, como <span class="code">8.8.8.8</span>.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:.9rem;">
+        <div class="info-box" style="margin-top:0;"><b>Por que todos têm 10.0.2.15 sem conflito?</b> Cada VM está numa rede isolada, que existe só dentro do seu host. É como o apartamento 101: existe em vários prédios, e o carteiro nunca confunde, porque o prédio (a rede) é diferente.</div>
+        <div class="warn-box" style="margin-top:0;"><b>O DNS da VM pode variar.</b> Em geral aparece <span class="code">10.0.2.3</span> (o VirtualBox repassa as consultas ao DNS do host); em alguns hosts, o VirtualBox entrega direto o DNS do host. Anote o seu na ficha.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 13 LOCAL OU REMOTO -->
+  <section class="slide" id="s-localremoto">
+    <div class="slide-inner">
+      <div class="kicker animate">13 · Bloco 1 · Interativo</div>
+      <h2 class="stitle animate delay-1">Local ou remoto? Decida como o sistema operacional decide</h2>
+      <p class="subtitle animate delay-2">Informe o seu IP, o prefixo, o gateway e um destino. O verificador aplica a máscara (um <b>E lógico</b> bit a bit, Aula 04) e diz para onde o pacote vai. Teste os cenários prontos e os dados da sua ficha.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.25fr;">
+        <div class="card">
+          <div class="calc-row" style="grid-template-columns:1.4fr .8fr;">
+            <div><label for="lrSrc">Meu IP</label><input class="ip-input" id="lrSrc" value="10.0.2.15" spellcheck="false"></div>
+            <div><label for="lrPfx">Prefixo</label><select class="ip-input" id="lrPfx"></select></div>
+          </div>
+          <div class="calc-row" style="grid-template-columns:1fr 1fr; margin-top:.7rem;">
+            <div><label for="lrGw">Gateway</label><input class="ip-input" id="lrGw" value="10.0.2.2" spellcheck="false"></div>
+            <div><label for="lrDst">Destino</label><input class="ip-input" id="lrDst" value="8.8.8.8" spellcheck="false"></div>
+          </div>
+          <div class="chips" id="lrChips">
+            <span class="chip" data-p="10.0.2.15|24|10.0.2.2|10.0.2.2">VM → gateway</span>
+            <span class="chip" data-p="10.0.2.15|24|10.0.2.2|8.8.8.8">VM → 8.8.8.8</span>
+            <span class="chip" data-p="192.168.0.25|24|192.168.0.1|192.168.0.40">casa → impressora</span>
+            <span class="chip" data-p="172.16.5.10|16|172.16.0.1|172.16.200.7">empresa /16</span>
+            <span class="chip" data-p="192.168.0.70|26|192.168.0.65|192.168.0.130">pegadinha /26</span>
+            <span class="chip" data-p="192.168.1.50|24|192.168.0.1|8.8.8.8">gateway errado</span>
+            <span class="chip" data-p="169.254.23.7|16|0.0.0.0|8.8.8.8">DHCP falhou</span>
+          </div>
+          <div class="verdict" id="lrVerdict" style="min-height:5.2em;"></div>
+        </div>
+        <div class="card">
+          <h3 class="accent">A conta, bit a bit</h3>
+          <div class="bin" id="lrBin"></div>
+          <div class="bin-legend"><span><b style="background:rgba(242,169,59,.5)"></b>bits de rede (comparados)</span><span><b style="background:rgba(47,176,232,.45)"></b>bits de host (ignorados na comparação)</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 14 ROTAS -->
+  <section class="slide" id="s-rotas">
+    <div class="slide-inner">
+      <div class="kicker animate">14 · Bloco 2 · Gateway</div>
+      <h2 class="stitle animate delay-1">A tabela de rotas: o "GPS" do sistema operacional</h2>
+      <p class="subtitle animate delay-2">Para cada pacote, o sistema consulta a tabela de rotas. Vence a rota <b>mais específica</b> (maior prefixo). Se nenhuma combinar, vale a rota <b>padrão</b> (<i>default</i>), que aponta para o gateway.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1.2fr 1fr;">
+        <div>
+<pre class="stat">$ ip route
+<span class="hg">default</span> via <span class="hl">10.0.2.2</span> dev <span class="hr">enp0s3</span> proto dhcp src 10.0.2.15 metric 100
+<span class="hg">10.0.2.0/24</span> dev <span class="hr">enp0s3</span> proto kernel scope link src 10.0.2.15 metric 100</pre>
+<pre class="stat" style="margin-top:.6rem;">C:\&gt; route print -4      <span style="color:var(--text-faint)">(trecho, no Windows)</span>
+Destino de rede    Máscara          Gateway        Interface
+       <span class="hg">0.0.0.0</span>          0.0.0.0      <span class="hl">192.168.0.1</span>    192.168.0.25
+   192.168.0.0    255.255.255.0       No vínculo    192.168.0.25</pre>
+          <p style="margin-top:.5rem; font-size:.78rem; color:var(--text-dim);">Podem aparecer linhas extras (rotas para o próprio gateway ou o DNS). As duas acima são as que importam hoje.</p>
+        </div>
+        <div class="legend">
+          <div class="g"><b>default</b> ou <b>0.0.0.0/0</b>: a rota padrão, para "qualquer destino que não esteja em outra linha".</div>
+          <div><b>via 10.0.2.2</b>: o gateway. É a ele que o pacote é entregue.</div>
+          <div class="r"><b>dev enp0s3</b>: a interface (placa) por onde o pacote sai.</div>
+          <div class="g"><b>10.0.2.0/24 … scope link</b> ou <b>No vínculo</b>: a rede local. Destino aqui = entrega direta, sem gateway.</div>
+          <div><b>proto dhcp</b>: a rota foi aprendida automaticamente, pelo DHCP.</div>
+        </div>
+      </div>
+      <div class="info-box animate delay-4"><b>Guarde:</b> sem a linha <i>default</i>, o computador continua falando com a própria rede, mas nada sai dela. No Bloco 3 você vai provar isso apagando essa linha na VM.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 15 DNS -->
+  <section class="slide" id="s-dns">
+    <div class="slide-inner">
+      <div class="kicker animate">15 · Bloco 2 · Nomes</div>
+      <h2 class="stitle animate delay-1">DNS: como <span class="code" style="font-size:.8em;">www.unipar.br</span> vira um endereço IP</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.15fr 1fr;">
+        <div class="card">
+          <h3 class="accent">A consulta, do seu computador até a resposta</h3>
+          <ol class="steps">
+            <li><span><b>Arquivo hosts e cache local:</b> o sistema olha primeiro o <span class="code">/etc/hosts</span> e as respostas recentes (no Ubuntu, o cache do systemd-resolved).</span></li>
+            <li><span><b>Resolvedor recursivo:</b> o servidor DNS da sua ficha (do provedor, do VirtualBox, ou públicos como <span class="code">8.8.8.8</span> e <span class="code">1.1.1.1</span>). Ele faz o trabalho pesado por você.</span></li>
+            <li><span><b>Servidores raiz:</b> 13 identidades (de A a M), replicadas pelo mundo. Respondem: "o .br é com estes servidores".</span></li>
+            <li><span><b>Servidores do .br</b> (mantidos pelo Registro.br/NIC.br): "o <span class="code">unipar.br</span> é com este servidor".</span></li>
+            <li><span><b>Servidor autoritativo</b> do domínio: dá a resposta final, o IP de <span class="code">www.unipar.br</span>.</span></li>
+            <li><span>A resposta volta e fica em <b>cache</b> pelo tempo do <b>TTL</b>. A próxima consulta é quase instantânea.</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Tipos de registro mais comuns</h3>
+          <div class="tbl-wrap" style="margin-top:.4rem;"><table class="cmp">
+            <tr><th>Tipo</th><th>Guarda</th></tr>
+            <tr><td>A</td><td>Endereço IPv4 de um nome</td></tr>
+            <tr><td>AAAA</td><td>Endereço IPv6 de um nome</td></tr>
+            <tr><td>CNAME</td><td>Apelido: um nome que aponta para outro nome</td></tr>
+            <tr><td>MX</td><td>Servidor que recebe os e-mails do domínio</td></tr>
+            <tr><td>NS</td><td>Servidores autoritativos do domínio</td></tr>
+          </table></div>
+          <div class="info-box"><b>TTL</b> (tempo de vida) é quantos segundos uma resposta pode ficar em cache. É por isso que, ao trocar um site de servidor, a mudança "demora a propagar".</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 16 SIMULADOR DNS -->
+  <section class="slide" id="s-dnssim">
+    <div class="slide-inner">
+      <div class="kicker animate">16 · Bloco 2 · Interativo</div>
+      <h2 class="stitle animate delay-1">Simulador: acompanhe uma consulta DNS</h2>
+      <p class="subtitle animate delay-2">Consulte, consulte de novo, limpe o cache e derrube o resolvedor. Observe quem é consultado e quanto tempo leva. Os tempos e o IP são ilustrativos.</p>
+      <div class="card animate delay-3" style="margin-top:.8rem;">
+        <div class="dns-path" id="dnsPath">
+          <div class="dnode" data-n="app">navegador<small>quer www.unipar.br</small></div>
+          <div class="dnode" data-n="stub">cache local<small>127.0.0.53</small></div>
+          <div class="dnode" data-n="res">resolvedor<small>10.0.2.3 → DNS do host</small></div>
+          <div class="dnode" data-n="root">raiz<small>servidores A–M</small></div>
+          <div class="dnode" data-n="tld">.br<small>a.dns.br …</small></div>
+          <div class="dnode" data-n="auth">autoritativo<small>unipar.br</small></div>
+        </div>
+        <div class="git-ctrl">
+          <button class="btn" data-dns="query">🔎 Consultar www.unipar.br</button>
+          <button class="btn ghost" data-dns="flush">Limpar cache local</button>
+          <button class="btn ghost" data-dns="down" id="dnsDownBtn" style="border-color:rgba(239,91,91,.5); color:var(--red);">💥 Derrubar o resolvedor</button>
+          <button class="btn ghost" data-dns="reset">↺</button>
+        </div>
+        <div class="vm-status">
+          <div><div class="n" id="dnsTime" style="color:var(--blue)">—</div><div class="l">tempo da consulta</div></div>
+          <div><div class="n" id="dnsHops" style="color:var(--gold)">—</div><div class="l">servidores consultados</div></div>
+          <div><div class="n" id="dnsAns" style="color:var(--text-faint)">—</div><div class="l">resposta</div></div>
+        </div>
+        <div class="term" id="dnsTerm" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 17 TESTES -->
+  <section class="slide hands-on" id="s-testes">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 20 min</span></div>
+      <h2 class="stitle animate delay-1">Siga o pacote: ping, traceroute e nslookup</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.15fr;">
+        <div class="card">
+          <h3 class="accent">Roteiro</h3>
+          <ol class="steps">
+            <li><span><b>Na VM,</b> teste em ordem: o gateway, um IP da internet e um nome. Registre o tempo (<i>time</i>) de cada um.</span></li>
+            <li><span>No <span class="code">ping unipar.br</span>, repare na 1ª linha: o nome virou IP <b>antes</b> do primeiro pacote sair. Quem fez isso?</span></li>
+            <li><span>Resolva <span class="code">unipar.br</span> na VM e no host. O IP é o mesmo nos dois?</span></li>
+            <li><span><b>No host,</b> rode o traceroute para <span class="code">8.8.8.8</span>. Quantos saltos? Quais IPs são privados? Em qual salto aparece o roteador da sua casa ou do laboratório?</span></li>
+          </ol>
+          <div class="info-box"><b>Por que o traceroute no host?</b> O NAT do VirtualBox trata o ICMP de forma limitada: o <span class="code">ping</span> funciona, mas o caminho medido de dentro da VM costuma sair incompleto.</div>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Na VM (Ubuntu) e depois no host</div>
+          <button class="copy">copiar</button>
+<pre class="wrap"><span class="cm"># --- dentro da VM ---</span>
+ping -c 4 10.0.2.2          <span class="cm"># 1 · gateway (rede local)</span>
+ping -c 4 8.8.8.8           <span class="cm"># 2 · um IP na internet</span>
+ping -c 4 unipar.br         <span class="cm"># 3 · um nome (depende do DNS)</span>
+resolvectl query unipar.br  <span class="cm"># qual IP, e quem respondeu</span>
+
+<span class="cm"># --- no host ---</span>
+nslookup unipar.br          <span class="cm"># Windows, macOS e Linux</span>
+tracert -d 8.8.8.8          <span class="cm"># Windows</span>
+traceroute -n 8.8.8.8       <span class="cm"># macOS (no Linux: tracepath -n 8.8.8.8)</span></pre>
+        </div>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem;">
+        <div class="legend">
+          <div><b>time=12.3 ms</b>: tempo de ida e volta (latência). Gateway local: poucos ms; outro continente: centenas.</div>
+          <div class="g"><b>ttl=…</b>: quantos saltos o pacote ainda poderia dar. Cada roteador desconta 1; em zero, o pacote é descartado.</div>
+        </div>
+        <div class="legend">
+          <div class="r"><b>* * *</b> no traceroute: aquele roteador não respondeu ao teste. Não significa que o caminho está quebrado.</div>
+          <div><b>100.64.x.x</b> nos primeiros saltos: o seu provedor usa <b>CGNAT</b> (seção 07).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 18 HOSTS -->
+  <section class="slide hands-on" id="s-hosts">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">O arquivo hosts: o "DNS" que vem antes do DNS</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.15fr;">
+        <div class="card">
+          <h3 class="accent">Roteiro (só na VM)</h3>
+          <ol class="steps">
+            <li><span>Veja o conteúdo atual: <span class="code">cat /etc/hosts</span>. Que nome já aponta para <span class="code">127.0.0.1</span>?</span></li>
+            <li><span>Crie um nome que <b>não existe</b> em nenhum DNS: <span class="code">portal.technorte</span> → <span class="code">10.0.2.2</span>. Teste com <span class="code">ping</span>.</span></li>
+            <li><span>Agora "sequestre" um nome real: <span class="code">unipar.br</span> → <span class="code">127.0.0.1</span>. Teste de novo. Para onde o ping foi?</span></li>
+            <li><span>Remova as duas linhas e confirme que <span class="code">unipar.br</span> voltou ao IP verdadeiro.</span></li>
+          </ol>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Dentro da VM</div>
+          <button class="copy">copiar</button>
+<pre class="wrap">cat /etc/hosts
+
+<span class="cm"># 2 · um nome inventado</span>
+echo "10.0.2.2   portal.technorte" | sudo tee -a /etc/hosts
+ping -c 2 portal.technorte
+getent hosts portal.technorte
+
+<span class="cm"># 3 · sequestrando um nome real</span>
+echo "127.0.0.1  unipar.br" | sudo tee -a /etc/hosts
+ping -c 2 unipar.br
+
+<span class="cm"># 4 · desfazer</span>
+sudo sed -i '/portal.technorte/d; /unipar.br/d' /etc/hosts
+ping -c 2 unipar.br</pre>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Segurança:</b> é exatamente isso que alguns malwares fazem: alteram o arquivo hosts (no Windows, <span class="code">C:\Windows\System32\drivers\etc\hosts</span>) para mandar o nome do seu banco para um site falso. Por isso antivírus vigiam esse arquivo. Hoje, mexa <b>só na VM</b>.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 19 ESCADA -->
+  <section class="slide" id="s-escada">
+    <div class="slide-inner">
+      <div class="kicker animate">19 · Bloco 3 · Método</div>
+      <h2 class="stitle animate delay-1">Diagnóstico de baixo para cima: 6 perguntas, nesta ordem</h2>
+      <p class="subtitle animate delay-2">Um técnico de suporte não "acha" o problema: ele <b>elimina hipóteses</b>, da base para o topo. O primeiro teste que falha aponta a camada com defeito.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>#</th><th>Pergunta</th><th>Teste (VM · Windows)</th><th>Se falhar, suspeite de…</th></tr>
+          <tr><td>1</td><td>Tenho um IP válido?</td><td><span class="code">ip -br a</span> · <span class="code">ipconfig</span></td><td>Sem IP ou com <span class="code">169.254.x.x</span>: cabo, Wi-Fi ou DHCP</td></tr>
+          <tr><td>2</td><td>Alcanço o gateway?</td><td><span class="code">ping -c 4 10.0.2.2</span> · <span class="code">ping 192.168.0.1</span></td><td>Rede local: Wi-Fi, cabo, IP ou máscara errados, modo de rede da VM</td></tr>
+          <tr><td>3</td><td>Existe rota para fora?</td><td><span class="code">ip route</span> · <span class="code">route print</span></td><td>Gateway ausente ou errado</td></tr>
+          <tr><td>4</td><td>Alcanço um IP na internet?</td><td><span class="code">ping -c 4 8.8.8.8</span></td><td>Roteador, provedor ou firewall</td></tr>
+          <tr><td>5</td><td>Resolvo nomes?</td><td><span class="code">resolvectl query unipar.br</span> · <span class="code">nslookup</span></td><td>DNS: servidor errado ou fora do ar; arquivo hosts</td></tr>
+          <tr><td>6</td><td>O serviço responde?</td><td>Navegador · <span class="code">curl -I https://unipar.br</span></td><td>O problema está no site ou na aplicação, não na sua rede</td></tr>
+        </table>
+      </div>
+      <div class="warn-box animate delay-4"><b>"A internet caiu" não é um diagnóstico.</b> Num chamado de suporte, escreva qual passo falhou e a evidência: "ping no gateway OK, ping em 8.8.8.8 OK, nslookup falha: problema de DNS".</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 20 QUEBRE -->
+  <section class="slide hands-on" id="s-quebre">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Mão na Massa · Individual <span class="mm-badge">⏱ 20 min</span></div>
+      <h2 class="stitle animate delay-1">Quebre o gateway e o DNS da VM, e conserte</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.2fr;">
+        <div class="card">
+          <h3 class="accent">Roteiro</h3>
+          <ol class="steps">
+            <li><span>Tire o snapshot <span class="code">antes-aula08</span>. Confira o nome da interface (<span class="code">enp0s3</span>?) com <span class="code">ip -br a</span>.</span></li>
+            <li><span><b>Quebre o gateway</b> e rode os 3 pings da seção 17. Anote cada mensagem. O nome foi resolvido?</span></li>
+            <li><span><b>Conserte</b> usando o gateway da sua ficha e teste de novo.</span></li>
+            <li><span><b>Quebre o DNS</b> e repita os 3 pings. Qual passa e qual falha?</span></li>
+            <li><span><b>Conserte</b> com o DNS da ficha. Travou tudo? Restaure <span class="code">antes-aula08</span>.</span></li>
+          </ol>
+          <div class="info-box"><b>192.0.2.53</b> pertence a uma faixa reservada para documentação: não existe na internet, então serve para simular um DNS "morto". As mudanças feitas com <span class="code">ip</span> e <span class="code">resolvectl</span> são temporárias: reiniciar a VM também desfaz.</div>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Dentro da VM · troque enp0s3 se a sua interface tiver outro nome</div>
+          <button class="copy">copiar</button>
+<pre class="wrap"><span class="cm"># ---- QUEBRA 1: sem gateway ----</span>
+sudo ip route del default
+ip route                          <span class="cm"># a linha default sumiu</span>
+ping -c 2 10.0.2.2                <span class="cm"># funciona? (rede local)</span>
+ping -c 2 8.8.8.8                 <span class="cm"># "Network is unreachable"</span>
+ping -c 2 unipar.br               <span class="cm"># resolveu o nome? e o pacote saiu?</span>
+
+<span class="cm"># conserto: o gateway da sua ficha</span>
+sudo ip route add default via 10.0.2.2
+
+<span class="cm"># ---- QUEBRA 2: DNS inexistente ----</span>
+sudo resolvectl dns enp0s3 192.0.2.53
+sudo resolvectl flush-caches
+ping -c 2 8.8.8.8                 <span class="cm"># funciona: IP não depende de DNS</span>
+ping -c 2 unipar.br               <span class="cm"># "Temporary failure in name resolution"</span>
+
+<span class="cm"># conserto: o DNS da sua ficha (ex.: 10.0.2.3)</span>
+sudo resolvectl dns enp0s3 10.0.2.3</pre>
+        </div>
+      </div>
+      <div class="deliver animate delay-3"><span>Prints das 2 quebras e dos 2 consertos</span><span>Usados na tarefa (seção 25)</span><span>Conta na avaliação contínua</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 21 DRILL -->
+  <section class="slide hands-on" id="s-drill">
+    <div class="slide-inner" style="max-width:920px;">
+      <div class="kicker animate">🛠️ Mão na Massa · Troubleshooting <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">Qual peça falhou?</h2>
+      <p class="subtitle animate delay-2">Chamados reais de suporte. Use a escada da seção 19 e escolha a causa mais provável.</p>
+      <div class="drill animate delay-3" style="margin-top:1rem;">
+        <div class="kicker" style="margin-bottom:.4rem;" id="dgCount">Chamado 1 de 7</div>
+        <div class="drill-q" id="dgQ"></div>
+        <div class="drill-btns" id="dgBtns"></div>
+        <div class="verdict" id="dgFb">Escolha a causa.</div>
+        <div class="drill-score" id="dgScore">Acertos: 0 / 0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 22 PROBLEMAS -->
+  <section class="slide" id="s-problemas">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">22 · Bloco 3 · Situações-problema · debate coletivo</div>
+      <h2 class="stitle animate delay-1">Aplique o que você construiu hoje</h2>
+      <p class="subtitle animate delay-2">Pense sozinho por 1 minuto em cada cenário, depois debata com a turma. Os pontos-chave ficam escondidos para revisão.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Laboratório.</b> Um aluno conecta o notebook no cabo do laboratório e o <span class="code">ipconfig</span> mostra <span class="code">169.254.80.12</span>, sem gateway. O que isso revela e o que você verificaria?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O sistema <b>não recebeu resposta do DHCP</b> e se deu um IP link-local. Verifique cabo e porta do switch, se o adaptador certo está ativo e se o servidor DHCP da rede funciona. Depois, <span class="code">ipconfig /release</span> e <span class="code">ipconfig /renew</span>.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>"Só o WhatsApp funciona."</b> No notebook de um cliente, nenhum site abre, mas o WhatsApp Desktop conversa normalmente. Hipótese principal e como confirmá-la em 2 comandos?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Forte suspeita de <b>DNS</b>: aplicativos podem manter conexões já abertas ou usar IPs guardados em cache. Confirme com <span class="code">ping 8.8.8.8</span> (funciona) e <span class="code">nslookup unipar.br</span> (falha). Solução: corrigir o DNS do adaptador ou do roteador.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Conflito.</b> Na TechNorte, dois computadores receberam o mesmo IP fixo, configurado à mão, e ambos ficam "caindo". Por que isso acontece e como evitar?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Os outros equipamentos não sabem a qual MAC entregar aquele IP: o ARP alterna entre os dois e as conexões quebram. Evite com <b>DHCP</b> para estações e, para servidores e impressoras, IPs fixos <b>documentados</b> e fora da faixa distribuída pelo DHCP (tema da próxima aula).</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Gateway na rede errada.</b> Um técnico configurou <span class="code">192.168.1.50/24</span> com gateway <span class="code">192.168.0.1</span>. A impressora <span class="code">192.168.1.20</span> funciona, a internet não. Por quê?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">A impressora está na <b>mesma rede</b> (192.168.1.0/24): entrega direta. Para a internet, o pacote precisa ir ao gateway, mas <span class="code">192.168.0.1</span> <b>não está na rede local</b>, e o computador não consegue entregá-lo. O gateway tem de pertencer à mesma rede do host (teste na seção 13).</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext"><b>Roteador comprometido.</b> Vários clientes de uma loja passam a cair num site falso do banco, mesmo digitando o endereço certo. Os computadores estão limpos. Onde investigar?</span><span class="qtag">pontos-chave</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">No <b>DNS distribuído pelo roteador</b>: um invasor que troca o DNS do roteador (senha padrão não alterada) passa a responder o IP que quiser para qualquer nome. Confira os servidores DNS no <span class="code">ipconfig /all</span> e na página do roteador, troque a senha de administração e atualize o firmware. O mesmo ataque, localmente, é o arquivo hosts adulterado.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 23 SÍNTESE -->
+  <section class="slide" id="s-sintese">
+    <div class="slide-inner">
+      <div class="kicker animate">23 · Bloco 4 · Síntese</div>
+      <h2 class="stitle animate delay-1">O que vimos e o que vem a seguir</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">1</div><h3>Hoje</h3><p>IP, máscara, gateway e DNS. Fizemos o Raio-X do host e da VM, entendemos os dois NATs, decidimos local × remoto bit a bit, seguimos o pacote com ping e traceroute, enganamos o DNS com o arquivo hosts e consertamos a rede quebrada de propósito.</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Próxima aula</h3><p><b>Configuração de endereço IP e testes de comunicação:</b> DHCP × IP estático, configurar IP fixo no Ubuntu e fazer duas VMs conversarem numa rede só delas.</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Para ir além</h3><p>KUROSE e ROSS, <i>Redes de Computadores e a Internet</i>: capítulo 1 (visão geral) e a seção sobre DNS. Para sub-redes e NAT a fundo, a <a href="../../redes/06-Camada-de-rede/">aula de camada de rede</a> de Fundamentos de Redes.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Não apague a VM!</b> Ela continua sendo o laboratório. Mantenha os snapshots <span class="code">pos-instalacao</span> e <span class="code">antes-aula08</span>.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 24 AVALIAÇÃO -->
+  <section class="slide hands-on" id="s-avaliacao">
+    <div class="slide-inner">
+      <div class="kicker animate">🛠️ Bloco 4 · Avaliação formativa <span class="mm-badge">⏱ 10 + 5 min</span></div>
+      <h2 class="stitle animate delay-1">Quiz técnico e exit ticket no Google Classroom</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Quiz técnico individual (10 min)</h3>
+          <ul>
+            <li>Pelo celular ou notebook, no <b>Google Classroom</b> (Forms com autocorreção).</li>
+            <li><b>5 questões</b> cobrindo os 3 blocos: endereço e máscara, local × remoto, rotas, DNS e diagnóstico.</li>
+            <li>Gabarito discutido logo depois, com foco nas questões com <b>mais erros</b>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Exit ticket (5 min, sem nota)</h3>
+          <ol class="steps">
+            <li><span><b>Consegui quebrar e consertar</b> o gateway e o DNS da VM? (sim; sim, com ajuda; não)</span></li>
+            <li><span><b>Consigo explicar</b> quando um pacote vai direto ao destino e quando vai ao gateway?</span></li>
+            <li><span><b>O que ainda não ficou claro?</b> Escreva em 1 ou 2 frases.</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 25 TAREFA -->
+  <section class="slide hands-on" id="s-tarefa">
+    <div class="slide-inner">
+      <div class="kicker animate">25 · Depois da aula · Tarefa de fixação <span class="mm-badge">⏱ 40 min · individual</span></div>
+      <h2 class="stitle animate delay-1">Laudo de conectividade</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">O que entregar</h3>
+          <ol class="steps">
+            <li><span><b>Ficha do Raio-X</b> (seção 11) completa, com o endereço de rede calculado do host e da VM.</span></li>
+            <li><span><b>Prints</b> dos testes da seção 17 e das 2 quebras e 2 consertos da seção 20, com 1 linha explicando cada mensagem de erro.</span></li>
+            <li><span><b>Traceroute comentado:</b> para cada salto até sair do seu provedor, diga se o IP é privado, CGNAT ou público e quem você acha que ele é.</span></li>
+            <li><span>Responda: por que, sem a rota <i>default</i>, o nome ainda pode ser resolvido mas o ping não sai? Em que caso o nome também falharia?</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Como ler o seu traceroute</h3>
+          <div class="tbl-wrap" style="margin-top:.4rem;"><table class="cmp">
+            <tr><th>Salto</th><th>Exemplo</th><th>Quem costuma ser</th></tr>
+            <tr><td>1</td><td><span class="code">192.168.0.1</span></td><td>O seu roteador (gateway do host)</td></tr>
+            <tr><td>2–3</td><td><span class="code">100.64.x.x</span> · <span class="code">10.x.x.x</span></td><td>Rede interna do provedor (CGNAT)</td></tr>
+            <tr><td>4+</td><td>IPs públicos</td><td>Roteadores do provedor e de outras redes</td></tr>
+            <tr><td>último</td><td><span class="code">8.8.8.8</span></td><td>O destino</td></tr>
+          </table></div>
+          <div class="info-box"><b>Dica:</b> sem o <span class="code">-d</span> (Windows) ou o <span class="code">-n</span>, o traceroute mostra nomes dos roteadores, que às vezes revelam a cidade ou o provedor.</div>
+        </div>
+      </div>
+      <div class="deliver animate delay-3"><span>Prazo: 1 semana após a aula</span><span>Entrega no Google Classroom</span><span>Conta na avaliação contínua</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 26 TRILHA -->
+  <section class="slide tall" id="s-trilha">
+    <div class="slide-inner">
+      <div class="kicker animate">26 · Trilha de estudo</div>
+      <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova e a tarefa; os <span class="req">complementar</span> aprofundam. A última coluna diz o que você deve saber explicar ao terminar.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp trail">
+          <tr><th>#</th><th>Estude</th><th>Onde</th><th>Tempo</th><th>Ao terminar, você sabe…</th></tr>
+          <tr><td>1</td><td>O que é DNS <span class="req ob">obrigatório</span></td><td><a href="https://www.cloudflare.com/pt-br/learning/dns/what-is-dns/" target="_blank" rel="noopener">Cloudflare Learning: o que é DNS?</a></td><td>15 min</td><td class="goal">descrever o caminho resolvedor → raiz → TLD → autoritativo</td></tr>
+          <tr><td>2</td><td>Visão geral da internet <span class="req ob">obrigatório</span></td><td>KUROSE e ROSS, <i>Redes de Computadores e a Internet</i>: capítulo 1</td><td>40 min</td><td class="goal">explicar hosts, roteadores, pacotes e atraso</td></tr>
+          <tr><td>3</td><td>DNS em profundidade <span class="req ob">obrigatório</span></td><td>KUROSE e ROSS: seção sobre DNS (capítulo 2)</td><td>30 min</td><td class="goal">diferenciar consulta recursiva e iterativa, cache e TTL</td></tr>
+          <tr><td>4</td><td>Endereçamento IPv4 <span class="req ob">obrigatório</span></td><td>KUROSE e ROSS: seção sobre o protocolo IP e endereçamento (capítulo 4)</td><td>30 min</td><td class="goal">achar o endereço de rede a partir do IP e do prefixo</td></tr>
+          <tr><td>5</td><td>Rede no VirtualBox <span class="req">complementar</span></td><td><a href="https://www.virtualbox.org/manual/" target="_blank" rel="noopener">Manual do VirtualBox</a>: <i>Virtual Networking</i></td><td>20 min</td><td class="goal">explicar o NAT do VirtualBox e seus endereços padrão</td></tr>
+          <tr><td>6</td><td>Camada de rede a fundo <span class="req">complementar</span></td><td><a href="../../redes/06-Camada-de-rede/">Portal · Fundamentos de Redes · Aula 06</a></td><td>60 min</td><td class="goal">calcular sub-redes e explicar NAT e DHCP</td></tr>
+          <tr><td>7</td><td>Servidores raiz <span class="req">complementar</span></td><td><a href="https://root-servers.org/" target="_blank" rel="noopener">root-servers.org</a> (mapa das instâncias)</td><td>10 min</td><td class="goal">localizar instâncias de servidores raiz no Brasil</td></tr>
+          <tr><td>8</td><td>Redes como administrador <span class="req">complementar</span></td><td>TANENBAUM e WETHERALL, <i>Redes de Computadores</i>: camada de rede</td><td>40 min</td><td class="goal">explicar roteamento e a tabela de rotas</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Livros da bibliografia:</b> estão on-line nas bibliotecas virtuais da UNIPAR (portal do aluno). Abra o <b>sumário</b> e procure pelo tema indicado.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 27 BIBLIOTECA -->
+  <section class="slide tall" id="s-fontes">
+    <div class="slide-inner">
+      <div class="kicker animate">27 · Biblioteca da aula</div>
+      <h2 class="stitle animate delay-1">Livros, documentação oficial e ferramentas</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card lib">
+          <h4>📚 Livros da bibliografia</h4>
+          <ul>
+            <li><b>KUROSE, J. F.; ROSS, K. W.</b> <i>Redes de Computadores e a Internet: uma abordagem top-down.</i> Pearson (on-line). <span class="find">Bibliografia básica. Procure: visão geral, DNS, endereçamento IPv4.</span></li>
+            <li><b>TANENBAUM, A. S.; WETHERALL, D. J.</b> <i>Redes de Computadores.</i> Pearson (on-line). <span class="find">Procure: camada de rede, roteamento.</span></li>
+            <li><b>NEMETH, E. et al.</b> <i>Manual Completo do Linux: guia do administrador.</i> Pearson (on-line). <span class="find">Procure: configuração de rede TCP/IP e DNS.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>📘 Documentação oficial</h4>
+          <ul>
+            <li><a href="https://www.virtualbox.org/manual/" target="_blank" rel="noopener">Oracle VirtualBox: User Manual</a> <span class="find">Capítulo de rede virtual: NAT, bridge, rede interna.</span></li>
+            <li><a href="https://www.freedesktop.org/software/systemd/man/latest/resolvectl.html" target="_blank" rel="noopener">resolvectl (systemd)</a> <span class="find">Consultar e alterar o DNS no Ubuntu.</span></li>
+            <li><a href="https://learn.microsoft.com/pt-br/windows-server/administration/windows-commands/ipconfig" target="_blank" rel="noopener">Microsoft Learn: ipconfig</a></li>
+            <li><a href="https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/" target="_blank" rel="noopener">Meta: detalhes da falha de 4/10/2021</a> <span class="find">O caso da seção 05, em inglês.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>🧰 Ferramentas e serviços</h4>
+          <ul>
+            <li><a href="https://registro.br/" target="_blank" rel="noopener">Registro.br</a> <span class="find">Quem administra o .br. A busca mostra os servidores DNS de um domínio.</span></li>
+            <li><a href="https://root-servers.org/" target="_blank" rel="noopener">root-servers.org</a> <span class="find">Mapa dos servidores raiz.</span></li>
+            <li><b>DNS públicos</b> <span class="find">Google <span class="code">8.8.8.8</span> e Cloudflare <span class="code">1.1.1.1</span>: úteis para testar se o problema é o DNS do provedor.</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Teste só na sua rede e nas suas máquinas.</b> Varredura de redes e equipamentos de terceiros sem autorização é proibida pelas regras da instituição e pode ser crime.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 28 GLOSSÁRIO -->
+  <section class="slide tall" id="s-glossario">
+    <div class="slide-inner">
+      <div class="kicker animate">28 · Glossário da aula</div>
+      <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
+      <dl class="gloss animate delay-2">
+        <div><dt>Endereço IP (IPv4)</dt><dd>Endereço lógico de 32 bits de uma interface, escrito como 4 números de 0 a 255.</dd></div>
+        <div><dt>Máscara / prefixo</dt><dd>Indica quantos bits do IP são de rede. <span class="code">/24</span> = <span class="code">255.255.255.0</span>.</dd></div>
+        <div><dt>Endereço de rede</dt><dd>IP com todos os bits de host em zero. Identifica a rede inteira.</dd></div>
+        <div><dt>Broadcast</dt><dd>IP com todos os bits de host em um. Alcança todos da rede local.</dd></div>
+        <div><dt>IP privado / público</dt><dd>Válido só dentro de redes internas / único e roteável na internet.</dd></div>
+        <div><dt>Loopback</dt><dd><span class="code">127.0.0.1</span>: o próprio computador.</dd></div>
+        <div><dt>Link-local (169.254)</dt><dd>IP que o sistema se dá quando o DHCP não responde.</dd></div>
+        <div><dt>MAC</dt><dd>Endereço físico da placa de rede, usado na entrega dentro da rede local.</dd></div>
+        <div><dt>ARP</dt><dd>Protocolo que descobre o MAC correspondente a um IP da rede local.</dd></div>
+        <div><dt>Gateway padrão</dt><dd>Roteador que recebe tudo o que vai para fora da rede local.</dd></div>
+        <div><dt>Tabela de rotas</dt><dd>Lista que diz, para cada destino, por onde e para quem enviar o pacote.</dd></div>
+        <div><dt>Salto (hop)</dt><dd>Cada roteador atravessado pelo pacote no caminho.</dd></div>
+        <div><dt>NAT / CGNAT</dt><dd>Tradução de muitos IPs privados em um público / NAT feito pelo provedor.</dd></div>
+        <div><dt>DHCP</dt><dd>Serviço que entrega IP, máscara, gateway e DNS automaticamente.</dd></div>
+        <div><dt>DNS</dt><dd>Sistema hierárquico que traduz nomes em endereços IP.</dd></div>
+        <div><dt>Resolvedor recursivo</dt><dd>Servidor DNS que faz a consulta completa em nome do cliente.</dd></div>
+        <div><dt>Servidor autoritativo</dt><dd>Servidor com a resposta oficial para um domínio.</dd></div>
+        <div><dt>TTL</dt><dd>No DNS: tempo de cache de uma resposta. No ping: saltos restantes do pacote.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================================================ 29 AUTOAVALIAÇÃO -->
+  <section class="slide" id="s-autoavaliacao">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate">29 · Autoavaliação</div>
+      <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
+      <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pela seção indicada (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="au8a"><div><div class="ci-t">Explicar o papel do IP, da máscara, do gateway e do DNS</div></div><span class="review-hint">seções 06–08</span></label>
+        <label class="check-item"><input type="checkbox" id="au8b"><div><div class="ci-t">Reconhecer IPs privados, públicos, loopback, link-local e CGNAT</div></div><span class="review-hint">seção 07</span></label>
+        <label class="check-item"><input type="checkbox" id="au8c"><div><div class="ci-t">Encontrar IP, gateway e DNS no Windows, no Linux e no macOS</div></div><span class="review-hint">seções 10–11</span></label>
+        <label class="check-item"><input type="checkbox" id="au8d"><div><div class="ci-t">Decidir, pela máscara, se um destino é local ou remoto</div></div><span class="review-hint">seção 13</span></label>
+        <label class="check-item"><input type="checkbox" id="au8e"><div><div class="ci-t">Ler a tabela de rotas e explicar a rota padrão</div></div><span class="review-hint">seção 14</span></label>
+        <label class="check-item"><input type="checkbox" id="au8f"><div><div class="ci-t">Descrever uma consulta DNS e usar ping, traceroute e nslookup</div></div><span class="review-hint">seções 15–18</span></label>
+        <label class="check-item"><input type="checkbox" id="au8g"><div><div class="ci-t">Diagnosticar, de baixo para cima, se a falha é de IP, gateway ou DNS</div></div><span class="review-hint">seções 19–21</span></label>
+      </div>
+      <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 30 QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate">30 · Fixação</div>
+      <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
+      <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Hoje você descobriu <span class="accent-b">como um pacote acha o caminho</span>.<br>Na próxima aula, você vai <span class="accent">definir os endereços</span>.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Vimos endereço IPv4, máscara e prefixo, faixas privadas e especiais, decisão local × remoto, MAC e ARP, gateway e tabela de rotas, NAT do VirtualBox e da sua casa, DNS e seus servidores, cache e TTL, ping, traceroute, nslookup, arquivo hosts e diagnóstico de baixo para cima.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula · <b style="color:var(--text)">Configuração de endereço IP e testes de comunicação</b></span><span class="arrow">→</span></div>
+      <div class="grid-2 animate delay-4" style="margin-top:1.2rem; max-width:820px;">
+        <div class="card"><h3 class="accent">Em até 1 semana</h3><p>Laudo de conectividade (seção 25) entregue no Google Classroom.</p></div>
+        <div class="card"><h3 class="accent-b">Para a próxima aula</h3><p>Traga a VM funcionando e a ficha do Raio-X. Você vai trocar o IP automático por um IP fixo.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const progress = document.getElementById('progress');
+document.getElementById('totalNo').textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('in-view'); }
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.2,.55,1]});
+slides.forEach(s=>io.observe(s));
+slides[0].classList.add('in-view');
+
+document.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const curr = Math.max(0, dots.findIndex(d=>d.classList.contains('active')));
+  if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ===== Gabaritos expansíveis (cards estáticos) ===== */
+function bindQ(root){ root.querySelectorAll('.qcard .qhead').forEach(hd=>{ hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open')); }); }
+document.querySelectorAll('.quiz-list.static').forEach(bindQ);
+
+/* ===== Botões copiar ===== */
+document.querySelectorAll('.codeblock .copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const pre = btn.parentElement.querySelector('pre');
+    const txt = pre.innerText;
+    const done = ()=>{ btn.textContent='copiado ✓'; setTimeout(()=>btn.textContent='copiar',1600); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent='selecionado: Ctrl+C'; setTimeout(()=>btn.textContent='copiar',2200); };
+    try{ navigator.clipboard.writeText(txt).then(done, fallback); }catch(e){ fallback(); }
+  });
+});
+
+/* ===== Checklists com localStorage ===== */
+document.querySelectorAll('.check-list[data-check]').forEach(list=>{
+  const key = 'ambtech-aula08-'+list.dataset.check;
+  const meter = document.getElementById(list.dataset.check+'Meter');
+  const boxes = Array.from(list.querySelectorAll('input[type=checkbox]'));
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  function render(){
+    let n=0; boxes.forEach(b=>{ b.closest('.check-item').classList.toggle('done', b.checked); if(b.checked) n++; });
+    meter.querySelector('span').textContent = n+'/'+boxes.length;
+    meter.querySelector('.check-bar span').style.width = (n/boxes.length*100)+'%';
+  }
+  boxes.forEach(b=>{
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', ()=>{ saved[b.id]=b.checked; try{ localStorage.setItem(key, JSON.stringify(saved)); }catch(e){} render(); });
+  });
+  render();
+});
+
+
+
+
+/* ===== Utilitários IPv4 ===== */
+const IP4 = (function(){
+  function parse(s){
+    const m = String(s).trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if(!m) return null;
+    const o = m.slice(1).map(Number);
+    if(o.some(x=>x>255)) return null;
+    return ((o[0]<<24)>>>0) + (o[1]<<16) + (o[2]<<8) + o[3];
+  }
+  function str(n){ return [n>>>24, (n>>>16)&255, (n>>>8)&255, n&255].join('.'); }
+  function mask(p){ return p===0 ? 0 : (0xFFFFFFFF << (32-p))>>>0; }
+  function net(n,p){ return (n & mask(p))>>>0; }
+  function bcast(n,p){ return (net(n,p) | (~mask(p)>>>0))>>>0; }
+  function inNet(n, base, p){ return net(n,p)===net(parse(base),p); }
+  function classify(n){
+    if(n===0) return 'inválido (0.0.0.0)';
+    if(inNet(n,'127.0.0.0',8)) return 'loopback';
+    if(inNet(n,'10.0.0.0',8) || inNet(n,'172.16.0.0',12) || inNet(n,'192.168.0.0',16)) return 'privado';
+    if(inNet(n,'169.254.0.0',16)) return 'link-local';
+    if(inNet(n,'100.64.0.0',10)) return 'CGNAT (provedor)';
+    if((n>>>24)>=224) return 'multicast/reservado';
+    return 'público';
+  }
+  function bits(n,p){
+    let h='<span class="bits">';
+    for(let o=0;o<4;o++){
+      h+='<span class="oct">';
+      for(let b=0;b<8;b++){ const i=o*8+b; h+='<i class="'+(i<p?'nb':'hb')+'">'+((n>>>(31-i))&1)+'</i>'; }
+      h+='</span>';
+    }
+    return h+'</span>';
+  }
+  function row(label, n, p, cls){ return '<div class="bin-row '+(cls||'')+'"><span class="bl">'+label+'</span>'+bits(n,p)+'<span class="bd">'+str(n)+'</span></div>'; }
+  return {parse,str,mask,net,bcast,classify,row};
+})();
+
+/* ===== Seção 07: 192.168.0.25/24 estático ===== */
+(function(){
+  const el=document.getElementById('ipv4Static'); if(!el) return;
+  const ip=IP4.parse('192.168.0.25'), p=24;
+  el.innerHTML = IP4.row('IP', ip, p) + IP4.row('máscara /24', IP4.mask(p), p) + '<div class="bin-sep"></div>' +
+    IP4.row('rede (IP E máscara)', IP4.net(ip,p), p, 'res') + IP4.row('broadcast', IP4.bcast(ip,p), p);
+})();
+
+/* ===== Seção 13: local ou remoto? ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const pfx=$('lrPfx'); if(!pfx) return;
+  for(let p=8;p<=30;p++){ const o=document.createElement('option'); o.value=p; o.textContent='/'+p; if(p===24) o.selected=true; pfx.appendChild(o); }
+  const V=$('lrVerdict'), B=$('lrBin');
+  function verdict(cls, t, txt){ V.className='verdict '+cls; V.innerHTML='<b class="t">'+t+'</b> '+txt; }
+  function run(){
+    const src=IP4.parse($('lrSrc').value), dst=IP4.parse($('lrDst').value), gwTxt=$('lrGw').value.trim(), p=+pfx.value;
+    const gw=IP4.parse(gwTxt);
+    if(src===null || dst===null || (gwTxt!=='' && gw===null)){
+      B.innerHTML=''; verdict('warn','!','Use o formato a.b.c.d, com números de 0 a 255.'); return;
+    }
+    const sn=IP4.net(src,p), dn=IP4.net(dst,p), m=IP4.mask(p);
+    B.innerHTML = IP4.row('meu IP', src, p) + IP4.row('máscara /'+p, m, p) + IP4.row('minha rede', sn, p, 'res') +
+      '<div class="bin-sep"></div>' + IP4.row('destino', dst, p) + IP4.row('rede do destino', dn, p, 'res');
+    const cls=IP4.classify(dst), netTxt=IP4.str(sn)+'/'+p;
+    if(IP4.classify(src)==='link-local'){
+      verdict('warn','! IP link-local.','O seu IP está em 169.254.0.0/16: o DHCP não respondeu e o sistema se deu um endereço sozinho. Não há gateway, então nada sai da rede local. Verifique cabo, Wi-Fi e DHCP.'); return;
+    }
+    if(dst===src){ verdict('ok','✓ É você mesmo.','O destino é o seu próprio IP: o pacote nem chega a sair pela placa.'); return; }
+    if(cls==='loopback'){ verdict('ok','✓ Loopback.','127.x.x.x é sempre o próprio computador: o pacote não sai da máquina.'); return; }
+    if(sn===dn){
+      const bc = dst===IP4.bcast(src,p) ? ' Atenção: esse é o <b>broadcast</b> da rede, que alcança todos os hosts.' : '';
+      verdict('ok','✓ Entrega direta.','O destino ('+cls+') está na sua rede, '+netTxt+'. O sistema usa o ARP para descobrir o MAC de '+IP4.str(dst)+' e entrega direto, <b>sem passar pelo gateway</b>.'+bc); return;
+    }
+    if(gw===null || gw===0){ verdict('no','✗ Sem saída.','O destino está em outra rede ('+IP4.str(dn)+'/'+p+') e não há gateway configurado: o sistema responde "Network is unreachable".'); return; }
+    if(IP4.net(gw,p)!==sn){ verdict('no','✗ Gateway fora da rede.','O destino é remoto, mas o gateway '+IP4.str(gw)+' não pertence à sua rede ('+netTxt+'). O sistema não consegue entregar o pacote a ele: a configuração está errada.'); return; }
+    if(gw===src){ verdict('no','✗ Gateway inválido.','O gateway não pode ser o seu próprio IP.'); return; }
+    verdict('warn','→ Via gateway.','O destino ('+cls+') está em outra rede ('+IP4.str(dn)+'/'+p+'). O pacote é entregue ao MAC do gateway <b>'+IP4.str(gw)+'</b>, que o encaminha adiante, salto a salto.');
+  }
+  ['lrSrc','lrGw','lrDst'].forEach(id=>{ const e=$(id); e.addEventListener('input',run); e.addEventListener('keydown',ev=>ev.stopPropagation()); });
+  pfx.addEventListener('change',run); pfx.addEventListener('keydown',ev=>ev.stopPropagation());
+  document.querySelectorAll('#lrChips .chip').forEach(c=>c.addEventListener('click',()=>{
+    const [s,p,g,d]=c.dataset.p.split('|'); $('lrSrc').value=s; pfx.value=p; $('lrGw').value=(g==='0.0.0.0'?'':g); $('lrDst').value=d; run();
+  }));
+  run();
+})();
+
+/* ===== Seção 16: simulador DNS ===== */
+(function(){
+  const path=document.getElementById('dnsPath'); if(!path) return;
+  const $=id=>document.getElementById(id);
+  const node=n=>path.querySelector('[data-n="'+n+'"]');
+  const IP='203.0.113.10';
+  let st, timers=[];
+  function init(){ st={local:false, res:false, down:false, busy:false}; }
+  function clearNodes(){ path.querySelectorAll('.dnode').forEach(d=>{ d.classList.remove('on','hit','fail'); d.classList.toggle('down', d.dataset.n==='res' && st.down); }); }
+  function log(html, reset){ const t=$('dnsTerm'); t.innerHTML = reset ? html : t.innerHTML+'\n'+html; }
+  function stats(time, hops, ans, ok){ $('dnsTime').textContent=time; $('dnsHops').textContent=hops; const a=$('dnsAns'); a.textContent=ans; a.style.color= ok===null?'var(--text-faint)':(ok?'var(--green)':'var(--red)'); }
+  function play(steps, done){
+    st.busy=true; let t=0;
+    steps.forEach(s=>{ t+=s.d||450; timers.push(setTimeout(()=>{ const n=node(s.n); if(n) n.classList.add(s.c||'on'); if(s.log) log(s.log); },t)); });
+    timers.push(setTimeout(()=>{ st.busy=false; done&&done(); }, t+150));
+  }
+  function query(){
+    if(st.busy) return;
+    clearNodes(); log('<span class="p">$</span> <span class="c">resolvectl query www.unipar.br</span>', true); stats('…','…','…',null);
+    const steps=[{n:'app', d:150, log:'navegador: preciso do IP de www.unipar.br'}];
+    if(st.local){
+      steps.push({n:'stub', c:'hit', log:'<span class="y">cache local: já sei! www.unipar.br → '+IP+' (ainda dentro do TTL)</span>'});
+      play(steps, ()=>{ stats('≈ 0 ms','0 (cache)',IP,true); log(st.down?'\n<span class="y">Repare: o resolvedor está fora do ar, mas o cache escondeu a falha. Quando o TTL vencer, o problema aparece.</span>':'\nNenhum servidor foi consultado: a resposta veio da memória.'); });
+      return;
+    }
+    steps.push({n:'stub', log:'cache local: não sei. Perguntando ao resolvedor…'});
+    if(st.down){
+      steps.push({n:'res', c:'fail', d:900, log:'<span class="e">resolvedor não responde… tentando de novo… desistindo.</span>'});
+      play(steps, ()=>{ stats('timeout','1 (sem resposta)','falhou',false); log('<span class="e">www.unipar.br: resolve call failed: All attempts to contact name servers or networks failed</span>\n<span class="y">Mas um ping por IP (ex.: 8.8.8.8) continua funcionando: o problema é só o DNS.</span>'); });
+      return;
+    }
+    if(st.res){
+      steps.push({n:'res', c:'hit', log:'<span class="y">resolvedor: está no meu cache! → '+IP+'</span>'});
+      play(steps, ()=>{ st.local=true; stats('≈ 15 ms','1',IP,true); log('\nO resolvedor já tinha a resposta de outra consulta (de você ou de outro cliente).'); });
+      return;
+    }
+    steps.push({n:'res', log:'resolvedor: não sei. Vou perguntar a partir da raiz.'});
+    steps.push({n:'root', d:550, log:'raiz: não conheço www.unipar.br, mas o .br é com a.dns.br, b.dns.br…'});
+    steps.push({n:'tld', d:550, log:'.br: unipar.br é com o servidor autoritativo da universidade.'});
+    steps.push({n:'auth', c:'hit', d:550, log:'<span class="y">autoritativo: www.unipar.br  A  '+IP+'  (TTL 300 s)</span>'});
+    play(steps, ()=>{ node('res').classList.add('hit'); st.local=true; st.res=true; stats('≈ 95 ms','4',IP,true); log('\nResposta guardada em cache no resolvedor e no seu computador. Consulte de novo e compare o tempo.\n<span style="color:var(--text-faint)">(IP ilustrativo, de uma faixa reservada para documentação)</span>'); });
+  }
+  function act(a){
+    if(st.busy && a!=='reset') return;
+    if(a==='query') return query();
+    if(a==='flush'){ st.local=false; clearNodes(); stats('—','—','—',null); log('<span class="p">$</span> <span class="c">sudo resolvectl flush-caches</span>\nCache <b>local</b> apagado. O cache do <b>resolvedor</b> continua lá: a próxima consulta não vai até a raiz.', true); return; }
+    if(a==='down'){ st.down=!st.down; $('dnsDownBtn').textContent= st.down?'🔌 Religar o resolvedor':'💥 Derrubar o resolvedor'; clearNodes();
+      log(st.down?'<span class="e">O resolvedor (DNS da sua ficha) saiu do ar.</span> Consulte e veja o que acontece. Depois limpe o cache local e consulte de novo.':'Resolvedor de volta ao ar.', true); return; }
+    if(a==='reset'){ timers.forEach(clearTimeout); timers=[]; init(); $('dnsDownBtn').textContent='💥 Derrubar o resolvedor'; clearNodes(); stats('—','—','—',null);
+      log('Caches vazios. Clique em <b>Consultar www.unipar.br</b> e acompanhe cada servidor consultado.', true); }
+  }
+  document.querySelectorAll('[data-dns]').forEach(b=>b.addEventListener('click',()=>act(b.dataset.dns)));
+  init(); act('reset');
+})();
+
+/* ===== Seção 21: qual peça falhou? ===== */
+(function(){
+  const items=[
+    {q:'O ipconfig do notebook mostra "Endereço IPv4: 169.254.23.7" e o campo Gateway Padrão está vazio.', opts:['O DHCP não respondeu','O DNS está fora do ar','O site da UNIPAR caiu','A máscara está errada'], a:0, why:'169.254.x.x é o IP que o sistema se dá quando o <b>DHCP</b> não responde. Sem IP válido nem gateway, nada funciona. Verifique cabo, Wi-Fi e o servidor DHCP (passo 1 da escada).'},
+    {q:'"ping 8.8.8.8" responde normalmente, mas "ping unipar.br" diz que não encontrou o host.', opts:['Gateway errado','Problema de DNS','Cabo desconectado','IP duplicado'], a:1, why:'Se o IP externo responde, IP, gateway e caminho estão bons. O que falha é a <b>tradução do nome</b>: DNS errado, fora do ar ou arquivo hosts (passo 5).'},
+    {q:'Na VM, "ping 10.0.2.2" responde, mas "ping 8.8.8.8" devolve "Network is unreachable".', opts:['Falta a rota padrão (gateway)','DNS errado','Placa de rede desligada','O 8.8.8.8 está fora do ar'], a:0, why:'A rede local funciona (o gateway responde), mas o sistema não tem para onde mandar o resto: falta a linha <b>default</b> na tabela de rotas (passo 3). Foi o que você fez na seção 20.'},
+    {q:'IP 192.168.1.50/24 com gateway 192.168.0.1. A impressora 192.168.1.20 imprime, mas nenhum site abre, nem por IP.', opts:['DNS fora do ar','Gateway fora da rede local','Impressora com IP duplicado','Pouca memória RAM'], a:1, why:'A impressora está na mesma rede: entrega direta. Para fora, o pacote precisa do gateway, mas <b>192.168.0.1 não está em 192.168.1.0/24</b>. Corrija o gateway (teste na seção 13).'},
+    {q:'Dois computadores do laboratório alternam entre "funciona" e "sem conexão", e o Windows avisa sobre conflito de endereço.', opts:['IP duplicado na rede','DNS lento','Cabo longo demais','Rota padrão ausente'], a:0, why:'Dois equipamentos com o <b>mesmo IP</b>: o ARP ora aponta para um MAC, ora para o outro. Use DHCP ou documente os IPs fixos fora da faixa do DHCP.'},
+    {q:'Só o site do banco abre uma página estranha; todos os outros sites funcionam. No arquivo hosts há uma linha com o nome do banco.', opts:['Gateway errado','Arquivo hosts adulterado','Máscara errada','Provedor com CGNAT'], a:1, why:'O arquivo hosts é consultado <b>antes</b> do DNS (seção 18). Um malware que grava ali o nome do banco desvia só esse site. Remova a linha e faça uma varredura antivírus.'},
+    {q:'A VM foi trocada para "Somente host": "ip -br a" mostra 192.168.56.101, mas "ping 8.8.8.8" falha.', opts:['DNS errado','Esse modo não tem saída para a internet','IP privado não navega','Faltam as Guest Additions'], a:1, why:'O modo <b>somente host</b> liga a VM só ao host e a outras VMs, sem gateway para a internet (Aula 07, seção 12). Volte para NAT ou bridge.'}
+  ];
+  const q=document.getElementById('dgQ'); if(!q) return;
+  let i=0, ok=0, tot=0, answered=false;
+  const fb=document.getElementById('dgFb'), sc=document.getElementById('dgScore'), ct=document.getElementById('dgCount'), box=document.getElementById('dgBtns');
+  function load(){
+    answered=false; const it=items[i];
+    q.textContent=it.q; ct.textContent='Chamado '+(i+1)+' de '+items.length;
+    fb.className='verdict'; fb.textContent='Escolha a causa.';
+    box.innerHTML=''; it.opts.forEach((o,k)=>{ const b=document.createElement('button'); b.className='btn ghost'; b.textContent=o; b.addEventListener('click',()=>answer(k)); box.appendChild(b); });
+  }
+  function answer(k){
+    if(answered) return; answered=true; tot++;
+    const it=items[i], right=k===it.a; if(right) ok++;
+    const last=i===items.length-1;
+    fb.className='verdict '+(right?'ok':'no');
+    fb.innerHTML='<b class="t">'+(right?'✓ Diagnóstico certo!':'✗ A causa mais provável é: '+it.opts[it.a]+'.')+'</b> '+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;" id="dgNext">'+(last?'recomeçar ↺':'próximo chamado →')+'</button>';
+    document.getElementById('dgNext').addEventListener('click',()=>{ if(last){ i=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else i++; load(); });
+    sc.textContent='Acertos: '+ok+' / '+tot; box.querySelectorAll('button').forEach(b=>b.disabled=true);
+  }
+  load();
+})();
+
+/* ===== Quiz de fixação ===== */
+(function(){
+  const quiz=[
+    {tag:'Conceito', q:'Para que serve a máscara de sub-rede?', a:'Indica quais bits do IP identificam a <b>rede</b> e quais identificam o <b>host</b>. Com ela, o sistema decide se o destino é local (entrega direta) ou remoto (gateway).'},
+    {tag:'Cálculo', q:'Qual o endereço de rede de 172.16.45.200/16?', a:'<b>172.16.0.0</b>. Com /16, os dois primeiros octetos são de rede; os dois últimos (host) viram zero.'},
+    {tag:'Cálculo', q:'192.168.0.70/26 e 192.168.0.130 estão na mesma rede?', a:'<b>Não.</b> Com /26, o último octeto se divide em blocos de 64: .64 a .127 e .128 a .191. O pacote vai para o gateway.'},
+    {tag:'Faixas', q:'Classifique: 10.0.2.15, 8.8.8.8, 169.254.1.1 e 127.0.0.1.', a:'Privado, <b>público</b>, link-local (DHCP falhou) e loopback (o próprio computador).'},
+    {tag:'Gateway', q:'O que acontece se um computador ficar sem gateway padrão?', a:'Continua falando com a <b>própria rede</b>, mas qualquer destino de outra rede dá "Network is unreachable".'},
+    {tag:'Rotas', q:'O que significa "default via 10.0.2.2 dev enp0s3" no ip route?', a:'É a <b>rota padrão</b>: tudo o que não combina com outra rota é entregue ao gateway 10.0.2.2, saindo pela interface enp0s3.'},
+    {tag:'DNS', q:'Sem nada em cache, em que ordem uma consulta DNS é respondida?', a:'Arquivo hosts e cache local → <b>resolvedor recursivo</b> → servidor <b>raiz</b> → servidor do <b>TLD</b> (.br) → servidor <b>autoritativo</b> do domínio. A resposta fica em cache pelo TTL.'},
+    {tag:'DNS', q:'Por que o /etc/resolv.conf do Ubuntu mostra 127.0.0.53?', a:'É o <b>systemd-resolved</b>, um intermediário local com cache. Os servidores DNS reais aparecem em <span class="code">resolvectl dns</span>.'},
+    {tag:'Diagnóstico', q:'ping 8.8.8.8 funciona e ping unipar.br falha. Onde está o problema?', a:'No <b>DNS</b>: IP, gateway e caminho estão funcionando, mas o nome não é traduzido. Confira o servidor DNS e o arquivo hosts.'},
+    {tag:'VM', q:'Por que todas as VMs da turma podem ter o IP 10.0.2.15 sem conflito?', a:'Cada VM fica numa <b>rede NAT isolada</b> criada pelo VirtualBox dentro do próprio host. IPs privados se repetem em redes diferentes; o conflito só existe dentro da mesma rede.'}
+  ];
+  const list=document.getElementById('quizList'); if(!list) return;
+  quiz.forEach((it,k)=>{
+    const c=document.createElement('div'); c.className='qcard';
+    c.innerHTML='<button class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">Q'+(k+1)+'.</b> '+it.q+'</span><span class="qtag">'+it.tag+'</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">'+it.a+'</div></div>';
+    list.appendChild(c);
+  });
+  bindQ(list);
+})();
+</script>
+
+</body>
+</html>
