@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Fundamentos de Redes de Computadores · Aula 08: camada de aplicação. Cliente-servidor e P2P, HTTP e HTTPS, DNS, e-mail (SMTP, POP3, IMAP), FTP, Telnet e SSH, com prática no Cisco Packet Tracer.">
+<title>Redes · Aula 08</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@600;700;800&display=swap">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — herdado das aulas do Prof. Patrick (mesmo padrão visual
+   de Redes, DevOps Tools e Ambientação Tech). Deck vertical com
+   scroll-snap, tema dark-tech.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12; --bg-2:#0c131d; --surface:#121b27; --surface-2:#182434;
+  --border:#223049; --border-soft:#1a2436;
+  --text:#eef3f8; --text-dim:#9fb0c3; --text-faint:#62768a;
+  --blue:#2fb0e8; --blue-dim:#12719e; --navy:#0b3556;
+  --gold:#f2a93b; --green:#36c58f; --red:#ef5b5b;
+  --mono:'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --disp:'Sora', 'Inter', sans-serif;
+  --radius:16px; --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+a{color:var(--blue);}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto; min-width:0;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); font-weight:600;
+  display:flex; align-items:center; gap:.6em; margin-bottom:.8rem; flex-wrap:wrap;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em; text-wrap:balance;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem; text-wrap:balance;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:70ch; line-height:1.55;}
+.subtitle b, .card p b, ol.steps b{color:var(--text);}
+.accent{color:var(--gold);} .accent-b{color:var(--blue);} .accent-g{color:var(--green);} .accent-r{color:var(--red);}
+
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease);}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;} .delay-4{transition-delay:.32s;}
+@media (prefers-reduced-motion: reduce){ .animate{opacity:1; transform:none; transition:none;} .deck{scroll-behavior:auto;} }
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem; min-width:0;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p, .card li{color:var(--text-dim); font-size:.84rem; line-height:1.5;}
+.card ul{padding-left:1.1rem; display:grid; gap:.25rem;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+.grid-5{display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+.icon-chip.g{background:rgba(242,169,59,.12); color:var(--gold);}
+
+.tbl-wrap{overflow-x:auto; min-width:0;}
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.1rem; cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn.gold{background:linear-gradient(180deg,var(--gold),#c98520);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue); white-space:nowrap;}
+
+/* ============================= CAPA ============================= */
+#s-capa{align-items:flex-start;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem; flex-wrap:wrap;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.16);
+  font-size:1rem; line-height:1.75; text-align:right; user-select:none; pointer-events:none; white-space:pre;}
+
+/* ============================= SUMÁRIO ============================= */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.76rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.82rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= CHECKLIST / AGENDA ============================= */
+.check-list{display:grid; gap:.5rem;}
+.check-item{display:flex; gap:.75rem; align-items:flex-start; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; cursor:pointer; transition:border-color .2s, background .2s;}
+.check-item input{appearance:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border); flex:none; margin-top:.1rem; display:grid; place-items:center; cursor:pointer; background:var(--surface-2);}
+.check-item input:checked{background:var(--green); border-color:var(--green);}
+.check-item input:checked::after{content:'✓'; color:#062014; font-weight:800; font-size:.8rem;}
+.check-item.done{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.05);}
+.check-item.done .ci-t{text-decoration:line-through; color:var(--text-faint);}
+.ci-t{font-size:.86rem; color:var(--text); font-weight:600;}
+.ci-d{font-size:.78rem; color:var(--text-dim); margin-top:.15rem; line-height:1.45;}
+.ci-time{margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--gold); flex:none; padding-top:.15rem;}
+.check-meter{display:flex; align-items:center; gap:.8rem; margin-top:.8rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);}
+.check-bar{flex:1; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.check-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--blue)); transition:width .4s var(--ease);}
+
+.agenda{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:1rem;}
+.ag{border-top:3px solid var(--blue); background:var(--surface); border-radius:0 0 12px 12px; padding:.75rem .9rem;}
+.ag .min{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.86rem;}
+.ag h4{font-family:var(--disp); font-size:.9rem; margin:.25rem 0; color:var(--text);}
+.ag p{font-size:.78rem; color:var(--text-dim); line-height:1.45;}
+.ag:nth-child(2){border-color:var(--gold);} .ag:nth-child(2) .min{color:var(--gold);}
+.ag:nth-child(3){border-color:var(--green);} .ag:nth-child(3) .min{color:var(--green);}
+.ag:nth-child(4){border-color:var(--text-faint);} .ag:nth-child(4) .min{color:var(--text-dim);}
+
+/* ============================= TIMELINE ============================= */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem; min-width:0;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.92rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item.hot{border-color:var(--red);} .tl-item.hot .yr{color:var(--red);}
+.tl-item.warn{border-color:var(--gold);} .tl-item.warn .yr{color:var(--gold);}
+.bignum-row{display:flex; gap:2.2rem; margin-top:1.2rem; flex-wrap:wrap;}
+.bignum .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); color:var(--red); line-height:1;}
+.bignum .l{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* ============================= HANDS-ON ============================= */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.5rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+
+/* ============================= QUIZ / GABARITOS ============================= */
+.quiz-list{display:flex; flex-direction:column; gap:.5rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; cursor:pointer; gap:1rem; width:100%; background:none; border:none; text-align:left; color:inherit; font:inherit;}
+.qcard .qhead .qtext{font-size:.85rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.62rem; color:var(--text-faint); flex-shrink:0; margin-left:auto;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:280px;}
+.qcard .qanswer{padding:.6rem 1rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft);}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= DRILL: TCP OU UDP? ============================= */
+.drill{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid rgba(242,169,59,.28); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+.drill-q{font-family:var(--disp); font-size:clamp(1rem,1.7vw,1.3rem); font-weight:700; color:var(--text); min-height:3.2em; line-height:1.35;}
+.drill-btns{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+.verdict{margin-top:.9rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.4em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.ok{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.ok b.t{color:var(--green);}
+.verdict.no{border-color:rgba(239,91,91,.5); background:rgba(239,91,91,.07);} .verdict.no b.t{color:var(--red);}
+.verdict.warn{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.warn b.t{color:var(--gold);}
+.drill-score{font-family:var(--mono); font-size:.76rem; color:var(--gold); margin-top:.6rem;}
+
+/* ============================= CODE BLOCK ============================= */
+.codeblock{position:relative; background:#04070c; border:1px solid var(--border); border-radius:12px; min-width:0;}
+.codeblock pre{font-family:var(--mono); font-size:.74rem; line-height:1.6; color:var(--text); padding:.8rem 1rem; overflow:auto; max-height:52vh;}
+.codeblock pre .cm{color:var(--text-faint);}
+.codeblock .copy{position:absolute; top:.5rem; right:.5rem; font-family:var(--mono); font-size:.66rem; padding:.25rem .6rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer;}
+.codeblock .copy:hover{color:var(--blue); border-color:var(--blue);}
+.codeblock .cb-title{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); padding:.5rem 1rem 0; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ============================= INPUTS ============================= */
+.ip-input{font-family:var(--mono); font-size:.88rem; padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.input-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;}
+.input-row .ip-input{flex:1; min-width:200px;}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+
+/* ============================= MISC ============================= */
+.warn-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.warn-box b{color:var(--gold);}
+.info-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(47,176,232,.07); border:1px solid rgba(47,176,232,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.info-box b{color:var(--blue);}
+.refs-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem 1rem; min-width:0;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.5rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.4rem;}
+.refs-box a, .refs-box span.ref{color:var(--text-dim); text-decoration:none; font-size:.8rem; display:flex; align-items:baseline; gap:.5em; line-height:1.4;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box .ext{color:var(--text-faint); font-family:var(--mono); font-size:.66rem; flex:none;}
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border); background:var(--surface); margin-top:1.4rem; flex-wrap:wrap;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+.deliver{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;}
+.deliver span{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid rgba(54,197,143,.4); background:rgba(54,197,143,.07); color:var(--green);}
+.tree{font-family:var(--mono); font-size:.76rem; line-height:1.6; color:var(--text-dim); white-space:pre; overflow-x:auto;}
+.tree b{color:var(--gold); font-weight:600;}
+
+/* ============================= RESPONSIVO ============================= */
+@media (max-width:860px){
+  html,body{overflow:auto;}
+  .deck{height:auto; overflow:visible; scroll-snap-type:none;}
+  .slide{height:auto; min-height:auto; padding:3.5rem 16px; overflow:visible;}
+  .grid-3,.grid-2,.grid-4,.grid-5,.agenda{grid-template-columns:1fr;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits,.hint,.slide-no{display:none;}
+  .timeline{flex-direction:column;}
+  .animate{opacity:1; transform:none;}
+}
+
+/* ============================= AUTOESTUDO (trilha, biblioteca, glossário, autoavaliação) ============================= */
+.slide.tall{justify-content:flex-start; overflow-y:auto; padding-top:6vh; padding-bottom:10vh;}
+table.trail td:nth-child(4){white-space:nowrap;}
+table.trail td{font-size:.8rem; line-height:1.45;}
+table.trail td:first-child{font-family:var(--mono); color:var(--text-faint); font-weight:600; width:2.2em;}
+table.trail td a{color:var(--blue); text-decoration:none;}
+table.trail td a:hover{text-decoration:underline;}
+table.trail .goal{color:var(--text);}
+.req{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; padding:.1rem .45rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); white-space:nowrap; margin-left:.3rem; vertical-align:1px;}
+.req.ob{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+.lib h4{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:.2rem 0 .45rem;}
+.lib ul{list-style:none; display:grid; gap:.45rem;}
+.lib li{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.lib li b{color:var(--text);}
+.lib li a{color:var(--blue); text-decoration:none;}
+.lib li a:hover{text-decoration:underline;}
+.lib .find{display:block; font-size:.74rem; color:var(--text-faint); margin-top:.1rem;}
+.gloss{display:grid; grid-template-columns:repeat(2,1fr); gap:.2rem 1.6rem; margin-top:.8rem;}
+.gloss div{border-bottom:1px solid var(--border-soft); padding:.4rem 0; min-width:0;}
+.gloss dt{font-family:var(--mono); color:var(--blue); font-size:.78rem; font-weight:600;}
+.gloss dd{font-size:.78rem; color:var(--text-dim); line-height:1.45; margin-top:.1rem;}
+.method{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem;}
+.method .card .icon-chip{font-size:.9rem;}
+.review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
+@media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+/* ============================= REVISÃO: situação, aprofundar, exemplos ============================= */
+.ctx{margin-top:.8rem; padding:.65rem .95rem; border-left:3px solid var(--gold); background:rgba(242,169,59,.07); border-radius:0 10px 10px 0; font-size:.88rem; color:var(--text-dim); line-height:1.55; max-width:95ch;}
+.ctx b{color:var(--text);}
+.ctx b.tag{display:inline-block; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-right:.5rem;}
+.deep{margin-top:.9rem; display:flex; flex-wrap:wrap; gap:.35rem 1rem; align-items:baseline; font-size:.8rem; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:.6rem;}
+.deep > span:first-child{font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue);}
+.deep a{color:var(--blue); text-decoration:none;}
+.deep a:hover{text-decoration:underline;}
+.deep a::after{content:' ↗'; font-size:.75em; color:var(--text-faint);}
+.deep .ref{color:var(--text-dim);}
+.card p.ex{margin-top:.45rem; padding-top:.45rem; border-top:1px dashed var(--border-soft); font-size:.78rem;}
+.card p.ex b{color:var(--gold);}
+.card p.sit{font-size:.78rem; color:var(--text-dim); background:rgba(242,169,59,.06); border-radius:8px; padding:.4rem .55rem; margin:.2rem 0 .45rem;}
+.card p.sit b{color:var(--gold);}
+
+/* ============================= COMPONENTES REAPROVEITADOS DA AULA 07 ============================= */
+.agenda.five{grid-template-columns:repeat(5,1fr);}
+.agenda.five .ag:nth-child(4){border-color:var(--gold);} .agenda.five .ag:nth-child(4) .min{color:var(--gold);}
+.agenda.five .ag:nth-child(5){border-color:var(--text-faint);} .agenda.five .ag:nth-child(5) .min{color:var(--text-dim);}
+.agenda.five .ag:nth-child(3){border-color:var(--green);}
+
+.ill{width:100%; height:auto; display:block;}
+.ill .lbl{font-family:'JetBrains Mono', monospace; font-size:11px; fill:var(--text-dim);}
+.ill .lbl-b{font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; fill:var(--text);}
+.ill .ttl{font-family:'Sora', sans-serif; font-size:13px; font-weight:700; fill:var(--text);}
+.ill-wrap{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.8rem 1rem; min-width:0;}
+
+
+/* tags TCP/UDP */
+.ptag{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.05em; padding:.08rem .45rem; border-radius:99px; border:1px solid var(--border); margin-left:.3rem; vertical-align:2px;}
+.ptag.t{color:var(--blue); border-color:rgba(47,176,232,.45); background:rgba(47,176,232,.08);}
+.ptag.u{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+
+
+/* diagrama de sequência (handshake, retransmissão, encerramento) */
+.seqwrap{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.6rem .8rem; min-width:0;}
+.seqsvg{width:100%; height:auto; display:block;}
+.seqsvg .host{font-family:'Sora', sans-serif; font-size:13px; font-weight:700; fill:var(--text); text-anchor:middle;}
+.seqsvg .life{stroke:var(--border); stroke-width:2; stroke-dasharray:4 5;}
+.seqsvg .arrow{stroke-width:2.2; fill:none;}
+.seqsvg .msg{font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700;}
+.seqsvg .msg,.seqsvg .sub{paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round;}
+.seqsvg .sub{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim);}
+.seqsvg .appear{animation:seqIn .5s var(--ease) both;}
+@keyframes seqIn{from{opacity:0;} to{opacity:1;}}
+.seq-ctrl{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem; align-items:center;}
+.seq-tabs{display:flex; gap:.4rem; flex-wrap:wrap;}
+.seq-tabs .btn.ghost.on{border-color:var(--gold); color:var(--gold);}
+
+
+/* topologia packet tracer */
+.topo .dev rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1.5;}
+.topo .dev.sw rect{stroke:var(--blue);}
+.topo .dev.srv rect{stroke:var(--gold);}
+.topo .cable{stroke:var(--green); stroke-width:2;}
+.topo .ip{font-family:'JetBrains Mono', monospace; font-size:10.5px; fill:var(--text-dim); text-anchor:middle;}
+.topo .nm{font-family:'Sora', sans-serif; font-size:12.5px; font-weight:700; fill:var(--text); text-anchor:middle;}
+.topo .ic{font-size:20px; text-anchor:middle;}
+
+/* quiz de múltipla escolha */
+.mcq-list{display:grid; grid-template-columns:1fr 1fr; gap:.6rem;}
+.mcq{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; min-width:0;}
+.mcq .q{font-size:.84rem; color:var(--text); margin-bottom:.45rem; line-height:1.4;}
+.mcq .q b.n{font-family:var(--mono); color:var(--text-faint); font-size:.8em; margin-right:.3rem;}
+.mcq .opts{display:flex; flex-wrap:wrap; gap:.35rem;}
+.mcq .opts button{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer; transition:all .2s;}
+.mcq .opts button:hover:not(:disabled){border-color:var(--blue); color:var(--text);}
+.mcq .opts button.right{border-color:var(--green); color:var(--green); background:rgba(54,197,143,.1);}
+.mcq .opts button.wrong{border-color:var(--red); color:var(--red); background:rgba(239,91,91,.08);}
+.mcq .opts button:disabled{cursor:default;}
+.mcq .why{font-size:.76rem; color:var(--text-dim); margin-top:.45rem; line-height:1.45; display:none;}
+.mcq.done .why{display:block;}
+.mcq-score{font-family:var(--mono); font-size:.78rem; color:var(--gold); margin-top:.7rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap;}
+
+/* ============================= AULA 08 — componentes novos ============================= */
+/* linha do tempo do clique */
+.flow{display:grid; grid-template-columns:repeat(6,1fr); gap:.45rem; margin-top:.4rem;}
+.flow .fs{border:1px solid var(--border); background:var(--surface); border-radius:11px; padding:.55rem .6rem; cursor:pointer; text-align:left; color:inherit; font:inherit; transition:all .25s var(--ease); min-width:0;}
+.flow .fs .n{font-family:var(--mono); font-size:.62rem; color:var(--text-faint);}
+.flow .fs b{display:block; font-family:var(--disp); font-size:.86rem; color:var(--text-dim); margin-top:.15rem;}
+.flow .fs .pt{display:block; font-family:var(--mono); font-size:.62rem; color:var(--text-faint); margin-top:.2rem;}
+.flow .fs:hover{border-color:var(--blue);}
+.flow .fs.past{border-color:rgba(54,197,143,.35);}
+.flow .fs.past b{color:var(--text);}
+.flow .fs.on{border-color:var(--gold); background:rgba(242,169,59,.09); box-shadow:0 0 0 3px rgba(242,169,59,.15);}
+.flow .fs.on b{color:var(--gold);}
+.aula-tag{display:inline-block; font-family:var(--mono); font-size:.6rem; padding:.05rem .4rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); margin-left:.3rem; vertical-align:1px;}
+.aula-tag.hoje{color:var(--gold); border-color:rgba(242,169,59,.5);}
+
+/* URL */
+.urlparts{display:flex; flex-wrap:wrap; gap:.2rem; margin-top:.8rem; font-family:var(--mono); font-size:.92rem;}
+.urlparts .up{display:flex; flex-direction:column; align-items:center; gap:.25rem;}
+.urlparts .up code{padding:.3rem .45rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); white-space:nowrap;}
+.urlparts .up small{font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint);}
+.urlparts .up.s code{border-color:rgba(47,176,232,.55); color:var(--blue);}
+.urlparts .up.h code{border-color:rgba(242,169,59,.55); color:var(--gold);}
+.urlparts .up.p code{border-color:rgba(54,197,143,.55); color:var(--green);}
+.urlparts .up.path code{border-color:rgba(159,176,195,.5);}
+.urlparts .up.q code{border-color:rgba(239,91,91,.45); color:#ff9a9a;}
+.urlparts .up.f code{border-style:dashed;}
+.urlparts .up.implicit code{opacity:.65; border-style:dashed;}
+
+/* HTTP: montador de requisição */
+.selrow{display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;}
+.selrow select{font-family:var(--mono); font-size:.82rem; padding:.5rem .7rem; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); color:var(--text);}
+.selrow select:focus{outline:none; border-color:var(--blue);}
+.raw{font-family:var(--mono); font-size:.72rem; line-height:1.6; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; white-space:pre-wrap; word-break:break-word; color:var(--text-dim); min-height:9.5em; margin-top:.5rem;}
+.raw .l1{color:var(--text); font-weight:700;}
+.raw .hk{color:var(--blue);}
+.raw .st2{color:var(--green); font-weight:700;} .raw .st3{color:var(--blue); font-weight:700;} .raw .st4{color:var(--gold); font-weight:700;} .raw .st5{color:var(--red); font-weight:700;}
+.raw .cm{color:var(--text-faint);}
+.raw-lab{font-family:var(--mono); font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); margin-top:.6rem;}
+
+/* status */
+.status-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:.45rem;}
+.sc{border-radius:11px; padding:.55rem .7rem; border:1px solid var(--border); background:var(--surface);}
+.sc .c{font-family:var(--mono); font-weight:700; font-size:1rem;}
+.sc p{font-size:.72rem; color:var(--text-dim); line-height:1.4; margin-top:.15rem;}
+.sc.c1 .c{color:var(--text-faint);} .sc.c2 .c{color:var(--green);} .sc.c3 .c{color:var(--blue);} .sc.c4 .c{color:var(--gold);} .sc.c5 .c{color:var(--red);}
+.chip.c2{border-color:rgba(54,197,143,.45);} .chip.c3{border-color:rgba(47,176,232,.45);} .chip.c4{border-color:rgba(242,169,59,.45);} .chip.c5{border-color:rgba(239,91,91,.45);}
+.chip.on{background:var(--surface-2); color:var(--text);}
+
+/* DNS */
+.dnswrap{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.6rem .8rem; min-width:0;}
+.dns-svg{width:100%; height:auto; display:block;}
+.dns-svg .node rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1.5; transition:all .3s;}
+.dns-svg .node.on rect{stroke:var(--gold); fill:rgba(242,169,59,.1);}
+.dns-svg .node.done rect{stroke:var(--green);}
+.dns-svg .node .nm{font-family:'Sora', sans-serif; font-size:12.5px; font-weight:700; fill:var(--text); text-anchor:middle;}
+.dns-svg .node .sb{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim); text-anchor:middle;}
+.dns-svg .ar{stroke-width:2.2; fill:none; opacity:.25; transition:opacity .3s;}
+.dns-svg .ar.on{opacity:1;}
+.dns-svg .ar.past{opacity:.45;}
+.dns-svg .bn{font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700;}
+.dns-svg .badge{opacity:.7;} .dns-svg .badge.on{opacity:1;}
+.dns-svg .cache{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--green); text-anchor:middle;}
+.tree-svg .tn rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1.5;}
+.tree-svg .tn.root rect{stroke:var(--gold);}
+.tree-svg .tn.tld rect{stroke:var(--blue);}
+.tree-svg .tn.dom rect{stroke:var(--green);}
+.tree-svg text{font-family:'JetBrains Mono', monospace; font-size:11px; fill:var(--text); text-anchor:middle;}
+.tree-svg text.lv{font-size:10px; fill:var(--text-faint); text-anchor:start;}
+.tree-svg line{stroke:var(--border); stroke-width:1.5;}
+
+/* e-mail */
+.mail-svg .node rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1.5; transition:all .3s;}
+.mail-svg .node.on rect{stroke:var(--gold); fill:rgba(242,169,59,.1);}
+.mail-svg .nm{font-family:'Sora', sans-serif; font-size:12.5px; font-weight:700; fill:var(--text); text-anchor:middle;}
+.mail-svg .sb{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--text-dim); text-anchor:middle;}
+.mail-svg .ar{stroke-width:2.4; fill:none; opacity:.22; transition:opacity .3s;}
+.mail-svg .ar.on{opacity:1;}
+.mail-svg .pl{font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; text-anchor:middle; opacity:.35; transition:opacity .3s;}
+.mail-svg .pl.on{opacity:1;}
+.mail-svg .env{transition:transform .9s var(--ease);}
+
+/* espião: Telnet x SSH */
+.wire{font-family:var(--mono); font-size:.74rem; line-height:1.55; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; min-height:7.5em; white-space:pre-wrap; word-break:break-all; color:var(--text-dim);}
+.wire .leak{color:var(--red); font-weight:700; background:rgba(239,91,91,.12); border-radius:4px; padding:0 .2rem;}
+.wire .enc{color:var(--green);}
+.seg-tabs{display:flex; gap:.4rem; flex-wrap:wrap; margin:.5rem 0;}
+.seg-tabs .btn.ghost.on{border-color:var(--gold); color:var(--gold);}
+
+/* drill com vários botões */
+.drill-btns.many .btn{padding:.5rem .8rem;}
+
+@media (max-width:860px){
+  .agenda.five,.mcq-list,.flow,.status-grid{grid-template-columns:1fr;}
+  .grid-2,.grid-3{grid-template-columns:1fr !important;}
+  .flow{grid-template-columns:1fr 1fr;}
+  .status-grid{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">--</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> FUNDAMENTOS DE REDES DE COMPUTADORES · ADS 2º PERÍODO · AULA 08 · 2026/2</div>
+      <h1 class="title animate delay-1">Camada de Aplicação:<br><span class="accent-b">HTTP</span>, <span class="accent">DNS</span>, <span class="accent-b">e-mail</span> e companhia</h1>
+      <p class="subtitle animate delay-2" style="margin-top:1.1rem;">Chegamos ao topo da pilha. Hoje você vê os protocolos que conversam com as pessoas: o que acontece entre apertar <b>Enter</b> e a página aparecer, como um nome vira IP e como um e-mail chega à caixa de entrada.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas · UNIPAR</div>
+        <div><b>Unidade II · Camada de aplicação</b><br>1h50 presencial · prática no Packet Tracer</div>
+        <div><b>Traga</b><br>Notebook com o Packet Tracer e o arquivo .pkt da Aula 07</div>
+      </div>
+    </div>
+    <div class="capa-bits">GET / HTTP/1.1
+Host: www.aula08.com
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+$ nslookup www.aula08.com
+Address: 192.168.1.100</div>
+  </section>
+
+  <!-- ============================================================ SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
+      <p class="subtitle animate delay-2" style="margin-bottom:.4rem;">O número de cada item é o mesmo do canto inferior esquerdo da tela. Clique para ir direto ao slide.</p>
+      <div class="toc animate delay-2" style="margin-top:.6rem;">
+        <div>
+          <div class="toc-group">Antes de começar</div>
+          <a href="#s-prep"><span class="n"></span><span class="t">Checklist antes da aula</span></a>
+          <a href="#s-agenda"><span class="n"></span><span class="t">Roteiro dos 110 minutos</span></a>
+          <a href="#s-revisao"><span class="n"></span><span class="t">Revisão relâmpago da Aula 07</span></a>
+          <a href="#s-gancho"><span class="n"></span><span class="t">Do Enter à página</span></a>
+          <div class="toc-group">Bloco 1 · Fundamentos</div>
+          <a href="#s-oque"><span class="n"></span><span class="t">O que é um protocolo de aplicação</span></a>
+          <a href="#s-arquiteturas"><span class="n"></span><span class="t">Cliente-servidor e P2P</span></a>
+          <a href="#s-requisitos"><span class="n"></span><span class="t">O que cada aplicação precisa</span></a>
+          <div class="toc-group">Bloco 2 · Web e HTTP</div>
+          <a href="#s-url"><span class="n"></span><span class="t">Anatomia de uma URL</span></a>
+          <a href="#s-http"><span class="n"></span><span class="t">Requisição e resposta</span></a>
+          <a href="#s-status"><span class="n"></span><span class="t">Métodos e códigos de status</span></a>
+        </div>
+        <div>
+          <a href="#s-cookies"><span class="n"></span><span class="t">HTTP sem estado e cookies</span></a>
+          <a href="#s-versoes"><span class="n"></span><span class="t">Versões do HTTP e HTTPS</span></a>
+          <a href="#s-mm-http"><span class="n"></span><span class="t">🛠️ HTTP no seu navegador</span></a>
+          <div class="toc-group">Bloco 3 · DNS, e-mail e acesso remoto</div>
+          <a href="#s-dns"><span class="n"></span><span class="t">DNS e sua hierarquia</span></a>
+          <a href="#s-resolucao"><span class="n"></span><span class="t">Resolução passo a passo</span></a>
+          <a href="#s-registros"><span class="n"></span><span class="t">Tipos de registro DNS</span></a>
+          <a href="#s-mm-dns"><span class="n"></span><span class="t">🛠️ Consultas com nslookup</span></a>
+          <a href="#s-email"><span class="n"></span><span class="t">A viagem de um e-mail</span></a>
+          <a href="#s-popimap"><span class="n"></span><span class="t">POP3 × IMAP</span></a>
+          <a href="#s-remoto"><span class="n"></span><span class="t">FTP, Telnet e SSH</span></a>
+          <a href="#s-resumo"><span class="n"></span><span class="t">Protocolos e portas</span></a>
+        </div>
+        <div>
+          <a href="#s-mm-qual"><span class="n"></span><span class="t">🛠️ Qual protocolo?</span></a>
+          <div class="toc-group">Bloco 4 · Packet Tracer</div>
+          <a href="#s-pt-topo"><span class="n"></span><span class="t">Topologia base</span></a>
+          <a href="#s-pt-1"><span class="n"></span><span class="t">🛠️ 1 · Sua página no ar</span></a>
+          <a href="#s-pt-2"><span class="n"></span><span class="t">🛠️ 2 · Nomes no DNS</span></a>
+          <a href="#s-pt-3"><span class="n"></span><span class="t">🛠️ 3 · Servidor de e-mail</span></a>
+          <a href="#s-pt-4"><span class="n"></span><span class="t">🛠️ 4 · Arquivos por FTP</span></a>
+          <a href="#s-entrega"><span class="n"></span><span class="t">Entrega da prática</span></a>
+          <div class="toc-group">Bloco 5 · Revisão e depois da aula</div>
+          <a href="#s-revfinal"><span class="n"></span><span class="t">Perguntas de revisão</span></a>
+          <a href="#s-trilha"><span class="n"></span><span class="t">Trilha de estudo</span></a>
+          <a href="#s-fontes"><span class="n"></span><span class="t">Biblioteca</span></a>
+          <a href="#s-glossario"><span class="n"></span><span class="t">Glossário</span></a>
+          <a href="#s-autoavaliacao"><span class="n"></span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n"></span><span class="t">Quiz de fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PREP -->
+  <section class="slide hands-on" id="s-prep">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Antes da aula <span class="mm-badge">⏱ 15 min · faça em casa</span></div>
+      <h2 class="stitle animate delay-1">Chegue com a topologia da Aula 07 e o terminal à mão</h2>
+      <p class="subtitle animate delay-2">A prática de hoje continua o arquivo da Aula 07: o mesmo servidor ganha site, DNS, e-mail e FTP. Confira estes itens antes (fica salvo neste navegador).</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="check-list" data-check="prep">
+          <label class="check-item"><input type="checkbox" id="p8a"><div><div class="ci-t">Ter o arquivo .pkt da Aula 07</div><div class="ci-d">PC0, PC1 e Server0 num switch, com IPs configurados. Sem ele, monte de novo pelo slide <span class="sref" data-s="s-pt-topo"></span> (5 min).</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p8b"><div><div class="ci-t">Abrir o Packet Tracer e testar o ping</div><div class="ci-d">No PC0: <span class="code">ping 192.168.1.100</span>. Se responder, a rede está pronta.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p8c"><div><div class="ci-t">Testar o terminal do seu computador</div><div class="ci-d">Rode <span class="code">nslookup unipar.br</span> e <span class="code">curl --version</span>. O Windows 10 e 11 já trazem os dois.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p8d"><div><div class="ci-t">Revisar a Aula 07</div><div class="ci-d">Portas, TCP e UDP. A revisão do slide <span class="sref" data-s="s-revisao"></span> mostra se você está pronto.</div></div></label>
+        </div>
+        <div class="card">
+          <h3 class="accent">Sem notebook ou sem instalação?</h3>
+          <p>Use um computador do laboratório: o Packet Tracer já está instalado. Faça a prática <b>em dupla</b> com um colega e entreguem juntos.</p>
+          <div class="info-box"><b>Dica:</b> salve com outro nome antes de começar (<span class="code">Aula08.pkt</span>). Assim o arquivo da Aula 07 continua intacto para revisar.</div>
+          <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ AGENDA -->
+  <section class="slide" id="s-agenda">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Encontro presencial · 1h50</div>
+      <h2 class="stitle animate delay-1">Como serão os 110 minutos de hoje</h2>
+      <div class="agenda five animate delay-2">
+        <div class="ag"><div class="min">10 min</div><h4>1 · Abertura</h4><p>Do Enter à página. Protocolos, arquiteturas e requisitos.</p></div>
+        <div class="ag"><div class="min">25 min</div><h4>2 · Web e HTTP</h4><p>URL, requisição e resposta, status, cookies e HTTPS.</p></div>
+        <div class="ag"><div class="min">25 min</div><h4>3 · DNS e e-mail</h4><p>Resolução de nomes, SMTP, POP3, IMAP, FTP e SSH.</p></div>
+        <div class="ag"><div class="min">40 min</div><h4>4 · Packet Tracer</h4><p>4 atividades: site, DNS, e-mail e FTP no mesmo servidor.</p></div>
+        <div class="ag"><div class="min">10 min</div><h4>5 · Revisão</h4><p>Perguntas de revisão e quiz de fixação.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pergunta para pensar antes da aula:</b> quando você digita <span class="code">unipar.br</span>, o computador não sabe para onde ir, porque a rede só entende IP. Quem traduz o nome?</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ REVISÃO -->
+  <section class="slide" id="s-revisao">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate"><span class="knum"></span>Revisão da Aula 07</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas sobre a Camada de Transporte</h2>
+      <p class="subtitle animate delay-2">Todo protocolo de hoje roda em cima do TCP ou do UDP. Responda de cabeça e clique para conferir. Se errar mais de uma, revise a Aula 07 antes da prática.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">O que a porta identifica?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O <b>processo</b> (programa) dentro do host. O IP leva ao computador; a porta leva ao programa certo.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Uma aplicação que não pode perder nenhum byte usa TCP ou UDP?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>TCP</b>: confirma cada segmento e reenvia o que se perdeu. É por isso que a web e o e-mail usam TCP.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Quais são os 3 passos do handshake?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>SYN, SYN+ACK, ACK.</b> Ele acontece antes de todo HTTP, SMTP, FTP ou SSH que você vir hoje.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Que protocolo de transporte e que porta o DNS usa nas consultas comuns?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>UDP, porta 53.</b> Hoje você vê o que vai dentro desse datagrama.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ GANCHO -->
+  <section class="slide" id="s-gancho">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Por que estudar a camada de aplicação</div>
+      <h2 class="stitle animate delay-1">Do Enter à página: 6 etapas em menos de 1 segundo</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você digita <span class="code">https://www.unipar.br</span> e aperta <b>Enter</b>. A página aparece quase na hora, mas por trás o computador usou protocolos de <b>quatro aulas</b> desta disciplina. Clique em cada etapa ou use <b>Próxima</b>.</div>
+      <div class="flow animate delay-3" id="flow" style="margin-top:.9rem;">
+        <button class="fs" data-i="0"><span class="n">1</span><b>DHCP</b><span class="pt">UDP 67/68</span></button>
+        <button class="fs" data-i="1"><span class="n">2</span><b>DNS</b><span class="pt">UDP 53</span></button>
+        <button class="fs" data-i="2"><span class="n">3</span><b>TCP</b><span class="pt">handshake :443</span></button>
+        <button class="fs" data-i="3"><span class="n">4</span><b>TLS</b><span class="pt">criptografia</span></button>
+        <button class="fs" data-i="4"><span class="n">5</span><b>HTTP</b><span class="pt">GET / → 200 OK</span></button>
+        <button class="fs" data-i="5"><span class="n">6</span><b>+ recursos</b><span class="pt">CSS, imagens, JS</span></button>
+      </div>
+      <div class="verdict animate delay-3" id="flowOut" style="min-height:5.6em;">Clique em <b>Próxima</b> para começar pela etapa 1.</div>
+      <div class="seq-ctrl animate delay-3"><button class="btn ghost" id="flowPrev">← Anterior</button><button class="btn" id="flowNext">Próxima →</button></div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><span class="ref">KUROSE &amp; ROSS, <i>Redes de computadores e a internet</i>, seção 6.7 (um dia na vida de uma requisição web)</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ O QUE É -->
+  <section class="slide" id="s-oque">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 1 · Onde estamos</div>
+      <h2 class="stitle animate delay-1">A aplicação define a conversa; o transporte só entrega</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> O Chrome e o Firefox são programas diferentes, feitos por empresas diferentes, mas os dois abrem o mesmo site. Funciona porque os dois "falam" <b>HTTP</b>: o mesmo protocolo de aplicação, com as mesmas regras.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.1fr;">
+        <div class="card">
+          <h3 class="accent-b">Programa ≠ protocolo</h3>
+          <div class="tbl-wrap"><table class="cmp">
+            <tr><th>Programa (aplicação)</th><th>Protocolo de aplicação</th></tr>
+            <tr><td>Chrome, Firefox, Edge</td><td>HTTP / HTTPS</td></tr>
+            <tr><td>Outlook, Thunderbird</td><td>SMTP, IMAP, POP3</td></tr>
+            <tr><td>FileZilla</td><td>FTP, SFTP</td></tr>
+            <tr><td>PuTTY, terminal</td><td>SSH</td></tr>
+            <tr><td>O sistema operacional</td><td>DNS, DHCP</td></tr>
+          </table></div>
+          <p style="margin-top:.5rem; font-size:.78rem;">O protocolo é só <b>uma parte</b> do programa: a parte que conversa pela rede.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent">O que um protocolo de aplicação define</h3>
+          <ol class="steps">
+            <li><span><b>Tipos de mensagem:</b> pedido e resposta (ex.: requisição HTTP e resposta HTTP).</span></li>
+            <li><span><b>Sintaxe:</b> os campos e a ordem deles (ex.: <span class="code">GET /pagina HTTP/1.1</span>).</span></li>
+            <li><span><b>Semântica:</b> o que cada campo significa (ex.: <span class="code">404</span> = não encontrado).</span></li>
+            <li><span><b>Regras:</b> quem fala primeiro e como responder a cada mensagem.</span></li>
+          </ol>
+          <div class="info-box"><b>Protocolos abertos</b> (HTTP, SMTP, DNS) são publicados em <b>RFCs</b>, documentos públicos do IETF. Qualquer pessoa pode implementar. Há também protocolos <b>proprietários</b>, como o do WhatsApp.</div>
+        </div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><span class="ref">KUROSE &amp; ROSS, seção 2.1 (princípios de aplicações de rede)</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ ARQUITETURAS -->
+  <section class="slide" id="s-arquiteturas">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 1 · Arquiteturas</div>
+      <h2 class="stitle animate delay-1">Cliente-servidor ou peer-to-peer: quem atende quem</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent-b">Cliente-servidor</h3>
+          <svg class="ill" viewBox="0 0 360 170" role="img" aria-label="Vários clientes ligados a um servidor central">
+            <rect x="140" y="62" width="80" height="46" rx="8" fill="var(--bg-2)" stroke="var(--gold)" stroke-width="1.5"/>
+            <text x="180" y="83" text-anchor="middle" class="lbl-b">🗄️ servidor</text>
+            <text x="180" y="99" text-anchor="middle" class="lbl">sempre ligado</text>
+            <g stroke="var(--blue)" stroke-width="1.6"><line x1="60" y1="30" x2="140" y2="72"/><line x1="60" y1="140" x2="140" y2="98"/><line x1="300" y1="30" x2="220" y2="72"/><line x1="300" y1="140" x2="220" y2="98"/></g>
+            <text x="44" y="34" text-anchor="middle" style="font-size:20px">💻</text><text x="44" y="146" text-anchor="middle" style="font-size:20px">📱</text>
+            <text x="316" y="34" text-anchor="middle" style="font-size:20px">💻</text><text x="316" y="146" text-anchor="middle" style="font-size:20px">📱</text>
+          </svg>
+          <ul>
+            <li><b>Servidor:</b> sempre ligado, IP fixo e conhecido, porta "bem conhecida".</li>
+            <li><b>Cliente:</b> inicia a conversa e usa porta efêmera. Clientes não falam entre si.</li>
+            <li><b>Exemplos:</b> web, e-mail, DNS, portal do aluno.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent">Peer-to-peer (P2P)</h3>
+          <svg class="ill" viewBox="0 0 360 170" role="img" aria-label="Computadores ligados diretamente entre si">
+            <g stroke="var(--green)" stroke-width="1.6"><line x1="70" y1="40" x2="290" y2="40"/><line x1="70" y1="40" x2="180" y2="140"/><line x1="290" y1="40" x2="180" y2="140"/><line x1="70" y1="40" x2="290" y2="140"/><line x1="290" y1="40" x2="70" y2="140"/><line x1="70" y1="140" x2="180" y2="140"/><line x1="180" y1="140" x2="290" y2="140"/></g>
+            <text x="70" y="46" text-anchor="middle" style="font-size:20px">💻</text><text x="290" y="46" text-anchor="middle" style="font-size:20px">💻</text>
+            <text x="70" y="146" text-anchor="middle" style="font-size:20px">💻</text><text x="180" y="146" text-anchor="middle" style="font-size:20px">💻</text><text x="290" y="146" text-anchor="middle" style="font-size:20px">💻</text>
+          </svg>
+          <ul>
+            <li>Cada <b>par</b> é cliente e servidor ao mesmo tempo: pede e também fornece.</li>
+            <li><b>Escala sozinho:</b> quanto mais gente, mais capacidade. Mas é mais difícil de controlar e proteger.</li>
+            <li><b>Exemplos:</b> BitTorrent e o envio de atualizações do Windows entre PCs da mesma rede.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="info-box animate delay-3"><b>Na prática, muitas aplicações são híbridas.</b> Numa chamada de vídeo, um servidor ajuda os participantes a se encontrarem, e o áudio e o vídeo podem seguir direto entre eles.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ REQUISITOS -->
+  <section class="slide" id="s-requisitos">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 1 · Requisitos</div>
+      <h2 class="stitle animate delay-1">O que cada aplicação precisa da rede (e por isso escolhe TCP ou UDP)</h2>
+      <p class="subtitle animate delay-2">É a ponte com a Aula 07: o desenvolvedor da aplicação escolhe o transporte olhando para três perguntas. Posso perder dados? Preciso de muita banda? Tenho pressa?</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>Aplicação</th><th>Tolera perda?</th><th>Banda</th><th>Sensível a atraso?</th><th>Transporte</th></tr>
+          <tr><td>Transferência de arquivos</td><td>Não</td><td>A que tiver</td><td>Não</td><td><span class="ptag t">TCP</span></td></tr>
+          <tr><td>E-mail</td><td>Não</td><td>A que tiver</td><td>Não</td><td><span class="ptag t">TCP</span></td></tr>
+          <tr><td>Páginas web</td><td>Não</td><td>A que tiver</td><td>Pouco</td><td><span class="ptag t">TCP</span> <span class="ptag u">UDP</span> no HTTP/3</td></tr>
+          <tr><td>Consulta DNS</td><td>Não, mas repete a pergunta</td><td>Mínima</td><td>Sim</td><td><span class="ptag u">UDP</span></td></tr>
+          <tr><td>Chamada de voz e vídeo</td><td>Sim, um pouco</td><td>Alguns Mbit/s</td><td>Muito</td><td><span class="ptag u">UDP</span></td></tr>
+          <tr><td>Jogos online</td><td>Sim, um pouco</td><td>Baixa</td><td>Muito</td><td><span class="ptag u">UDP</span></td></tr>
+          <tr><td>Streaming de vídeo (Netflix, YouTube)</td><td>Não</td><td>Alta</td><td>Pouco (tem buffer)</td><td><span class="ptag t">TCP</span></td></tr>
+        </table>
+      </div>
+      <div class="warn-box animate delay-3"><b>Repare no streaming:</b> o vídeo gravado usa TCP porque o player guarda alguns segundos em buffer. Uma retransmissão não aparece na tela. Já a chamada ao vivo não tem buffer: por isso usa UDP.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ URL -->
+  <section class="slide" id="s-url">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 2 · Web</div>
+      <h2 class="stitle animate delay-1">Anatomia de uma URL: cada pedaço tem uma função</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> A URL é o "endereço completo" de um recurso na web. Ela já contém respostas de outras aulas: o <b>esquema</b> indica o protocolo, o <b>host</b> vai para o DNS e a <b>porta</b> é a da Aula 07. Quando a porta não aparece, o navegador usa a padrão do esquema.</div>
+      <div class="card animate delay-3" style="margin-top:.9rem;">
+        <h3 class="accent">🛠️ Desmonte uma URL</h3>
+        <div class="input-row" style="margin-top:.4rem;">
+          <input class="ip-input" id="urlIn" type="text" spellcheck="false" autocomplete="off" value="https://www.unipar.br:443/cursos/ads?turno=noite#grade" aria-label="URL">
+          <button class="btn" id="urlGo">Desmontar</button>
+        </div>
+        <div class="chips" id="urlChips"><span class="chip">http://192.168.1.100/index.html</span><span class="chip">https://www.google.com/search?q=redes</span><span class="chip">ftp://192.168.1.100</span><span class="chip">http://www.aula08.com:8080/admin</span></div>
+        <div class="urlparts" id="urlParts"></div>
+        <div class="verdict" id="urlOut" style="min-height:3.4em;"></div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Guides/Overview" target="_blank" rel="noopener">MDN · Uma visão geral do HTTP</a><a href="https://www.rfc-editor.org/rfc/rfc3986" target="_blank" rel="noopener">RFC 3986 · Sintaxe de URI</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ HTTP -->
+  <section class="slide" id="s-http">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 2 · HTTP</div>
+      <h2 class="stitle animate delay-1">HTTP: o cliente pede, o servidor responde. Sempre em texto estruturado</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> O <b>HTTP</b> (HyperText Transfer Protocol) roda sobre <b>TCP</b>, porta <b>80</b>. Cada mensagem tem uma <b>linha inicial</b>, <b>cabeçalhos</b> (nome: valor), uma linha em branco e, às vezes, um <b>corpo</b>. Monte uma requisição e veja o que o servidor devolve.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent-b">Requisição (cliente → servidor)</h3>
+          <div class="selrow">
+            <select id="hMethod" aria-label="Método"><option>GET</option><option>POST</option><option>DELETE</option></select>
+            <select id="hPath" aria-label="Caminho"><option>/</option><option>/aulas/08</option><option>/login</option><option>/nao-existe</option><option>/admin</option></select>
+            <button class="btn" id="hSend">Enviar →</button>
+          </div>
+          <div class="raw" id="hReq"></div>
+        </div>
+        <div class="card">
+          <h3 class="accent">Resposta (servidor → cliente)</h3>
+          <div class="raw" id="hRes" style="margin-top:2.85rem;"><span class="cm">Aguardando uma requisição…</span></div>
+          <div class="verdict" id="hOut" style="min-height:3.2em;">Escolha método e caminho e clique em Enviar.</div>
+        </div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Messages" target="_blank" rel="noopener">MDN · Mensagens HTTP</a><span class="ref">KUROSE &amp; ROSS, seção 2.2 (a web e o HTTP)</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MÉTODOS E STATUS -->
+  <section class="slide" id="s-status">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 2 · Métodos e status</div>
+      <h2 class="stitle animate delay-1">O método diz o que o cliente quer; o status diz como foi</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.35fr;">
+        <div class="card">
+          <h3 class="accent-b">Métodos mais usados</h3>
+          <div class="tbl-wrap"><table class="cmp">
+            <tr><th>Método</th><th>Para quê</th></tr>
+            <tr><td>GET</td><td>Buscar um recurso (abrir página, imagem)</td></tr>
+            <tr><td>POST</td><td>Enviar dados (formulário, login, upload)</td></tr>
+            <tr><td>PUT</td><td>Substituir um recurso</td></tr>
+            <tr><td>DELETE</td><td>Apagar um recurso</td></tr>
+            <tr><td>HEAD</td><td>Igual ao GET, mas só os cabeçalhos</td></tr>
+          </table></div>
+          <p class="ex"><b>Quem programa APIs</b> usa esses métodos o tempo todo. É o assunto de disciplinas de desenvolvimento web.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent">Códigos de status · 5 famílias</h3>
+          <div class="status-grid">
+            <div class="sc c1"><div class="c">1xx</div><p>Informação</p></div>
+            <div class="sc c2"><div class="c">2xx</div><p>Sucesso</p></div>
+            <div class="sc c3"><div class="c">3xx</div><p>Redirecionamento</p></div>
+            <div class="sc c4"><div class="c">4xx</div><p>Erro do <b>cliente</b></p></div>
+            <div class="sc c5"><div class="c">5xx</div><p>Erro do <b>servidor</b></p></div>
+          </div>
+          <p style="margin-top:.7rem;">Clique num código para ver quando ele aparece:</p>
+          <div class="chips" id="scChips">
+            <span class="chip c2">200</span><span class="chip c2">201</span><span class="chip c3">301</span><span class="chip c3">302</span><span class="chip c3">304</span><span class="chip c4">400</span><span class="chip c4">401</span><span class="chip c4">403</span><span class="chip c4">404</span><span class="chip c4">429</span><span class="chip c5">500</span><span class="chip c5">502</span><span class="chip c5">503</span>
+          </div>
+          <div class="verdict" id="scOut" style="min-height:3.6em;">Dica para o suporte: <b>4xx</b> = o pedido está errado; <b>5xx</b> = o servidor falhou.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ COOKIES -->
+  <section class="slide" id="s-cookies">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 2 · Estado</div>
+      <h2 class="stitle animate delay-1">HTTP não tem memória: os cookies lembram por ele</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> O HTTP é <b>sem estado</b> (<i>stateless</i>): cada requisição é tratada como se fosse a primeira. Então, como o portal do aluno sabe que você já fez login quando você troca de página? O servidor entrega um <b>cookie</b>, e o navegador o devolve em toda requisição seguinte.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1.3fr 1fr;">
+        <div class="seqwrap">
+          <svg class="seqsvg" id="ckSvg" viewBox="0 0 520 300" role="img" aria-label="Diagrama de login com cookie"></svg>
+          <div class="seq-ctrl"><button class="btn" id="ckPlay">▶ Reproduzir</button></div>
+        </div>
+        <div class="card">
+          <h3 class="accent">Como funciona</h3>
+          <ol class="steps">
+            <li><span>Você envia usuário e senha num <b>POST /login</b>.</span></li>
+            <li><span>O servidor cria uma sessão e responde com <span class="code">Set-Cookie: sessao=a81f…</span>.</span></li>
+            <li><span>O navegador guarda e devolve <span class="code">Cookie: sessao=a81f…</span> em cada pedido para aquele site.</span></li>
+            <li><span>O servidor reconhece a sessão e responde com <b>as suas</b> notas.</span></li>
+          </ol>
+          <div class="warn-box"><b>Segurança:</b> quem rouba o cookie de sessão entra na sua conta sem precisar da senha. Por isso o login só deve acontecer em <b>HTTPS</b>, e "Sair" em computador público importa.</div>
+        </div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><a href="https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Guides/Session" target="_blank" rel="noopener">MDN · Uma sessão HTTP típica</a><span class="ref">KUROSE &amp; ROSS, seção 2.2.4 (cookies)</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ VERSÕES E HTTPS -->
+  <section class="slide" id="s-versoes">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 2 · Versões e HTTPS</div>
+      <h2 class="stitle animate delay-1">Do HTTP/1.1 ao HTTP/3, e o "S" que protege tudo</h2>
+      <div class="timeline animate delay-2">
+        <div class="tl-item"><div class="yr">HTTP/1.1 · 1997</div><p>Texto puro. Uma requisição por vez em cada conexão TCP, mas a conexão pode ser reaproveitada.</p></div>
+        <div class="tl-item"><div class="yr">HTTP/2 · 2015</div><p>Binário. Várias requisições <b>ao mesmo tempo</b> na mesma conexão TCP. Cabeçalhos comprimidos.</p></div>
+        <div class="tl-item warn"><div class="yr">HTTP/3 · 2022</div><p>Roda sobre <b>QUIC</b>, que usa <b>UDP 443</b>. Uma perda não trava as outras requisições. Lembra da curiosidade da Aula 07?</p></div>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent-b">HTTPS = HTTP + TLS</h3>
+          <ul>
+            <li>Porta <b>443</b>. O <b>TLS</b> cria um túnel criptografado antes do primeiro GET.</li>
+            <li><b>Confidencialidade:</b> ninguém no caminho lê senha, cookie ou conteúdo.</li>
+            <li><b>Integridade:</b> ninguém altera a página no caminho.</li>
+            <li><b>Autenticidade:</b> o <b>certificado digital</b> prova que o servidor é mesmo quem diz ser.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent">O que o cadeado <u>não</u> garante</h3>
+          <p>O cadeado só diz que a conexão é cifrada com <b>aquele</b> site. Um site falso de phishing também pode ter cadeado.</p>
+          <p class="ex"><b>Ainda visível no caminho:</b> o IP do servidor e, em geral, o nome do site. O conteúdo, o caminho da URL e os cookies ficam protegidos.</p>
+        </div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Fontes oficiais:</span><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener">RFC 9110 · Semântica do HTTP</a><a href="https://www.rfc-editor.org/rfc/rfc9114" target="_blank" rel="noopener">RFC 9114 · HTTP/3</a><a href="https://www.rfc-editor.org/rfc/rfc8446" target="_blank" rel="noopener">RFC 8446 · TLS 1.3</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MM HTTP -->
+  <section class="slide hands-on" id="s-mm-http">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 8 min · individual</span></div>
+      <h2 class="stitle animate delay-1">Veja o HTTP de verdade no seu navegador e no terminal</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo a passo</h3>
+          <ol class="steps">
+            <li><span>No navegador, aperte <b>F12</b> → aba <b>Network</b> (Rede) e recarregue um site qualquer.</span></li>
+            <li><span>Clique na <b>primeira linha</b> da lista e abra <b>Headers</b> (Cabeçalhos).</span></li>
+            <li><span>No terminal, rode os comandos abaixo e compare.</span></li>
+          </ol>
+          <div class="codeblock" style="margin-top:.6rem;">
+            <div class="cb-title">Windows · Linux · macOS</div>
+            <button class="copy">copiar</button>
+<pre><span class="cm"># só os cabeçalhos da resposta (método HEAD)</span>
+curl -I https://example.com
+
+<span class="cm"># a conversa completa: linhas com &gt; = enviado, &lt; = recebido</span>
+curl -v http://example.com</pre>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Responda e confira</h3>
+          <div class="quiz-list static" style="margin-top:.4rem;">
+            <div class="qcard"><button class="qhead"><span class="qtext">(a) Qual o método e o status da primeira requisição?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Normalmente <b>GET</b> e <b>200</b>. Se aparecer <b>301</b> ou <b>302</b>, o site redirecionou (ex.: de http para https).</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(b) Quantas requisições foram feitas para carregar a página?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Dezenas, às vezes centenas: cada <b>imagem, CSS e script</b> é uma requisição. É a etapa 6 do slide <span class="sref" data-s="s-gancho"></span>.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(c) Qual porta aparece em <i>Remote Address</i>?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>443</b> em sites HTTPS. Ao lado aparece o IP que o DNS devolveu.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(d) Na saída do <span class="code">curl -v</span>, onde está o <span class="code">Host:</span>?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Nas linhas com <b>&gt;</b>, logo abaixo de <span class="code">GET / HTTP/1.1</span>. É o cabeçalho que diz ao servidor qual site você quer: um mesmo IP pode hospedar vários sites.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ DNS -->
+  <section class="slide" id="s-dns">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · DNS</div>
+      <h2 class="stitle animate delay-1">DNS: a agenda de contatos da internet, distribuída pelo mundo</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você guarda o nome "Mãe" no celular, não o número. O <b>DNS</b> (Domain Name System) faz o mesmo: você usa <span class="code">unipar.br</span> e ele devolve o IP. Nenhum servidor sozinho conhece todos os nomes do mundo, então o DNS é dividido numa <b>hierarquia</b>.</div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1.25fr 1fr;">
+        <div class="ill-wrap">
+          <svg class="ill tree-svg" viewBox="0 0 520 250" role="img" aria-label="Hierarquia do DNS">
+            <line x1="260" y1="44" x2="90" y2="104"/><line x1="260" y1="44" x2="260" y2="104"/><line x1="260" y1="44" x2="430" y2="104"/>
+            <line x1="90" y1="128" x2="50" y2="190"/><line x1="90" y1="128" x2="140" y2="190"/>
+            <line x1="260" y1="128" x2="230" y2="190"/><line x1="260" y1="128" x2="320" y2="190"/>
+            <line x1="430" y1="128" x2="430" y2="190"/>
+            <g class="tn root"><rect x="215" y="20" width="90" height="26" rx="6"/><text x="260" y="37">. (raiz)</text></g>
+            <g class="tn tld"><rect x="55" y="104" width="70" height="26" rx="6"/><text x="90" y="121">.br</text></g>
+            <g class="tn tld"><rect x="225" y="104" width="70" height="26" rx="6"/><text x="260" y="121">.com</text></g>
+            <g class="tn tld"><rect x="395" y="104" width="70" height="26" rx="6"/><text x="430" y="121">.org</text></g>
+            <g class="tn dom"><rect x="10" y="190" width="80" height="26" rx="6"/><text x="50" y="207">unipar.br</text></g>
+            <g class="tn dom"><rect x="100" y="190" width="80" height="26" rx="6"/><text x="140" y="207">gov.br</text></g>
+            <g class="tn dom"><rect x="190" y="190" width="80" height="26" rx="6"/><text x="230" y="207">google.com</text></g>
+            <g class="tn dom"><rect x="280" y="190" width="80" height="26" rx="6"/><text x="320" y="207">aula08.com</text></g>
+            <g class="tn dom"><rect x="380" y="190" width="100" height="26" rx="6"/><text x="430" y="207">wikipedia.org</text></g>
+            <text class="lv" x="330" y="37">servidores raiz</text>
+            <text class="lv" x="10" y="160">TLD (domínio de topo)</text>
+            <text class="lv" x="10" y="240">domínios · servidores autoritativos</text>
+          </svg>
+        </div>
+        <div class="card">
+          <h3 class="accent">Os níveis</h3>
+          <ul>
+            <li><b>Raiz:</b> 13 identidades (de A a M), replicadas em mais de mil pontos pelo mundo. Sabem quem cuida de cada TLD.</li>
+            <li><b>TLD:</b> <span class="code">.br</span>, <span class="code">.com</span>, <span class="code">.org</span>… O <b>.br</b> é administrado pelo <b>Registro.br</b> (NIC.br).</li>
+            <li><b>Autoritativo:</b> o servidor do dono do domínio. Ele tem a resposta final.</li>
+            <li><b>Resolvedor:</b> faz a busca por você (o do provedor, o 8.8.8.8 do Google ou o 1.1.1.1 da Cloudflare). Seu PC recebe o endereço dele pelo <b>DHCP</b>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="deep animate delay-4"><span>📖 Para aprofundar:</span><span class="ref">KUROSE &amp; ROSS, seção 2.4 (DNS)</span><a href="https://registro.br/" target="_blank" rel="noopener">Registro.br · domínios .br</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ RESOLUÇÃO -->
+  <section class="slide" id="s-resolucao">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · Resolução de nomes</div>
+      <h2 class="stitle animate delay-1">Resolução passo a passo: 8 mensagens na primeira vez, 2 na segunda</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.4fr 1fr;">
+        <div class="dnswrap">
+          <svg class="dns-svg" id="dnsSvg" viewBox="0 0 640 300" role="img" aria-label="Resolução DNS entre PC, resolvedor e servidores"></svg>
+          <div class="seq-ctrl">
+            <button class="btn ghost" id="dnsPrev">←</button>
+            <button class="btn" id="dnsNext">Próxima mensagem →</button>
+            <button class="btn gold" id="dnsCache">Nova consulta (com cache)</button>
+            <button class="btn ghost" id="dnsReset">↺</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">O que está acontecendo</h3>
+          <div class="verdict" id="dnsOut" style="min-height:8.5em; margin-top:.3rem;">Clique em <b>Próxima mensagem</b>. O PC quer o IP de <span class="code">www.unipar.br</span>.</div>
+          <p style="margin-top:.6rem; font-size:.78rem;">O PC faz uma consulta <b>recursiva</b> ("me traga a resposta"). O resolvedor faz consultas <b>iterativas</b> ("quem sabe?") até chegar ao autoritativo.</p>
+          <p class="ex"><b>Cache e TTL:</b> cada resposta vem com um prazo de validade (TTL). Enquanto ele vale, o resolvedor responde direto, sem perguntar de novo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ REGISTROS -->
+  <section class="slide" id="s-registros">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · Registros DNS</div>
+      <h2 class="stitle animate delay-1">Tipos de registro: o DNS guarda mais do que IPs</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.25fr 1fr;">
+        <div class="tbl-wrap card">
+          <table class="cmp">
+            <tr><th>Tipo</th><th>Guarda</th><th>Exemplo</th></tr>
+            <tr><td>A</td><td>Nome → IPv4</td><td><span class="code">www.aula08.com → 192.168.1.100</span></td></tr>
+            <tr><td>AAAA</td><td>Nome → IPv6</td><td><span class="code">www → 2001:db8::10</span></td></tr>
+            <tr><td>CNAME</td><td>Apelido → outro nome</td><td><span class="code">portal → www.aula08.com</span></td></tr>
+            <tr><td>MX</td><td>Servidor de e-mail do domínio</td><td><span class="code">aula08.com → mail.aula08.com</span></td></tr>
+            <tr><td>NS</td><td>Servidores autoritativos do domínio</td><td><span class="code">unipar.br → ns1…</span></td></tr>
+            <tr><td>TXT</td><td>Texto livre (verificações, anti-spam)</td><td><span class="code">"v=spf1 …"</span></td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 class="accent">Por que isso importa</h3>
+          <ul>
+            <li>O <b>MX</b> é como um servidor de e-mail descobre para onde entregar a mensagem de outro domínio. Você vê isso no slide <span class="sref" data-s="s-email"></span>.</li>
+            <li>O <b>CNAME</b> permite trocar o servidor sem mudar o nome que as pessoas usam.</li>
+            <li>Ao publicar um site ou trocar de hospedagem, você edita esses registros no painel do domínio.</li>
+          </ul>
+          <div class="warn-box"><b>"Mudei o DNS e não funcionou":</b> é o cache. Os resolvedores guardam a resposta antiga até o TTL vencer.</div>
+        </div>
+      </div>
+      <div class="deep animate delay-3"><span>📖 Fontes oficiais:</span><a href="https://www.rfc-editor.org/rfc/rfc1034" target="_blank" rel="noopener">RFC 1034 · Conceitos do DNS</a><a href="https://www.rfc-editor.org/rfc/rfc1035" target="_blank" rel="noopener">RFC 1035 · Implementação do DNS</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MM DNS -->
+  <section class="slide hands-on" id="s-mm-dns">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 6 min · individual</span></div>
+      <h2 class="stitle animate delay-1">Pergunte ao DNS você mesmo</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Comandos</h3>
+          <div class="codeblock">
+            <div class="cb-title">Windows · Linux · macOS</div>
+            <button class="copy">copiar</button>
+<pre><span class="cm"># registro A (e AAAA, se houver)</span>
+nslookup unipar.br
+
+<span class="cm"># servidores de e-mail do domínio</span>
+nslookup -type=MX gmail.com
+
+<span class="cm"># quem é autoritativo pelo .br</span>
+nslookup -type=NS br
+
+<span class="cm"># Linux/macOS: resposta curta</span>
+dig unipar.br +short</pre>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Responda e confira</h3>
+          <div class="quiz-list static" style="margin-top:.4rem;">
+            <div class="qcard"><button class="qhead"><span class="qtext">(a) Na primeira linha, quem respondeu (<i>Server</i>)?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O seu <b>resolvedor</b>: o roteador de casa, o do provedor ou um público como 8.8.8.8. Foi o DHCP que informou esse endereço.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(b) O que significa "Non-authoritative answer" (ou "Não é resposta autoritativa")?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Que a resposta veio do <b>cache</b> do resolvedor, e não direto do servidor autoritativo do domínio.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(c) O que vem no MX do gmail.com?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Vários servidores de e-mail, cada um com uma <b>preferência</b> (número). O menor número é tentado primeiro; os outros são reserva.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(d) Quem é autoritativo pelo .br?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Servidores com nomes como <b>a.dns.br</b>, <b>b.dns.br</b>… operados pelo <b>NIC.br</b>.</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ E-MAIL -->
+  <section class="slide" id="s-email">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · E-mail</div>
+      <h2 class="stitle animate delay-1">A viagem de um e-mail: SMTP para enviar, IMAP ou POP3 para ler</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> A Ana (Gmail) manda um e-mail para o Bruno (Outlook). O e-mail não vai do computador dela direto para o dele: passa por <b>dois servidores</b> e usa <b>dois tipos</b> de protocolo. Avance as etapas.</div>
+      <div class="ill-wrap animate delay-3" style="margin-top:.8rem;">
+        <svg class="ill mail-svg" id="mailSvg" viewBox="0 0 720 200" role="img" aria-label="Fluxo de um e-mail entre Ana e Bruno">
+          <defs><marker id="mailArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--text-dim)"/></marker></defs>
+          <g class="node" data-n="0"><rect x="10" y="70" width="120" height="60" rx="10"/><text class="nm" x="70" y="96">👩 Ana</text><text class="sb" x="70" y="114">cliente de e-mail</text></g>
+          <g class="node" data-n="1"><rect x="210" y="70" width="130" height="60" rx="10"/><text class="nm" x="275" y="96">📮 servidor</text><text class="sb" x="275" y="114">do Gmail</text></g>
+          <g class="node" data-n="2"><rect x="420" y="70" width="130" height="60" rx="10"/><text class="nm" x="485" y="96">📮 servidor</text><text class="sb" x="485" y="114">do Outlook</text></g>
+          <g class="node" data-n="3"><rect x="630" y="70" width="80" height="60" rx="10"/><text class="nm" x="670" y="96">🧑 Bruno</text><text class="sb" x="670" y="114">cliente</text></g>
+          <line class="ar" data-a="0" x1="130" y1="100" x2="208" y2="100" stroke="var(--blue)" marker-end="url(#mailArr)"/>
+          <line class="ar" data-a="1" x1="340" y1="100" x2="418" y2="100" stroke="var(--blue)" marker-end="url(#mailArr)"/>
+          <line class="ar" data-a="2" x1="628" y1="100" x2="552" y2="100" stroke="var(--green)" marker-end="url(#mailArr)"/>
+          <text class="pl" data-a="0" x="170" y="60" fill="var(--blue)">SMTP</text><text class="pl" data-a="0" x="170" y="150" fill="var(--text-dim)">:587</text>
+          <text class="pl" data-a="1" x="380" y="60" fill="var(--blue)">SMTP</text><text class="pl" data-a="1" x="380" y="150" fill="var(--text-dim)">:25</text>
+          <text class="pl" data-a="2" x="590" y="60" fill="var(--green)">IMAP/POP3</text><text class="pl" data-a="2" x="590" y="150" fill="var(--text-dim)">:993 / :995</text>
+          <text class="sb" x="380" y="186">antes: consulta DNS do MX de outlook.com</text>
+          <g class="env" id="mailEnv"><text x="60" y="58" style="font-size:22px">✉️</text></g>
+        </svg>
+      </div>
+      <div class="seq-ctrl animate delay-3"><button class="btn" id="mailNext">Próxima etapa →</button><button class="btn ghost" id="mailReset">↺</button></div>
+      <div class="verdict animate delay-3" id="mailOut" style="min-height:3.6em;">Clique em <b>Próxima etapa</b>.</div>
+      <div class="deep animate delay-4"><span>📖 Fontes:</span><a href="https://www.rfc-editor.org/rfc/rfc5321" target="_blank" rel="noopener">RFC 5321 · SMTP</a><span class="ref">KUROSE &amp; ROSS, seção 2.3 (correio eletrônico)</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ POP3 x IMAP -->
+  <section class="slide" id="s-popimap">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · Ler e-mails</div>
+      <h2 class="stitle animate delay-1">POP3 baixa e esvazia; IMAP sincroniza</h2>
+      <div class="ctx animate delay-2"><b class="tag">Situação</b> Você lê um e-mail no celular e, ao abrir o notebook, ele já aparece como lido, na mesma pasta. Isso é o <b>IMAP</b>. Com o <b>POP3</b> configurado do jeito clássico, o e-mail iria para um aparelho só e sumiria do servidor.</div>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>Critério</th><th>POP3</th><th>IMAP</th></tr>
+          <tr><td>Onde ficam as mensagens</td><td>Baixadas para o aparelho; em geral apagadas do servidor</td><td>No servidor</td></tr>
+          <tr><td>Vários aparelhos</td><td class="accent-r">Ruim: cada um vê uma coisa</td><td class="accent-g">Ótimo: tudo sincronizado</td></tr>
+          <tr><td>Pastas, lido/não lido</td><td>Só no aparelho</td><td>No servidor</td></tr>
+          <tr><td>Funciona sem internet</td><td>Sim, o que já baixou</td><td>Só o que estiver em cache</td></tr>
+          <tr><td>Portas</td><td>110 · <b>995</b> com TLS</td><td>143 · <b>993</b> com TLS</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-3"><b>E o webmail?</b> Quando você usa o Gmail pelo navegador, entre você e o servidor quem trabalha é o <b>HTTPS</b>. O SMTP continua sendo usado entre os servidores.</div>
+      <div class="deep animate delay-4"><span>📖 Fontes:</span><a href="https://www.rfc-editor.org/rfc/rfc9051" target="_blank" rel="noopener">RFC 9051 · IMAP4rev2</a><a href="https://www.rfc-editor.org/rfc/rfc1939" target="_blank" rel="noopener">RFC 1939 · POP3</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FTP / TELNET / SSH -->
+  <section class="slide" id="s-remoto">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · Arquivos e acesso remoto</div>
+      <h2 class="stitle animate delay-1">FTP e Telnet falam em texto puro; SSH criptografa tudo</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <div class="grid-2" style="gap:.6rem;">
+            <div><h3 class="accent-b">FTP · 21 / 20</h3><p>Transfere arquivos. Usa <b>duas conexões</b>: controle (comandos e login, porta 21) e dados (os arquivos). Login e arquivos viajam <b>sem criptografia</b>.</p></div>
+            <div><h3 class="accent-r">Telnet · 23</h3><p>Terminal remoto. Tudo que você digita, inclusive a senha, vai <b>em texto puro</b>. Hoje só se usa em laboratório.</p></div>
+          </div>
+          <div style="margin-top:.7rem;"><h3 class="accent-g">SSH · 22</h3><p>Terminal remoto <b>criptografado</b>. É como se administra servidor Linux e roteador hoje. Também transfere arquivos com <b>SFTP</b> e <b>SCP</b>, que substituem o FTP com segurança.</p></div>
+          <div class="info-box"><b>Para o desenvolvedor:</b> o <span class="code">git push</span> por SSH e o acesso a servidores na nuvem usam SSH. Você vê isso em DevOps Tools.</div>
+        </div>
+        <div class="card">
+          <h3 class="accent">🛠️ O que um espião na rede vê?</h3>
+          <p>Alguém com o Wireshark captura o login do administrador no switch. Compare:</p>
+          <div class="seg-tabs" id="spyTabs"><button class="btn ghost on" data-spy="telnet">Telnet (porta 23)</button><button class="btn ghost" data-spy="ssh">SSH (porta 22)</button></div>
+          <div class="wire" id="spyOut"></div>
+          <div class="verdict" id="spyMsg" style="min-height:3.2em;"></div>
+        </div>
+      </div>
+      <div class="deep animate delay-3"><span>📖 Fontes:</span><a href="https://www.rfc-editor.org/rfc/rfc959" target="_blank" rel="noopener">RFC 959 · FTP</a><a href="https://www.rfc-editor.org/rfc/rfc4253" target="_blank" rel="noopener">RFC 4253 · Protocolo de transporte do SSH</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ RESUMO -->
+  <section class="slide" id="s-resumo">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 3 · Resumo</div>
+      <h2 class="stitle animate delay-1">Os protocolos de aplicação desta aula, numa tabela só</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.9rem;">
+        <table class="cmp">
+          <tr><th>Protocolo</th><th>Para quê</th><th>Transporte</th><th>Porta</th><th>Versão segura</th></tr>
+          <tr><td>HTTP</td><td>Páginas e APIs web</td><td>TCP</td><td>80</td><td>HTTPS · 443 (TCP; UDP no HTTP/3)</td></tr>
+          <tr><td>DNS</td><td>Nome → IP e outros registros</td><td>UDP (e TCP)</td><td>53</td><td>DoH (sobre HTTPS) · DoT 853</td></tr>
+          <tr><td>DHCP</td><td>Entregar IP, máscara, gateway e DNS</td><td>UDP</td><td>67 / 68</td><td>—</td></tr>
+          <tr><td>SMTP</td><td>Enviar e-mail</td><td>TCP</td><td>25 · 587</td><td>Com TLS · 465</td></tr>
+          <tr><td>POP3</td><td>Baixar e-mail</td><td>TCP</td><td>110</td><td>POP3S · 995</td></tr>
+          <tr><td>IMAP</td><td>Ler e-mail sincronizado</td><td>TCP</td><td>143</td><td>IMAPS · 993</td></tr>
+          <tr><td>FTP</td><td>Transferir arquivos</td><td>TCP</td><td>21 (controle) · 20 (dados)</td><td>SFTP (via SSH) · FTPS</td></tr>
+          <tr><td>Telnet</td><td>Terminal remoto sem criptografia</td><td>TCP</td><td>23</td><td>Substituído pelo SSH</td></tr>
+          <tr><td>SSH</td><td>Terminal remoto seguro</td><td>TCP</td><td>22</td><td>Já é criptografado</td></tr>
+        </table>
+      </div>
+      <div class="warn-box animate delay-3"><b>Para a prova:</b> saiba para cada protocolo a <b>função</b>, o <b>transporte</b> e a <b>porta</b>. A autoavaliação do slide <span class="sref" data-s="s-autoavaliacao"></span> cobra isso.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MM QUAL PROTOCOLO -->
+  <section class="slide hands-on" id="s-mm-qual">
+    <div class="slide-inner" style="max-width:920px;">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 5 min</span></div>
+      <h2 class="stitle animate delay-1">Qual protocolo de aplicação está trabalhando?</h2>
+      <p class="subtitle animate delay-2">Leia a situação e escolha o protocolo. Use a tabela do slide <span class="sref" data-s="s-resumo"></span> se precisar.</p>
+      <div class="drill animate delay-3" style="margin-top:1rem;">
+        <div class="kicker" style="margin-bottom:.4rem;" id="qpCount">Situação 1 de 7</div>
+        <div class="drill-q" id="qpQ"></div>
+        <div class="drill-btns many" id="qpBtns">
+          <button class="btn ghost" data-qp="HTTPS">HTTPS</button>
+          <button class="btn ghost" data-qp="DNS">DNS</button>
+          <button class="btn ghost" data-qp="DHCP">DHCP</button>
+          <button class="btn ghost" data-qp="SMTP">SMTP</button>
+          <button class="btn ghost" data-qp="IMAP">IMAP</button>
+          <button class="btn ghost" data-qp="SSH">SSH</button>
+          <button class="btn ghost" data-qp="FTP">FTP</button>
+        </div>
+        <div class="verdict" id="qpFb">Escolha um protocolo.</div>
+        <div class="drill-score" id="qpScore">Acertos: 0 / 0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PT TOPOLOGIA -->
+  <section class="slide hands-on" id="s-pt-topo">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Bloco 4 · Packet Tracer <span class="mm-badge">⏱ 3 min · abrir o arquivo da Aula 07</span></div>
+      <h2 class="stitle animate delay-1">Topologia base: a mesma da Aula 07, agora com 4 serviços no Server0</h2>
+      <p class="subtitle animate delay-2">Abra o arquivo da Aula 07 e salve como <span class="code">Aula08.pkt</span>. Se não tiver o arquivo, monte pela tabela (5 min). O Server0 vai ser, ao mesmo tempo, servidor <b>web</b>, <b>DNS</b>, <b>e-mail</b> e <b>FTP</b>: um único IP, quatro portas.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; align-items:start; grid-template-columns:1fr 1.1fr;">
+        <div class="ill-wrap">
+          <svg class="ill topo" viewBox="0 0 420 250" role="img" aria-label="Topologia: PC0, PC1 e Server0 ligados ao Switch0">
+            <line class="cable" x1="210" y1="120" x2="70" y2="200"/>
+            <line class="cable" x1="210" y1="120" x2="210" y2="200"/>
+            <line class="cable" x1="210" y1="120" x2="350" y2="200"/>
+            <g class="dev sw"><rect x="160" y="92" width="100" height="44" rx="8"/><text class="ic" x="186" y="122">🔀</text><text class="nm" x="228" y="119">Switch0</text></g>
+            <g class="dev"><rect x="20" y="176" width="100" height="44" rx="8"/><text class="nm" x="70" y="203">💻 PC0 · Ana</text></g>
+            <text class="ip" x="70" y="236">192.168.1.10</text>
+            <g class="dev"><rect x="160" y="176" width="100" height="44" rx="8"/><text class="nm" x="210" y="203">💻 PC1 · Bruno</text></g>
+            <text class="ip" x="210" y="236">192.168.1.11</text>
+            <g class="dev srv"><rect x="300" y="176" width="100" height="44" rx="8"/><text class="nm" x="350" y="203">🗄️ Server0</text></g>
+            <text class="ip" x="350" y="236">192.168.1.100</text>
+            <text class="ip" x="350" y="168">HTTP · DNS · EMAIL · FTP</text>
+            <text class="ip" x="210" y="40">rede 192.168.1.0/24</text>
+          </svg>
+        </div>
+        <div class="card">
+          <h3 class="accent">Configuração (Desktop → IP Configuration)</h3>
+          <div class="tbl-wrap"><table class="cmp">
+            <tr><th>Dispositivo</th><th>IP</th><th>Máscara</th><th>DNS Server</th></tr>
+            <tr><td>PC0</td><td>192.168.1.10</td><td>255.255.255.0</td><td>192.168.1.100</td></tr>
+            <tr><td>PC1</td><td>192.168.1.11</td><td>255.255.255.0</td><td>192.168.1.100</td></tr>
+            <tr><td>Server0</td><td>192.168.1.100</td><td>255.255.255.0</td><td>—</td></tr>
+          </table></div>
+          <div class="info-box"><b>Confira o DNS Server nos PCs.</b> Sem ele, a Atividade 2 não funciona: o PC não saberia a quem perguntar os nomes.</div>
+          <div class="warn-box"><b>Nos serviços do Server0</b> (aba <b>Services</b>), cada serviço tem seu botão <b>On/Off</b> no topo da tela.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PT 1 -->
+  <section class="slide hands-on" id="s-pt-1">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Packet Tracer · Atividade 1 <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">Sua página no ar: edite o site e veja o HTTP trabalhar</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo a passo</h3>
+          <ol class="steps">
+            <li><span><b>Server0 → Services → HTTP:</b> HTTP em <b>On</b>.</span></li>
+            <li><span>Na lista de arquivos, clique em <b>edit</b> ao lado de <span class="code">index.html</span>. Troque o título por <span class="code">Aula 08 · seu nome</span> e clique em <b>Save</b>.</span></li>
+            <li><span>Mude para o modo <b>Simulation</b>. Em <b>Edit Filters</b>, deixe só <b>HTTP</b> e <b>TCP</b>.</span></li>
+            <li><span><b>PC0 → Desktop → Web Browser</b>: acesse <span class="code">http://192.168.1.100</span> e clique em <b>Play</b>.</span></li>
+            <li><span>Abra o envelope HTTP que <b>sai do PC0</b> e o que <b>volta do Server0</b> (<b>Outbound PDU Details</b>).</span></li>
+            <li><span>Agora acesse <span class="code">http://192.168.1.100/teste.html</span>, um arquivo que não existe.</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Perguntas</h3>
+          <div class="quiz-list static">
+            <div class="qcard"><button class="qhead"><span class="qtext">(a) O que acontece antes do primeiro envelope HTTP?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O <b>handshake TCP</b> com a porta 80 (Aula 07). O HTTP só começa com a conexão aberta.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(b) O envelope do PC0 é requisição ou resposta? E o do Server0?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O do PC0 é a <b>requisição</b> (GET). O do Server0 é a <b>resposta</b>, com o conteúdo do index.html que você editou.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(c) O que aparece ao pedir teste.html?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Uma mensagem de <b>arquivo não encontrado</b>: é o <b>404</b>. O servidor está no ar, mas o recurso não existe (erro da família 4xx).</div></div></div>
+          </div>
+          <div class="warn-box"><b>Tire o print</b> do navegador do PC0 mostrando a sua página com o seu nome.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PT 2 -->
+  <section class="slide hands-on" id="s-pt-2">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Packet Tracer · Atividade 2 <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">Nomes no DNS: registro A, apelido CNAME e o nslookup</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo a passo</h3>
+          <ol class="steps">
+            <li><span><b>Server0 → Services → DNS:</b> DNS Service em <b>On</b>.</span></li>
+            <li><span>Name <span class="code">www.aula08.com</span>, Type <b>A Record</b>, Address <span class="code">192.168.1.100</span> → <b>Add</b>.</span></li>
+            <li><span>Name <span class="code">portal.aula08.com</span>, Type <b>CNAME</b>, Host Name <span class="code">www.aula08.com</span> → <b>Add</b>.</span></li>
+            <li><span><b>PC1 → Command Prompt</b>: <span class="code">nslookup www.aula08.com</span> e depois <span class="code">nslookup portal.aula08.com</span>.</span></li>
+            <li><span>Em Simulation, filtro <b>DNS</b>: no PC1, abra o navegador em <span class="code">http://portal.aula08.com</span>.</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Perguntas</h3>
+          <div class="quiz-list static">
+            <div class="qcard"><button class="qhead"><span class="qtext">(a) Que IP o nslookup devolveu para os dois nomes?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>192.168.1.100</b> nos dois. O CNAME leva ao www, e o www leva ao IP.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(b) Que transporte e que porta a consulta DNS usou?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>UDP, porta 53.</b> Sem handshake: o primeiro datagrama já é a pergunta.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(c) Por que a página que abriu é a mesma da Atividade 1?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Porque os nomes apontam para o <b>mesmo servidor</b>. O DNS só traduz o nome; quem entrega a página continua sendo o HTTP do Server0.</div></div></div>
+          </div>
+          <div class="warn-box"><b>Tire o print</b> das duas respostas do nslookup.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PT 3 -->
+  <section class="slide hands-on" id="s-pt-3">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Packet Tracer · Atividade 3 <span class="mm-badge">⏱ 12 min</span></div>
+      <h2 class="stitle animate delay-1">Servidor de e-mail: a Ana escreve para o Bruno</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo a passo</h3>
+          <ol class="steps">
+            <li><span><b>Server0 → Services → EMAIL:</b> SMTP e POP3 em <b>On</b>. Domain Name <span class="code">aula08.com</span> → <b>Set</b>.</span></li>
+            <li><span>Crie os usuários <span class="code">ana</span> e <span class="code">bruno</span>, senha <span class="code">cisco</span>, com o botão <b>+</b>.</span></li>
+            <li><span><b>PC0 → Desktop → Email</b>: Your Name <b>Ana</b>, Email Address <span class="code">ana@aula08.com</span>, Incoming e Outgoing Mail Server <span class="code">192.168.1.100</span>, User Name <span class="code">ana</span>, Password <span class="code">cisco</span> → <b>Save</b>.</span></li>
+            <li><span>Faça o mesmo no <b>PC1</b> com os dados do <b>bruno</b>.</span></li>
+            <li><span>No PC0: <b>Compose</b> → To <span class="code">bruno@aula08.com</span> → <b>Send</b>. No PC1: <b>Receive</b>.</span></li>
+            <li><span>Repita em Simulation com os filtros <b>SMTP</b> e <b>POP3</b>.</span></li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Perguntas</h3>
+          <div class="quiz-list static">
+            <div class="qcard"><button class="qhead"><span class="qtext">(a) Qual protocolo aparece ao clicar em Send? E em Receive?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>SMTP</b> no envio e <b>POP3</b> na leitura, os dois sobre TCP.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(b) Quais as portas de destino?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>25</b> para o SMTP e <b>110</b> para o POP3 (sem criptografia, como no laboratório).</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(c) Por que o e-mail não vai direto do PC0 para o PC1?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Porque o PC1 pode estar <b>desligado</b>. O servidor fica sempre ligado e guarda a mensagem na caixa do Bruno até ele pedir. É a arquitetura <b>cliente-servidor</b>.</div></div></div>
+          </div>
+          <div class="warn-box"><b>Tire o print</b> da caixa de entrada do PC1 com o e-mail da Ana aberto.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PT 4 -->
+  <section class="slide hands-on" id="s-pt-4">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Packet Tracer · Atividade 4 <span class="mm-badge">⏱ 8 min</span></div>
+      <h2 class="stitle animate delay-1">Arquivos por FTP: baixe um arquivo e pense na segurança</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">Passo a passo</h3>
+          <ol class="steps">
+            <li><span><b>Server0 → Services → FTP:</b> deixe em <b>On</b>. O usuário <span class="code">cisco</span> / <span class="code">cisco</span> já existe.</span></li>
+            <li><span><b>PC0 → Command Prompt</b>: <span class="code">ftp 192.168.1.100</span>, usuário e senha <span class="code">cisco</span>.</span></li>
+            <li><span>No prompt <span class="code">ftp&gt;</span>, rode <span class="code">dir</span> e escolha um arquivo da lista.</span></li>
+            <li><span>Baixe com <span class="code">get nome-do-arquivo</span> e saia com <span class="code">quit</span>.</span></li>
+            <li><span>De volta ao prompt do PC0, rode <span class="code">dir</span> e confira que o arquivo chegou.</span></li>
+          </ol>
+          <div class="codeblock" style="margin-top:.6rem;">
+            <div class="cb-title">Command Prompt do PC0</div>
+            <button class="copy">copiar</button>
+<pre>ftp 192.168.1.100
+dir
+get nome-do-arquivo
+quit
+dir</pre>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Perguntas</h3>
+          <div class="quiz-list static">
+            <div class="qcard"><button class="qhead"><span class="qtext">(a) Qual a porta de destino da conexão de controle?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>21</b>, sobre TCP.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(b) O usuário e a senha foram protegidos no caminho?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>Não.</b> O FTP envia login e arquivos <b>sem criptografia</b>. Qualquer um capturando o tráfego lê a senha, como no espião do slide <span class="sref" data-s="s-remoto"></span>.</div></div></div>
+            <div class="qcard"><button class="qhead"><span class="qtext">(c) O que usar no lugar do FTP numa empresa?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>SFTP</b> (sobre SSH, porta 22) ou <b>FTPS</b> (FTP com TLS).</div></div></div>
+          </div>
+          <div class="info-box"><b>Fechamento:</b> o Server0 atende HTTP (80), DNS (53), SMTP (25), POP3 (110) e FTP (21). Um IP, cinco portas, e a demultiplexação da Aula 07 entrega cada pedido ao serviço certo.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ ENTREGA -->
+  <section class="slide hands-on" id="s-entrega">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Entrega da prática <span class="mm-badge">⏱ ao fim do Bloco 4</span></div>
+      <h2 class="stitle animate delay-1">O que entregar das 4 atividades</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card"><div class="icon-chip">1</div><h3>3 prints</h3><p>Sua página no navegador do PC0 (Atividade 1), as duas respostas do nslookup (Atividade 2) e o e-mail recebido no PC1 (Atividade 3).</p></div>
+        <div class="card"><div class="icon-chip g">2</div><h3>Respostas</h3><p>Perguntas das 4 atividades (slides <span class="sref" data-s="s-pt-1"></span> a <span class="sref" data-s="s-pt-4"></span>), na folha ou no formulário indicado pelo professor.</p></div>
+        <div class="card"><div class="icon-chip">3</div><h3>Arquivo .pkt (opcional)</h3><p>O <span class="code">Aula08.pkt</span> com os 4 serviços configurados. Ajuda a revisar para a prova.</p></div>
+      </div>
+      <div class="deliver animate delay-3"><span>Individual ou em dupla</span><span>Entrega ao fim da aula</span><span>Pode compor a nota de trabalhos (30%) do 2º bimestre</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ REVISÃO FINAL -->
+  <section class="slide" id="s-revfinal">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate"><span class="knum"></span>Bloco 5 · Revisão</div>
+      <h2 class="stitle animate delay-1">6 perguntas para fechar a aula</h2>
+      <p class="subtitle animate delay-2">Responda em voz alta ou com a dupla antes de abrir a resposta.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual a diferença entre cliente-servidor e P2P?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">No <b>cliente-servidor</b> um servidor sempre ligado atende os clientes. No <b>P2P</b> cada par pede e também fornece.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">O que diferencia um erro 4xx de um 5xx?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>4xx</b>: o pedido do cliente tem problema (ex.: 404). <b>5xx</b>: o servidor falhou ao atender (ex.: 500).</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Se o HTTP não tem estado, como o site lembra do seu login?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Com um <b>cookie</b> de sessão: o servidor envia <span class="code">Set-Cookie</span> e o navegador devolve <span class="code">Cookie</span> em cada requisição.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Quem o resolvedor consulta para achar www.unipar.br sem cache?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">A <b>raiz</b>, depois o <b>TLD .br</b> e por fim o <b>autoritativo</b> de unipar.br.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Que protocolos o e-mail usa para enviar e para ler?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><b>SMTP</b> para enviar (do cliente ao servidor e entre servidores). <b>IMAP</b> ou <b>POP3</b> para ler.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Por que o SSH substituiu o Telnet?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Porque o Telnet envia tudo, inclusive a senha, <b>em texto puro</b>. O SSH <b>criptografa</b> a sessão inteira.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ TRILHA -->
+  <section class="slide tall" id="s-trilha">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Depois da aula · Trilha de estudo</div>
+      <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova; os <span class="req">complementar</span> aprofundam. A última coluna diz o que você deve saber explicar ao terminar.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp trail">
+          <tr><th>#</th><th>Estude</th><th>Onde</th><th>Tempo</th><th>Ao terminar, você sabe…</th></tr>
+          <tr><td>1</td><td>Princípios e arquiteturas <span class="req ob">obrigatório</span></td><td>KUROSE &amp; ROSS, seção 2.1</td><td>25 min</td><td class="goal">comparar cliente-servidor e P2P</td></tr>
+          <tr><td>2</td><td>A web e o HTTP <span class="req ob">obrigatório</span></td><td>KUROSE &amp; ROSS, seção 2.2 + <a href="https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Guides/Overview" target="_blank" rel="noopener">MDN · visão geral do HTTP</a></td><td>40 min</td><td class="goal">ler uma requisição e uma resposta e explicar o status</td></tr>
+          <tr><td>3</td><td>DNS <span class="req ob">obrigatório</span></td><td>KUROSE &amp; ROSS, seção 2.4</td><td>35 min</td><td class="goal">descrever a resolução e os tipos de registro</td></tr>
+          <tr><td>4</td><td>Correio eletrônico <span class="req ob">obrigatório</span></td><td>KUROSE &amp; ROSS, seção 2.3</td><td>25 min</td><td class="goal">explicar SMTP, POP3 e IMAP</td></tr>
+          <tr><td>5</td><td>Refazer as Atividades 2 e 3 <span class="req ob">obrigatório</span></td><td>Cisco Packet Tracer (slides <span class="sref" data-s="s-pt-2"></span> e <span class="sref" data-s="s-pt-3"></span>)</td><td>20 min</td><td class="goal">configurar DNS e e-mail sem consultar</td></tr>
+          <tr><td>6</td><td>Camada de aplicação na visão do Tanenbaum <span class="req">complementar</span></td><td>TANENBAUM, FEAMSTER &amp; WETHERALL, capítulo 7 (DNS, e-mail e web)</td><td>40 min</td><td class="goal">relacionar os protocolos com outros exemplos</td></tr>
+          <tr><td>7</td><td>Exercícios interativos <span class="req">complementar</span></td><td><a href="https://gaia.cs.umass.edu/kurose_ross/interactive/" target="_blank" rel="noopener">Kurose &amp; Ross · Interactive problems</a>, capítulo 2 (em inglês)</td><td>20 min</td><td class="goal">calcular tempos de HTTP e consultas DNS</td></tr>
+          <tr><td>8</td><td>Arquitetura TCP/IP <span class="req">complementar</span></td><td>SILVA, C. F. <i>Arquitetura e práticas TCP/IP I e II</i>. Contentus</td><td>30 min</td><td class="goal">ligar aplicação, transporte e rede na prática</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Livros da bibliografia:</b> estão on-line nas bibliotecas virtuais da UNIPAR (portal do aluno). Abra o <b>sumário</b> e procure pelo capítulo da camada de aplicação.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ BIBLIOTECA -->
+  <section class="slide tall" id="s-fontes">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Biblioteca da aula</div>
+      <h2 class="stitle animate delay-1">Livros, documentação oficial e prática extra</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card lib">
+          <h4>📚 Livros</h4>
+          <ul>
+            <li><b>KUROSE, J.; ROSS, K.</b> <i>Redes de computadores e a internet: uma abordagem top-down.</i> Pearson. <span class="find">Capítulo 2: camada de aplicação.</span></li>
+            <li><b>TANENBAUM, A.; FEAMSTER, N.; WETHERALL, D.</b> <i>Redes de computadores.</i> Pearson. <span class="find">Capítulo 7: camada de aplicação.</span></li>
+            <li><b>SILVA, C. F.</b> <i>Arquitetura e práticas TCP/IP I e II.</i> Contentus. <span class="find">Procure: HTTP, DNS, SMTP.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>📘 Documentação oficial</h4>
+          <ul>
+            <li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener">RFC 9110 · Semântica do HTTP</a> <span class="find">Métodos, cabeçalhos e códigos de status.</span></li>
+            <li><a href="https://www.rfc-editor.org/rfc/rfc1034" target="_blank" rel="noopener">RFC 1034</a> e <a href="https://www.rfc-editor.org/rfc/rfc1035" target="_blank" rel="noopener">RFC 1035 · DNS</a></li>
+            <li><a href="https://www.rfc-editor.org/rfc/rfc5321" target="_blank" rel="noopener">RFC 5321 · SMTP</a> · <a href="https://www.rfc-editor.org/rfc/rfc9051" target="_blank" rel="noopener">RFC 9051 · IMAP</a> · <a href="https://www.rfc-editor.org/rfc/rfc1939" target="_blank" rel="noopener">RFC 1939 · POP3</a></li>
+            <li><a href="https://developer.mozilla.org/pt-BR/docs/Web/HTTP" target="_blank" rel="noopener">MDN · HTTP (em português)</a> <span class="find">A melhor referência de HTTP para quem programa.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>🎓 Prática extra</h4>
+          <ul>
+            <li><a href="https://www.netacad.com/cisco-packet-tracer" target="_blank" rel="noopener">Cisco Packet Tracer</a> <span class="find">Gratuito pela Cisco Networking Academy.</span></li>
+            <li><a href="https://gaia.cs.umass.edu/kurose_ross/interactive/" target="_blank" rel="noopener">Kurose &amp; Ross · Interactive problems</a> <span class="find">Exercícios gerados na hora, com resposta.</span></li>
+            <li><a href="https://www.wireshark.org/" target="_blank" rel="noopener">Wireshark</a> <span class="find">Capture as suas consultas DNS com o filtro <span class="code">dns</span>.</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Travou no Packet Tracer?</b> Nome não resolve: confira o <b>DNS Server</b> do PC e se o serviço DNS está <b>On</b>. E-mail falha: confira se o <b>Domain Name</b> foi salvo com <b>Set</b> e se usuário e senha batem com o que você criou no servidor.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ GLOSSÁRIO -->
+  <section class="slide tall" id="s-glossario">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Glossário da aula</div>
+      <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
+      <dl class="gloss animate delay-2">
+        <div><dt>Protocolo de aplicação</dt><dd>Regras de conversa entre programas: tipos de mensagem, sintaxe, semântica e ordem.</dd></div>
+        <div><dt>Cliente-servidor</dt><dd>Arquitetura em que um servidor sempre ligado atende clientes que iniciam a conversa.</dd></div>
+        <div><dt>P2P</dt><dd>Arquitetura em que cada par é cliente e servidor ao mesmo tempo.</dd></div>
+        <div><dt>URL</dt><dd>Endereço de um recurso: esquema, host, porta, caminho, consulta e fragmento.</dd></div>
+        <div><dt>HTTP / HTTPS</dt><dd>Protocolo da web (porta 80) e sua versão protegida por TLS (porta 443).</dd></div>
+        <div><dt>Método HTTP</dt><dd>A ação pedida: GET, POST, PUT, DELETE, HEAD…</dd></div>
+        <div><dt>Código de status</dt><dd>Número de 3 dígitos na resposta: 2xx sucesso, 3xx redirecionamento, 4xx erro do cliente, 5xx erro do servidor.</dd></div>
+        <div><dt>Cookie</dt><dd>Dado que o servidor pede para o navegador guardar e devolver. Mantém a sessão.</dd></div>
+        <div><dt>TLS</dt><dd>Camada de criptografia usada pelo HTTPS, IMAPS, SMTPS e outros.</dd></div>
+        <div><dt>DNS</dt><dd>Sistema distribuído que traduz nomes em IPs e guarda outros registros.</dd></div>
+        <div><dt>Resolvedor</dt><dd>Servidor DNS que faz a busca completa para o cliente e guarda em cache.</dd></div>
+        <div><dt>Autoritativo</dt><dd>Servidor DNS que tem a resposta oficial de um domínio.</dd></div>
+        <div><dt>TTL</dt><dd>Tempo que uma resposta DNS pode ficar em cache.</dd></div>
+        <div><dt>Registro A / CNAME / MX</dt><dd>Nome → IPv4 / apelido para outro nome / servidor de e-mail do domínio.</dd></div>
+        <div><dt>SMTP / POP3 / IMAP</dt><dd>Enviar e-mail / baixar e-mail / ler e-mail sincronizado no servidor.</dd></div>
+        <div><dt>FTP / SFTP</dt><dd>Transferência de arquivos sem criptografia / com criptografia, sobre SSH.</dd></div>
+        <div><dt>Telnet / SSH</dt><dd>Terminal remoto em texto puro / terminal remoto criptografado.</dd></div>
+        <div><dt>QUIC</dt><dd>Protocolo sobre UDP usado pelo HTTP/3.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================================================ AUTOAVALIAÇÃO -->
+  <section class="slide" id="s-autoavaliacao">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate"><span class="knum"></span>Autoavaliação</div>
+      <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
+      <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pelo slide indicado (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="au8a"><div><div class="ci-t">Diferenciar programa de protocolo e cliente-servidor de P2P</div></div><span class="review-hint">slides <span class="sref" data-s="s-oque"></span>–<span class="sref" data-s="s-arquiteturas"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8b"><div><div class="ci-t">Separar uma URL em esquema, host, porta e caminho</div></div><span class="review-hint">slide <span class="sref" data-s="s-url"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8c"><div><div class="ci-t">Ler uma requisição e uma resposta HTTP e explicar o código de status</div></div><span class="review-hint">slides <span class="sref" data-s="s-http"></span>–<span class="sref" data-s="s-status"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8d"><div><div class="ci-t">Explicar cookies e o que o HTTPS protege</div></div><span class="review-hint">slides <span class="sref" data-s="s-cookies"></span>–<span class="sref" data-s="s-versoes"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8e"><div><div class="ci-t">Descrever a resolução DNS e os registros A, CNAME e MX</div></div><span class="review-hint">slides <span class="sref" data-s="s-dns"></span>–<span class="sref" data-s="s-registros"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8f"><div><div class="ci-t">Explicar o caminho de um e-mail e a diferença entre POP3 e IMAP</div></div><span class="review-hint">slides <span class="sref" data-s="s-email"></span>–<span class="sref" data-s="s-popimap"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8g"><div><div class="ci-t">Citar função, transporte e porta de HTTP, HTTPS, DNS, DHCP, SMTP, POP3, IMAP, FTP e SSH</div></div><span class="review-hint">slide <span class="sref" data-s="s-resumo"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au8h"><div><div class="ci-t">Configurar HTTP, DNS e e-mail no Server0 do Packet Tracer</div></div><span class="review-hint">slides <span class="sref" data-s="s-pt-1"></span>–<span class="sref" data-s="s-pt-3"></span></span></label>
+      </div>
+      <div class="check-meter" id="autoMeter"><span>0/8</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Fixação</div>
+      <h2 class="stitle animate delay-1">Quiz de fixação: 8 questões de múltipla escolha</h2>
+      <div class="mcq-list animate delay-2" id="mcqList" style="margin-top:.8rem;"></div>
+      <div class="mcq-score animate delay-2"><span id="mcqScore">Acertos: 0 / 0</span><button class="btn ghost" id="mcqReset">↺ refazer</button></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Você subiu a pilha inteira.<br>Do <span class="accent-b">cabo</span> à <span class="accent">página</span>, cada camada faz a sua parte.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Vimos protocolos e arquiteturas de aplicação, URL, HTTP (métodos, status, cookies, versões e HTTPS), DNS (hierarquia, resolução e registros), e-mail (SMTP, POP3 e IMAP), FTP, Telnet e SSH, e configuramos tudo isso num único servidor no Packet Tracer.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula · <b style="color:var(--text)">a confirmar em sala</b></span><span class="arrow">→</span></div>
+      <div class="grid-2 animate delay-4" style="margin-top:1.2rem; max-width:820px;">
+        <div class="card"><h3 class="accent">Dica de estudo</h3><p>Reabra o slide <span class="sref" data-s="s-gancho"></span> e explique cada etapa em voz alta, dizendo a aula de origem. Se conseguir, você entendeu a disciplina.</p></div>
+        <div class="card"><h3 class="accent-b">Prova do 2º bimestre</h3><p>A camada de aplicação entra no conteúdo. Use a autoavaliação (slide <span class="sref" data-s="s-autoavaliacao"></span>) para revisar.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const progress = document.getElementById('progress');
+document.getElementById('totalNo').textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+/* Numeração automática: kicker, sumário e referências usam a posição real do slide */
+const pad = n => String(n).padStart(2,'0');
+slides.forEach((s,i)=>{ const k=s.querySelector('.knum'); if(k) k.textContent = pad(i+1)+' · '; });
+document.querySelectorAll('.toc a').forEach(a=>{ const t=document.querySelector(a.getAttribute('href')); const n=a.querySelector('.n'); if(t&&n) n.textContent = pad(slides.indexOf(t)+1); });
+document.querySelectorAll('.sref').forEach(r=>{ const t=document.getElementById(r.dataset.s); if(t) r.textContent = pad(slides.indexOf(t)+1); });
+
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('in-view'); }
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.2,.55,1]});
+slides.forEach(s=>io.observe(s));
+slides[0].classList.add('in-view');
+
+document.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const curr = Math.max(0, dots.findIndex(d=>d.classList.contains('active')));
+  if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ===== Gabaritos expansíveis (cards estáticos) ===== */
+function bindQ(root){ root.querySelectorAll('.qcard .qhead').forEach(hd=>{ hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open')); }); }
+document.querySelectorAll('.quiz-list.static').forEach(bindQ);
+
+/* ===== Botões copiar ===== */
+document.querySelectorAll('.codeblock .copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const pre = btn.parentElement.querySelector('pre');
+    const txt = pre.innerText;
+    const done = ()=>{ btn.textContent='copiado ✓'; setTimeout(()=>btn.textContent='copiar',1600); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent='selecionado: Ctrl+C'; setTimeout(()=>btn.textContent='copiar',2200); };
+    try{ navigator.clipboard.writeText(txt).then(done, fallback); }catch(e){ fallback(); }
+  });
+});
+
+/* ===== Checklists com localStorage ===== */
+document.querySelectorAll('.check-list[data-check]').forEach(list=>{
+  const key = 'redes-aula08-'+list.dataset.check;
+  const meter = document.getElementById(list.dataset.check+'Meter');
+  const boxes = Array.from(list.querySelectorAll('input[type=checkbox]'));
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  function render(){
+    let n=0; boxes.forEach(b=>{ b.closest('.check-item').classList.toggle('done', b.checked); if(b.checked) n++; });
+    meter.querySelector('span').textContent = n+'/'+boxes.length;
+    meter.querySelector('.check-bar span').style.width = (n/boxes.length*100)+'%';
+  }
+  boxes.forEach(b=>{
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', ()=>{ saved[b.id]=b.checked; try{ localStorage.setItem(key, JSON.stringify(saved)); }catch(e){} render(); });
+  });
+  render();
+});
+
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const NS='http://www.w3.org/2000/svg';
+function sel(tag, attrs, text){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(text!=null) e.textContent=text; return e; }
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===== Do Enter à página ===== */
+(function(){
+  const steps=[
+    ['DHCP · já aconteceu ao entrar no Wi-Fi','Aula 06','O notebook recebeu <b>IP, máscara, gateway</b> e o <b>endereço do servidor DNS</b>. Sem isso, nenhuma das etapas seguintes funciona.'],
+    ['DNS · "qual o IP de www.unipar.br?"','hoje','O navegador só tem um nome. Ele pergunta ao resolvedor (UDP 53) e recebe o <b>IP</b> do servidor. Se o nome estiver em cache, isso leva quase zero tempo.'],
+    ['TCP · handshake com IP:443','Aula 07','Com o IP em mãos, o navegador abre uma conexão TCP: <b>SYN, SYN+ACK, ACK</b>. A porta de destino é 443 porque a URL começa com https.'],
+    ['TLS · conexão criptografada','hoje','Cliente e servidor combinam as chaves e o navegador <b>confere o certificado</b> do site. Daqui em diante, tudo vai cifrado.'],
+    ['HTTP · GET / → 200 OK','hoje','O navegador envia <span class="code">GET / HTTP/1.1</span> com <span class="code">Host: www.unipar.br</span>. O servidor responde <b>200 OK</b> e o HTML da página.'],
+    ['Mais recursos · CSS, imagens, scripts','hoje','O HTML cita outros arquivos. Para cada um sai <b>mais uma requisição HTTP</b>, muitas vezes na mesma conexão. Por fim, a página aparece.']
+  ];
+  const btns=Array.from(document.querySelectorAll('#flow .fs')), out=document.getElementById('flowOut');
+  let cur=-1;
+  function show(i){
+    cur=Math.max(0,Math.min(steps.length-1,i));
+    btns.forEach((b,k)=>{ b.classList.toggle('on',k===cur); b.classList.toggle('past',k<cur); });
+    const s=steps[cur];
+    out.className='verdict';
+    out.innerHTML='<b class="t" style="color:var(--gold)">Etapa '+(cur+1)+' de 6 · '+s[0]+'</b><span class="aula-tag'+(s[1]==='hoje'?' hoje':'')+'">'+s[1]+'</span><br>'+s[2];
+  }
+  btns.forEach((b,k)=>b.addEventListener('click',()=>show(k)));
+  document.getElementById('flowNext').addEventListener('click',()=>show(cur+1));
+  document.getElementById('flowPrev').addEventListener('click',()=>show(cur<=0?0:cur-1));
+})();
+
+/* ===== Anatomia da URL ===== */
+(function(){
+  const inp=document.getElementById('urlIn'), parts=document.getElementById('urlParts'), out=document.getElementById('urlOut');
+  const defaults={'http:':'80','https:':'443','ftp:':'21'};
+  function part(cls,val,lab){ return '<span class="up '+cls+'"><code>'+esc(val)+'</code><small>'+lab+'</small></span>'; }
+  function go(){
+    let raw=inp.value.trim(); let u;
+    try{ u=new URL(raw); }catch(e){
+      parts.innerHTML=''; out.className='verdict no';
+      out.innerHTML='<b class="t">URL inválida</b><br>Ela precisa começar pelo esquema, como <span class="code">https://</span>.'; return;
+    }
+    const sch=u.protocol, port=u.port||defaults[sch]||'?', implicit=!u.port;
+    let h=part('s',sch+'//','esquema')+part('h',u.hostname,'host')+part('p'+(implicit?' implicit':''),':'+port,implicit?'porta (padrão)':'porta')+part('path',u.pathname||'/','caminho');
+    if(u.search) h+=part('q',u.search,'consulta');
+    if(u.hash) h+=part('f',u.hash,'fragmento');
+    parts.innerHTML=h;
+    const isIP=/^\d+\.\d+\.\d+\.\d+$/.test(u.hostname);
+    const proto={'http:':'HTTP, sem criptografia','https:':'HTTP com TLS (HTTPS)','ftp:':'FTP'}[sch]||sch.replace(':','');
+    out.className='verdict ok';
+    out.innerHTML='<b class="t">Protocolo: '+proto+' · TCP '+port+'</b><br>'+
+      (isIP?'O host já é um IP: <b>não precisa de DNS</b>.':'Antes de tudo, o navegador pergunta ao <b>DNS</b> o IP de <span class="code">'+esc(u.hostname)+'</span>.')+
+      (implicit&&defaults[sch]?' A porta não foi escrita, então vale a padrão do esquema.':'')+
+      (u.hash?' O fragmento <b>não vai para o servidor</b>: o navegador usa para rolar até um ponto da página.':'');
+  }
+  document.getElementById('urlGo').addEventListener('click',go);
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  document.querySelectorAll('#urlChips .chip').forEach(c=>c.addEventListener('click',()=>{ inp.value=c.textContent; go(); }));
+  go();
+})();
+
+/* ===== Montador de requisição HTTP ===== */
+(function(){
+  const host='www.aula08.com';
+  const m=document.getElementById('hMethod'), p=document.getElementById('hPath');
+  const reqBox=document.getElementById('hReq'), resBox=document.getElementById('hRes'), out=document.getElementById('hOut');
+  const H=(k,v)=>'<span class="hk">'+k+':</span> '+v;
+  function request(){
+    const meth=m.value, path=p.value;
+    let lines=['<span class="l1">'+meth+' '+path+' HTTP/1.1</span>', H('Host',host), H('User-Agent','Mozilla/5.0 (Windows NT 10.0)'), H('Accept','text/html')];
+    if(meth==='POST'){ lines.push(H('Content-Type','application/x-www-form-urlencoded'), H('Content-Length','27'), '', 'usuario=ana&amp;senha=••••••'); }
+    else lines.push('','<span class="cm">(sem corpo)</span>');
+    reqBox.innerHTML=lines.join('\n');
+  }
+  function respond(){
+    const meth=m.value, path=p.value;
+    let code, txt, hdrs=[], body='', why;
+    if(meth==='GET'){
+      if(path==='/'){ code=200; txt='OK'; hdrs=[H('Content-Type','text/html; charset=utf-8'),H('Content-Length','1342')]; body='&lt;html&gt;…página inicial…&lt;/html&gt;'; why='O recurso existe e foi entregue. É o caso de quase toda página que você abre.'; }
+      else if(path==='/aulas/08'){ code=200; txt='OK'; hdrs=[H('Content-Type','text/html; charset=utf-8'),H('Cache-Control','max-age=3600')]; body='&lt;html&gt;…Aula 08…&lt;/html&gt;'; why='Sucesso. O <span class="code">Cache-Control</span> diz que o navegador pode guardar a página por 1 hora.'; }
+      else if(path==='/login'){ code=200; txt='OK'; hdrs=[H('Content-Type','text/html; charset=utf-8')]; body='&lt;form method="POST"&gt;…&lt;/form&gt;'; why='O GET só busca o <b>formulário</b> de login. Para entrar, troque o método para <b>POST</b>.'; }
+      else if(path==='/nao-existe'){ code=404; txt='Not Found'; hdrs=[H('Content-Type','text/html')]; body='&lt;h1&gt;Página não encontrada&lt;/h1&gt;'; why='O servidor está no ar, mas esse caminho não existe. <b>4xx = erro do cliente</b>: o pedido é que está errado.'; }
+      else { code=401; txt='Unauthorized'; hdrs=[H('WWW-Authenticate','Basic realm="admin"')]; body=''; why='A área exige <b>autenticação</b>. Sem login, o servidor recusa com 401.'; }
+    } else if(meth==='POST'){
+      if(path==='/login'){ code=302; txt='Found'; hdrs=[H('Location','/aulas/08'),H('Set-Cookie','sessao=a81f3c; HttpOnly; Secure')]; body=''; why='Login aceito: o servidor <b>redireciona</b> (3xx) e entrega um <b>cookie de sessão</b>. É o assunto do slide '+pad(slides.indexOf(document.getElementById('s-cookies'))+1)+'.'; }
+      else { code=405; txt='Method Not Allowed'; hdrs=[H('Allow','GET')]; body=''; why='Esse recurso só aceita <b>GET</b>. O cabeçalho <span class="code">Allow</span> diz quais métodos são permitidos.'; }
+    } else {
+      if(path==='/nao-existe'){ code=404; txt='Not Found'; hdrs=[]; body=''; why='Não dá para apagar o que não existe.'; }
+      else { code=403; txt='Forbidden'; hdrs=[H('Content-Type','text/html')]; body='&lt;h1&gt;Acesso negado&lt;/h1&gt;'; why='O servidor entendeu o pedido, mas <b>você não tem permissão</b> para apagar. Diferente do 401: aqui não adianta só fazer login.'; }
+    }
+    const cls='st'+String(code)[0];
+    const lines=['<span class="l1">HTTP/1.1 <span class="'+cls+'">'+code+' '+txt+'</span></span>', H('Date','Thu, 12 Nov 2026 21:00:00 GMT'), H('Server','Apache')].concat(hdrs);
+    lines.push('', body||'<span class="cm">(sem corpo)</span>');
+    resBox.innerHTML=lines.join('\n');
+    out.className='verdict '+(code<300?'ok':code<400?'':code<500?'warn':'no');
+    out.innerHTML='<b class="t">'+code+' '+txt+'</b> · '+why;
+  }
+  m.addEventListener('change',request); p.addEventListener('change',request);
+  document.getElementById('hSend').addEventListener('click',()=>{ request(); respond(); });
+  request();
+})();
+
+/* ===== Códigos de status ===== */
+(function(){
+  const info={
+    200:['OK','Deu certo. A resposta traz o que foi pedido.'],
+    201:['Created','Um recurso novo foi criado, por exemplo após um POST que cadastra um aluno numa API.'],
+    301:['Moved Permanently','O endereço mudou de vez. O navegador vai ao novo e lembra disso. Comum de http:// para https://.'],
+    302:['Found','Redirecionamento temporário. Comum depois de um login.'],
+    304:['Not Modified','"Nada mudou desde a última vez." O navegador usa a cópia que já tem em cache e economiza banda.'],
+    400:['Bad Request','O pedido está mal formado: faltou campo, sintaxe errada.'],
+    401:['Unauthorized','Precisa se autenticar (fazer login) antes.'],
+    403:['Forbidden','O servidor sabe quem você é, mas você não tem permissão.'],
+    404:['Not Found','O caminho não existe no servidor. Link quebrado ou digitação errada.'],
+    429:['Too Many Requests','Você fez pedidos demais em pouco tempo. É um limite contra abuso e robôs.'],
+    500:['Internal Server Error','O programa do servidor falhou: um bug, uma exceção não tratada.'],
+    502:['Bad Gateway','Um servidor intermediário (proxy) recebeu uma resposta inválida do servidor de trás.'],
+    503:['Service Unavailable','O servidor está sobrecarregado ou em manutenção. Comum em dia de inscrição no vestibular.']
+  };
+  const chips=Array.from(document.querySelectorAll('#scChips .chip')), out=document.getElementById('scOut');
+  chips.forEach(c=>c.addEventListener('click',()=>{
+    chips.forEach(x=>x.classList.toggle('on',x===c));
+    const code=+c.textContent, i=info[code], f=String(code)[0];
+    out.className='verdict '+(f==='2'?'ok':f==='4'?'warn':f==='5'?'no':'');
+    out.innerHTML='<b class="t">'+code+' '+i[0]+'</b><br>'+i[1];
+  }));
+})();
+
+/* ===== Diagramas de sequência ===== */
+function seqDiagram(svg, cfg){
+  const XL=90, XR=430, top=48, rowH=cfg.rowH||46;
+  const rows=cfg.items.length, H=top+rows*rowH+(cfg.band?46:16);
+  svg.setAttribute('viewBox','0 0 520 '+H); svg.innerHTML='';
+  const defs=sel('defs',{}); svg.appendChild(defs);
+  const mk={};
+  function marker(color){
+    if(mk[color]) return mk[color];
+    const id=svg.id+'-m'+Object.keys(mk).length;
+    const m=sel('marker',{id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:7, markerHeight:7, orient:'auto-start-reverse'});
+    m.appendChild(sel('path',{d:'M0 0 L10 5 L0 10 z', fill:color})); defs.appendChild(m); mk[color]=id; return id;
+  }
+  svg.appendChild(sel('text',{x:XL,y:22,class:'host'},cfg.left));
+  svg.appendChild(sel('text',{x:XR,y:22,class:'host'},cfg.right));
+  svg.appendChild(sel('line',{x1:XL,y1:32,x2:XL,y2:H-6,class:'life'}));
+  svg.appendChild(sel('line',{x1:XR,y1:32,x2:XR,y2:H-6,class:'life'}));
+  cfg.items.forEach((it,i)=>{
+    const g=sel('g',{}); const y0=top+i*rowH, y1=y0+rowH-12;
+    if(cfg.animate && !reduceMotion){ g.setAttribute('class','appear'); g.style.animationDelay=(i*0.7)+'s'; }
+    const xa=it.from==='L'?XL:XR, xb=it.from==='L'?XR:XL, color=it.color||(it.from==='L'?'var(--blue)':'var(--gold)');
+    g.appendChild(sel('line',{x1:xa,y1:y0,x2:xb,y2:y1,class:'arrow',stroke:color,'marker-end':'url(#'+marker(color)+')'}));
+    const mx=(xa+xb)/2, my=(y0+y1)/2;
+    g.appendChild(sel('text',{x:mx,y:my-6,'text-anchor':'middle',class:'msg',fill:color},it.label));
+    if(it.sub) g.appendChild(sel('text',{x:mx,y:my+20,'text-anchor':'middle',class:'sub'},it.sub));
+    svg.appendChild(g);
+  });
+  if(cfg.band){
+    const y=top+rows*rowH+8;
+    const g=sel('g',{}); if(cfg.animate && !reduceMotion){ g.setAttribute('class','appear'); g.style.animationDelay=(rows*0.7)+'s'; }
+    g.appendChild(sel('rect',{x:XL,y:y,width:XR-XL,height:26,rx:6,fill:cfg.band.fill||'rgba(242,169,59,.14)',stroke:cfg.band.color||'var(--gold)'}));
+    g.appendChild(sel('text',{x:(XL+XR)/2,y:y+17,'text-anchor':'middle',class:'msg',fill:cfg.band.color||'var(--gold)'},cfg.band.text));
+    svg.appendChild(g);
+  }
+}
+
+/* cookies */
+(function(){
+  const svg=document.getElementById('ckSvg');
+  const cfg={left:'Navegador', right:'Portal do aluno', rowH:52, items:[
+    {from:'L',label:'POST /login',sub:'usuario=ana & senha'},
+    {from:'R',label:'302 + Set-Cookie: sessao=a81f',color:'var(--green)'},
+    {from:'L',label:'GET /notas',sub:'Cookie: sessao=a81f'},
+    {from:'R',label:'200 OK · notas da Ana',color:'var(--green)'}
+  ], band:{text:'o cookie volta em toda requisição ao site'}};
+  seqDiagram(svg,cfg);
+  document.getElementById('ckPlay').addEventListener('click',()=>seqDiagram(svg,Object.assign({},cfg,{animate:true})));
+})();
+
+/* ===== Resolução DNS ===== */
+(function(){
+  const svg=document.getElementById('dnsSvg'), out=document.getElementById('dnsOut');
+  const N={pc:{x:15,y:125,w:110,t:'💻 PC',s:'cliente'},res:{x:195,y:125,w:140,t:'🔁 Resolvedor',s:'do provedor'},root:{x:470,y:15,w:155,t:'. raiz',s:'servidor raiz'},tld:{x:470,y:125,w:155,t:'.br',s:'servidor do TLD'},auth:{x:470,y:235,w:155,t:'unipar.br',s:'autoritativo'}};
+  const H=50;
+  const cx=n=>N[n].x+N[n].w/2, cy=n=>N[n].y+H/2;
+  function edge(a,b){
+    // pontos na borda dos retângulos
+    const ax=cx(a), ay=cy(a), bx=cx(b), by=cy(b);
+    const clip=(n,tx,ty)=>{ const x=cx(n), y=cy(n), dx=tx-x, dy=ty-y, hw=N[n].w/2+3, hh=H/2+3; const k=Math.min(hw/Math.abs(dx||1e-9), hh/Math.abs(dy||1e-9)); return [x+dx*k, y+dy*k]; };
+    return [clip(a,bx,by), clip(b,ax,ay)];
+  }
+  const full=[
+    ['pc','res','consulta: www.unipar.br?','O PC pergunta ao <b>resolvedor</b> (UDP 53): "qual o IP de www.unipar.br?". É uma consulta <b>recursiva</b>: o PC quer a resposta pronta.'],
+    ['res','root','www.unipar.br?','O resolvedor não tem nada em cache. Começa pelo topo: pergunta a um <b>servidor raiz</b>.'],
+    ['root','res','pergunte ao .br','A raiz não sabe o IP, mas sabe quem cuida do <b>.br</b> e devolve os endereços desses servidores.'],
+    ['res','tld','www.unipar.br?','O resolvedor repete a pergunta ao servidor do <b>TLD .br</b> (operado pelo NIC.br).'],
+    ['tld','res','pergunte a unipar.br','O .br também não tem o IP, mas sabe quais são os servidores <b>autoritativos</b> de unipar.br (registro NS).'],
+    ['res','auth','www.unipar.br?','Terceira pergunta, agora a quem tem a resposta oficial: o <b>autoritativo</b> de unipar.br.'],
+    ['auth','res','A 203.0.113.10','O autoritativo responde com o <b>registro A</b> e um <b>TTL</b> (ex.: 3600 s). O IP do exemplo é fictício.'],
+    ['res','pc','203.0.113.10','O resolvedor entrega o IP ao PC e <b>guarda em cache</b> pelo TTL. Agora o navegador pode abrir a conexão TCP. Total: 8 mensagens.']
+  ];
+  const cached=[
+    ['pc','res','consulta: www.unipar.br?','Outro aluno, na mesma rede, pede o mesmo nome alguns minutos depois.'],
+    ['res','pc','203.0.113.10 (cache)','O resolvedor tem a resposta em <b>cache</b> e o TTL ainda vale: responde na hora, <b>sem consultar</b> raiz, .br ou autoritativo. 2 mensagens em vez de 8.']
+  ];
+  let seq=full, cur=-1, cacheOn=false;
+  function draw(){
+    svg.innerHTML='';
+    const defs=sel('defs',{}); svg.appendChild(defs);
+    [['dA','var(--blue)'],['dB','var(--green)']].forEach(([id,c])=>{ const m=sel('marker',{id,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'}); m.appendChild(sel('path',{d:'M0 0 L10 5 L0 10 z',fill:c})); defs.appendChild(m); });
+    const active=new Set();
+    seq.forEach((s,i)=>{ if(i<=cur){ active.add(s[0]); active.add(s[1]); } });
+    seq.forEach((s,i)=>{
+      if(i>cur) return;
+      const [[x1,y1],[x2,y2]]=edge(s[0],s[1]);
+      const down = ['pc','res'].indexOf(s[0])>=0 && !(s[0]==='res'&&s[1]==='pc');
+      const color=down?'var(--blue)':'var(--green)';
+      // deslocamento perpendicular para separar ida e volta
+      const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy), ox=-dy/L*7, oy=dx/L*7;
+      svg.appendChild(sel('line',{x1:x1+ox,y1:y1+oy,x2:x2+ox,y2:y2+oy,class:'ar'+(i===cur?' on':' past'),stroke:color,'marker-end':'url(#'+(down?'dA':'dB')+')'}));
+      const mx=(x1+x2)/2+ox*2.2, my=(y1+y2)/2+oy*2.2; const bg=sel('g',{class:'badge'+(i===cur?' on':'')}); bg.appendChild(sel('circle',{cx:mx,cy:my,r:9,fill:i===cur?color:'var(--surface-2)',stroke:color,'stroke-width':1.5})); bg.appendChild(sel('text',{x:mx,y:my+3.5,'text-anchor':'middle',class:'bn',fill:i===cur?'#06101a':color},String(i+1))); svg.appendChild(bg);
+    });
+    Object.keys(N).forEach(k=>{
+      const n=N[k], g=sel('g',{class:'node'+(cur>=0&&k===seq[cur][1]?' on':active.has(k)?' done':'')});
+      g.appendChild(sel('rect',{x:n.x,y:n.y,width:n.w,height:H,rx:9}));
+      g.appendChild(sel('text',{x:n.x+n.w/2,y:n.y+21,class:'nm'},n.t));
+      g.appendChild(sel('text',{x:n.x+n.w/2,y:n.y+38,class:'sb'},n.s));
+      svg.appendChild(g);
+    });
+    if(cacheOn) svg.appendChild(sel('text',{x:175,y:N.res.y+H+34,class:'cache'},'cache: www.unipar.br → 203.0.113.10'));
+    if(cur<0){ out.className='verdict'; out.innerHTML=cacheOn?'Clique em <b>Próxima mensagem</b>: agora o resolvedor já tem a resposta guardada.':'Clique em <b>Próxima mensagem</b>. O PC quer o IP de <span class="code">www.unipar.br</span>.'; }
+    else { const s=seq[cur]; out.className='verdict'+(cur===seq.length-1?' ok':''); out.innerHTML='<b class="t" style="color:var(--gold)">Mensagem '+(cur+1)+' de '+seq.length+'</b><br>'+s[3]; }
+  }
+  document.getElementById('dnsNext').addEventListener('click',()=>{ if(cur<seq.length-1){ cur++; if(seq===full && cur===seq.length-1) cacheOn=true; draw(); } });
+  document.getElementById('dnsPrev').addEventListener('click',()=>{ if(cur>-1){ if(seq===full && cur===seq.length-1) cacheOn=false; cur--; draw(); } });
+  document.getElementById('dnsCache').addEventListener('click',()=>{ seq=cached; cacheOn=true; cur=-1; draw(); });
+  document.getElementById('dnsReset').addEventListener('click',()=>{ seq=full; cacheOn=false; cur=-1; draw(); });
+  draw();
+})();
+
+/* ===== Viagem do e-mail ===== */
+(function(){
+  const out=document.getElementById('mailOut'), env=document.getElementById('mailEnv');
+  const nodes=Array.from(document.querySelectorAll('#mailSvg .node'));
+  const steps=[
+    {a:0, n:1, x:205, t:'1 · Ana clica em Enviar', d:'O cliente de e-mail da Ana entrega a mensagem ao <b>servidor do Gmail</b> usando <b>SMTP</b> (porta 587, com login e TLS).'},
+    {a:1, n:2, x:415, t:'2 · Servidor para servidor', d:'O Gmail consulta o <b>DNS</b> pelo registro <b>MX</b> de outlook.com e entrega a mensagem ao servidor da Microsoft, também por <b>SMTP</b> (porta 25).'},
+    {a:-1, n:2, x:415, t:'3 · A mensagem espera', d:'O e-mail fica na <b>caixa postal do Bruno</b>, no servidor, que está sempre ligado. Se o computador do Bruno estiver desligado, não faz diferença.'},
+    {a:2, n:3, x:615, t:'4 · Bruno lê', d:'Quando abre o aplicativo, o cliente do Bruno busca as mensagens com <b>IMAP</b> (993) ou <b>POP3</b> (995). A seta vai do Bruno para o servidor porque <b>é o cliente que pede</b>.'}
+  ];
+  let i=-1;
+  function render(){
+    document.querySelectorAll('#mailSvg .ar, #mailSvg .pl').forEach(e=>e.classList.toggle('on', i>=0 && +e.dataset.a===steps[i].a));
+    nodes.forEach(n=>n.classList.toggle('on', i>=0 && +n.dataset.n===steps[i].n));
+    env.style.transform='translateX('+(i<0?0:steps[i].x-60)+'px)';
+    if(i<0){ out.className='verdict'; out.innerHTML='Clique em <b>Próxima etapa</b>.'; }
+    else { out.className='verdict'+(i===steps.length-1?' ok':''); out.innerHTML='<b class="t" style="color:var(--gold)">'+steps[i].t+'</b><br>'+steps[i].d; }
+  }
+  document.getElementById('mailNext').addEventListener('click',()=>{ i = i>=steps.length-1 ? 0 : i+1; render(); });
+  document.getElementById('mailReset').addEventListener('click',()=>{ i=-1; render(); });
+  render();
+})();
+
+/* ===== Espião: Telnet x SSH ===== */
+(function(){
+  const out=document.getElementById('spyOut'), msg=document.getElementById('spyMsg');
+  const tabs=Array.from(document.querySelectorAll('#spyTabs [data-spy]'));
+  function hex(n){ let s=''; const a=new Uint8Array(n); (window.crypto||{getRandomValues:x=>x.map(()=>Math.random()*256|0)}).getRandomValues(a); a.forEach((b,k)=>{ s+=b.toString(16).padStart(2,'0')+(k%16===15?'\n':' '); }); return s.trim(); }
+  function show(mode){
+    tabs.forEach(t=>t.classList.toggle('on',t.dataset.spy===mode));
+    if(mode==='telnet'){
+      out.innerHTML='192.168.1.10:51022 → 192.168.1.2:23\n\nUser Access Verification\n\nUsername: <span class="leak">admin</span>\nPassword: <span class="leak">Unipar@2026</span>\nSwitch0&gt; enable\nSwitch0# show running-config';
+      msg.className='verdict no'; msg.innerHTML='<b class="t">Senha exposta.</b> Tudo que foi digitado aparece como texto. Quem capturou agora tem acesso administrativo ao switch.';
+    } else {
+      out.innerHTML='192.168.1.10:51023 → 192.168.1.2:22\n\nSSH-2.0-OpenSSH_9.6\n<span class="enc">'+hex(64)+'</span>';
+      msg.className='verdict ok'; msg.innerHTML='<b class="t">Só bytes embaralhados.</b> O espião vê os IPs, as portas e que é SSH. O usuário, a senha e os comandos ficam ilegíveis.';
+    }
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>show(t.dataset.spy)));
+  show('telnet');
+})();
+
+/* ===== Qual protocolo? ===== */
+(function(){
+  const items=[
+    {q:'Você abre o portal do aluno no navegador e o cadeado aparece na barra de endereço.', a:'HTTPS', why:'Página web com cadeado = HTTP sobre TLS, porta 443.'},
+    {q:'Antes de abrir o portal, o computador descobre o IP de portal.unipar.br.', a:'DNS', why:'Traduzir nome em IP é trabalho do DNS (UDP 53).'},
+    {q:'Ao entrar no Wi-Fi da faculdade, o notebook recebe IP, gateway e servidor DNS sem você configurar nada.', a:'DHCP', why:'Configuração automática de rede é o DHCP, o DORA da Aula 06.'},
+    {q:'O Outlook do seu computador envia ao servidor o e-mail com o trabalho para o professor.', a:'SMTP', why:'Enviar e-mail, do cliente para o servidor ou entre servidores, é SMTP.'},
+    {q:'Você lê um e-mail no celular e, no notebook, ele já aparece como lido e na mesma pasta.', a:'IMAP', why:'Mensagens e pastas sincronizadas no servidor: IMAP. O POP3 não sincroniza.'},
+    {q:'O administrador acessa o terminal de um servidor Linux na nuvem, de forma criptografada.', a:'SSH', why:'Terminal remoto seguro é SSH, porta 22. O Telnet faria o mesmo sem criptografia.'},
+    {q:'Um sistema antigo envia arquivos de backup para outro servidor, com login e senha em texto puro.', a:'FTP', why:'Transferência de arquivos sem criptografia é o FTP clássico (porta 21). O certo hoje seria SFTP.'}
+  ];
+  let i=0, ok=0, tot=0, answered=false;
+  const q=document.getElementById('qpQ'), fb=document.getElementById('qpFb'), sc=document.getElementById('qpScore'), ct=document.getElementById('qpCount');
+  const btns=Array.from(document.querySelectorAll('[data-qp]'));
+  function load(){ answered=false; q.textContent=items[i].q; ct.textContent='Situação '+(i+1)+' de '+items.length; fb.className='verdict'; fb.textContent='Escolha um protocolo.'; btns.forEach(b=>b.disabled=false); }
+  function answer(v){
+    if(answered) return; answered=true; tot++;
+    const it=items[i], right=v===it.a; if(right) ok++;
+    const last=i===items.length-1;
+    fb.className='verdict '+(right?'ok':'no');
+    fb.innerHTML='<b class="t">'+(right?'✓ Isso mesmo: '+it.a+'.':'✗ A resposta é '+it.a+'.')+'</b> '+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;" id="qpNext">'+(last?'recomeçar ↺':'próxima situação →')+'</button>';
+    document.getElementById('qpNext').addEventListener('click',()=>{ if(last){ i=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else i++; load(); });
+    sc.textContent='Acertos: '+ok+' / '+tot; btns.forEach(b=>b.disabled=true);
+  }
+  btns.forEach(b=>b.addEventListener('click',()=>answer(b.dataset.qp)));
+  load();
+})();
+
+/* ===== Quiz de múltipla escolha ===== */
+(function(){
+  const quiz=[
+    {tag:'Camadas', q:'HTTP, DNS e SMTP pertencem a qual camada do modelo TCP/IP?', o:['Rede','Transporte','Aplicação','Enlace'], a:2, why:'São protocolos de <b>aplicação</b>. Eles usam o transporte (TCP ou UDP) para levar as mensagens.'},
+    {tag:'Portas', q:'Porta padrão do DNS:', o:['25','53','80','110'], a:1, why:'<b>53</b>, normalmente sobre UDP. 25 é SMTP, 80 é HTTP e 110 é POP3.'},
+    {tag:'HTTP', q:'Qual código indica que o recurso pedido não existe?', o:['200','301','404','500'], a:2, why:'<b>404 Not Found</b>, um erro do cliente (4xx). O 500 é erro do servidor.'},
+    {tag:'HTTP', q:'Como um site lembra que você já fez login, se o HTTP não tem estado?', o:['Pelo endereço MAC','Com cookies de sessão','Pela porta efêmera','Pelo TTL do DNS'], a:1, why:'O servidor envia <b>Set-Cookie</b> e o navegador devolve o cookie em cada requisição.'},
+    {tag:'DNS', q:'Qual registro DNS associa um nome a um endereço IPv4?', o:['A','MX','CNAME','NS'], a:0, why:'<b>A</b>. O AAAA faz o mesmo para IPv6; MX aponta o servidor de e-mail; CNAME é um apelido.'},
+    {tag:'E-mail', q:'Qual protocolo leva o e-mail de um servidor para outro?', o:['IMAP','POP3','SMTP','HTTP'], a:2, why:'<b>SMTP</b>. IMAP e POP3 servem para o cliente ler as mensagens.'},
+    {tag:'E-mail', q:'Você lê e-mails no celular e no notebook e quer tudo sincronizado. Use:', o:['POP3','IMAP','FTP','SMTP'], a:1, why:'<b>IMAP</b> mantém mensagens, pastas e o estado de lido no servidor.'},
+    {tag:'Segurança', q:'Por que trocar o Telnet pelo SSH?', o:['O SSH é mais rápido','O SSH usa UDP','O SSH criptografa a sessão','O Telnet não funciona em switches'], a:2, why:'O Telnet envia até a senha em texto puro. O <b>SSH criptografa</b> tudo.'}
+  ];
+  const list=document.getElementById('mcqList'), score=document.getElementById('mcqScore');
+  let ok=0, done=0;
+  function build(){
+    ok=0; done=0; score.textContent='Acertos: 0 / 0'; list.innerHTML='';
+    quiz.forEach((it,k)=>{
+      const c=document.createElement('div'); c.className='mcq';
+      c.innerHTML='<div class="q"><b class="n">Q'+(k+1)+' · '+it.tag+'</b>'+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="why">'+it.why+'</div>';
+      const bs=Array.from(c.querySelectorAll('button'));
+      bs.forEach(b=>b.addEventListener('click',()=>{
+        const j=+b.dataset.j; bs.forEach(x=>x.disabled=true);
+        bs[it.a].classList.add('right'); if(j!==it.a) b.classList.add('wrong'); else ok++;
+        done++; c.classList.add('done');
+        score.textContent='Acertos: '+ok+' / '+done+(done===quiz.length?(ok>=6?' · ótimo!':' · revise a autoavaliação'):'');
+      }));
+      list.appendChild(c);
+    });
+  }
+  document.getElementById('mcqReset').addEventListener('click',build);
+  build();
+})();
+</script>
+
+</body>
+</html>
