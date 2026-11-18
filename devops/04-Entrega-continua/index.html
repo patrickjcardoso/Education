@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DevOps Tools · Aula 04</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@600;700;800&display=swap">
+<style>
+/* ======================================================================
+   DESIGN SYSTEM — herdado da aula "Camada de Rede" (mesmo padrão visual
+   das aulas do Prof. Patrick). Deck vertical com scroll-snap, tema dark-tech.
+   ====================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#070b12; --bg-2:#0c131d; --surface:#121b27; --surface-2:#182434;
+  --border:#223049; --border-soft:#1a2436;
+  --text:#eef3f8; --text-dim:#9fb0c3; --text-faint:#62768a;
+  --blue:#2fb0e8; --blue-dim:#12719e; --navy:#0b3556;
+  --gold:#f2a93b; --green:#36c58f; --red:#ef5b5b;
+  --mono:'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --disp:'Sora', 'Inter', sans-serif;
+  --radius:16px; --ease:cubic-bezier(.16,.8,.3,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;}
+::selection{background:var(--blue-dim); color:#fff;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+a{color:var(--blue);}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+.bg-fx{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(47,176,232,.10), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 85%, rgba(242,169,59,.07), transparent 60%),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:auto, auto, 42px 42px, 42px 42px;}
+
+/* ============================= DECK / NAV ============================= */
+.deck{position:relative; z-index:1; height:100vh; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+.slide{min-height:100vh; height:100vh; width:100%; scroll-snap-align:start; scroll-snap-stop:always;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5vh 7vw; position:relative; overflow:hidden;}
+.slide-inner{width:100%; max-width:1180px; margin:0 auto; min-width:0;}
+
+.kicker{font-family:var(--mono); font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); font-weight:600;
+  display:flex; align-items:center; gap:.6em; margin-bottom:.8rem; flex-wrap:wrap;}
+.kicker::before{content:''; width:22px; height:2px; background:var(--gold); display:inline-block;}
+h1.title{font-family:var(--disp); font-weight:800; font-size:clamp(2rem,4.4vw,3.4rem); line-height:1.08; letter-spacing:-.01em; text-wrap:balance;}
+h2.stitle{font-family:var(--disp); font-weight:700; font-size:clamp(1.35rem,2.4vw,2rem); line-height:1.15; letter-spacing:-.01em; margin-bottom:.3rem; text-wrap:balance;}
+.subtitle{color:var(--text-dim); font-size:clamp(.9rem,1.05vw,1.05rem); max-width:70ch; line-height:1.55;}
+.subtitle b, .card p b, ol.steps b{color:var(--text);}
+.accent{color:var(--gold);} .accent-b{color:var(--blue);} .accent-g{color:var(--green);} .accent-r{color:var(--red);}
+
+.slide-no{position:fixed; left:7vw; bottom:4vh; z-index:5; font-family:var(--mono); font-size:.78rem; color:var(--text-faint); letter-spacing:.05em;}
+.slide-no b{color:var(--text);}
+.progress{position:fixed; top:0; left:0; height:2px; background:linear-gradient(90deg,var(--blue),var(--gold)); z-index:6; transition:width .4s var(--ease);}
+.dotnav{position:fixed; right:2.2vw; top:50%; transform:translateY(-50%); z-index:5; display:flex; flex-direction:column; gap:7px;}
+.dotnav button{width:7px; height:7px; border-radius:50%; border:1px solid var(--border); background:transparent; cursor:pointer; padding:0; transition:all .25s var(--ease);}
+.dotnav button:hover{border-color:var(--blue);}
+.dotnav button.active{background:var(--blue); border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,176,232,.18); transform:scale(1.3);}
+.hint{position:fixed; bottom:4vh; right:2.6vw; z-index:5; font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:flex; gap:.4em; align-items:center;}
+.hint kbd{border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-family:var(--mono); color:var(--text-dim);}
+
+.animate{opacity:0; transform:translateY(16px); transition:opacity .7s var(--ease), transform .7s var(--ease);}
+.slide.in-view .animate{opacity:1; transform:translateY(0);}
+.delay-1{transition-delay:.08s;} .delay-2{transition-delay:.16s;} .delay-3{transition-delay:.24s;} .delay-4{transition-delay:.32s;}
+@media (prefers-reduced-motion: reduce){ .animate{opacity:1; transform:none; transition:none;} .deck{scroll-behavior:auto;} }
+
+/* ============================= COMPONENTS ============================= */
+.card{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.25rem; min-width:0;}
+.card h3{font-family:var(--disp); font-size:.98rem; margin-bottom:.35rem; color:var(--text);}
+.card p, .card li{color:var(--text-dim); font-size:.84rem; line-height:1.5;}
+.card ul{padding-left:1.1rem; display:grid; gap:.25rem;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.9rem;}
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem;}
+.grid-5{display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;}
+.icon-chip{width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:rgba(47,176,232,.12); color:var(--blue); font-size:1.05rem; margin-bottom:.6rem; font-family:var(--mono); font-weight:700;}
+.icon-chip.g{background:rgba(242,169,59,.12); color:var(--gold);}
+
+.tbl-wrap{overflow-x:auto; min-width:0;}
+table.cmp{width:100%; border-collapse:collapse; font-size:.84rem;}
+table.cmp th{text-align:left; font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); padding:.5rem .8rem; border-bottom:1px solid var(--border);}
+table.cmp td{padding:.55rem .8rem; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+table.cmp tr:hover td{color:var(--text); background:rgba(255,255,255,.015);}
+table.cmp td:first-child{color:var(--text); font-weight:600;}
+
+.btn{font-family:var(--mono); font-size:.78rem; font-weight:600; letter-spacing:.03em; color:var(--bg);
+  background:linear-gradient(180deg,var(--blue),var(--blue-dim)); border:none; border-radius:9px; padding:.6rem 1.1rem; cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease); box-shadow:0 4px 18px rgba(47,176,232,.25);}
+.btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(47,176,232,.35);}
+.btn.ghost{background:transparent; color:var(--text-dim); border:1px solid var(--border); box-shadow:none;}
+.btn.ghost:hover{color:var(--text); border-color:var(--blue);}
+.btn.gold{background:linear-gradient(180deg,var(--gold),#c98520);}
+.btn:disabled{opacity:.35; cursor:not-allowed; transform:none; box-shadow:none;}
+.code{font-family:var(--mono); font-size:.82em; padding:.08rem .4rem; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--blue); white-space:nowrap;}
+
+/* ============================= CAPA ============================= */
+#s-capa{align-items:flex-start;}
+.capa-badge{display:inline-flex; gap:.5em; align-items:center; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);
+  border:1px solid var(--border); padding:.4rem .9rem; border-radius:99px; margin-bottom:1.5rem;}
+.capa-badge span.dot{width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+.capa-foot{display:flex; gap:2.2rem; margin-top:2.4rem; color:var(--text-faint); font-size:.86rem; flex-wrap:wrap;}
+.capa-foot b{color:var(--text);}
+.capa-bits{position:absolute; right:4vw; top:50%; transform:translateY(-50%); font-family:var(--mono); color:rgba(47,176,232,.16);
+  font-size:1rem; line-height:1.75; text-align:right; user-select:none; pointer-events:none; white-space:pre;}
+
+/* ============================= SUMÁRIO ============================= */
+.toc{display:grid; grid-template-columns:repeat(3,1fr); gap:.4rem 1.6rem; font-size:.84rem;}
+.toc a{display:flex; align-items:baseline; gap:.8rem; text-decoration:none; color:var(--text); padding:.28rem 0; border-bottom:1px solid var(--border-soft); transition:padding-left .2s var(--ease), color .2s;}
+.toc a:hover{padding-left:.5rem; color:var(--blue);}
+.toc a .n{font-family:var(--mono); color:var(--text-faint); font-size:.76rem; width:1.6em; flex-shrink:0;}
+.toc a .t{font-weight:500; font-size:.82rem;}
+.toc-group{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:.6rem 0 .1rem;}
+
+/* ============================= CHECKLIST / AGENDA ============================= */
+.check-list{display:grid; gap:.5rem;}
+.check-item{display:flex; gap:.75rem; align-items:flex-start; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.7rem .9rem; cursor:pointer; transition:border-color .2s, background .2s;}
+.check-item input{appearance:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border); flex:none; margin-top:.1rem; display:grid; place-items:center; cursor:pointer; background:var(--surface-2);}
+.check-item input:checked{background:var(--green); border-color:var(--green);}
+.check-item input:checked::after{content:'✓'; color:#062014; font-weight:800; font-size:.8rem;}
+.check-item.done{border-color:rgba(54,197,143,.4); background:rgba(54,197,143,.05);}
+.check-item.done .ci-t{text-decoration:line-through; color:var(--text-faint);}
+.ci-t{font-size:.86rem; color:var(--text); font-weight:600;}
+.ci-d{font-size:.78rem; color:var(--text-dim); margin-top:.15rem; line-height:1.45;}
+.ci-time{margin-left:auto; font-family:var(--mono); font-size:.72rem; color:var(--gold); flex:none; padding-top:.15rem;}
+.check-meter{display:flex; align-items:center; gap:.8rem; margin-top:.8rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim);}
+.check-bar{flex:1; height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
+.check-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--green),var(--blue)); transition:width .4s var(--ease);}
+
+.agenda{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem; margin-top:1rem;}
+.ag{border-top:3px solid var(--blue); background:var(--surface); border-radius:0 0 12px 12px; padding:.75rem .9rem;}
+.ag .min{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.86rem;}
+.ag h4{font-family:var(--disp); font-size:.9rem; margin:.25rem 0; color:var(--text);}
+.ag p{font-size:.78rem; color:var(--text-dim); line-height:1.45;}
+.ag:nth-child(2){border-color:var(--gold);} .ag:nth-child(2) .min{color:var(--gold);}
+.ag:nth-child(3){border-color:var(--green);} .ag:nth-child(3) .min{color:var(--green);}
+.ag:nth-child(4){border-color:var(--text-faint);} .ag:nth-child(4) .min{color:var(--text-dim);}
+
+/* ============================= TIMELINE ============================= */
+.timeline{display:flex; gap:.8rem; margin-top:1.1rem;}
+.tl-item{flex:1; border-left:3px solid var(--blue); background:var(--surface); border-radius:0 10px 10px 0; padding:.75rem .9rem; min-width:0;}
+.tl-item .yr{font-family:var(--mono); font-weight:700; color:var(--blue); font-size:.92rem;}
+.tl-item p{color:var(--text-dim); font-size:.8rem; margin-top:.25rem; line-height:1.45;}
+.tl-item.hot{border-color:var(--red);} .tl-item.hot .yr{color:var(--red);}
+.tl-item.warn{border-color:var(--gold);} .tl-item.warn .yr{color:var(--gold);}
+.bignum-row{display:flex; gap:2.2rem; margin-top:1.2rem; flex-wrap:wrap;}
+.bignum .n{font-family:var(--disp); font-weight:800; font-size:clamp(1.6rem,3vw,2.3rem); color:var(--red); line-height:1;}
+.bignum .l{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:.3rem;}
+
+/* ============================= MURO DA CONFUSÃO ============================= */
+.wall{display:grid; grid-template-columns:1fr 70px 1fr; gap:1rem; align-items:stretch; margin-top:1.1rem;}
+.wall .side{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1rem 1.1rem;}
+.wall .side h3{font-family:var(--disp); font-size:1rem; margin-bottom:.5rem;}
+.wall .side.dev h3{color:var(--blue);} .wall .side.ops h3{color:var(--gold);}
+.wall .side li{font-size:.84rem; color:var(--text-dim); line-height:1.5; margin-left:1rem;}
+.wall .brick{border-radius:10px; background:repeating-linear-gradient(0deg, var(--surface-2) 0 18px, var(--border) 18px 20px), var(--surface-2);
+  display:flex; align-items:center; justify-content:center; writing-mode:vertical-rl; font-family:var(--mono); font-size:.68rem; color:var(--text-dim); letter-spacing:.12em; text-transform:uppercase;}
+
+/* ============================= CALMS / 3 CAMINHOS ============================= */
+.calms .card .letter{font-family:var(--disp); font-weight:800; font-size:2rem; color:var(--blue); line-height:1;}
+.calms .card:nth-child(even) .letter{color:var(--gold);}
+.ways{display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; margin-top:1rem;}
+.way svg{width:100%; height:70px; display:block; margin-bottom:.6rem;}
+.way .lbl{font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);}
+
+/* ============================= CICLO DEVOPS ============================= */
+.loop-wrap{display:grid; grid-template-columns:1.25fr 1fr; gap:1.4rem; align-items:center; margin-top:.8rem;}
+.loop-svg{width:100%; height:auto; display:block;}
+.loop-svg .seg{cursor:pointer;}
+.loop-svg .seg rect{fill:var(--surface-2); stroke:var(--border); stroke-width:1; transition:all .25s;}
+.loop-svg .seg text{font-family:var(--mono); font-size:11px; fill:var(--text-dim); text-anchor:middle; pointer-events:none;}
+.loop-svg .seg:hover rect, .loop-svg .seg:focus rect{stroke:var(--blue);}
+.loop-svg .seg.dev.active rect{fill:rgba(47,176,232,.2); stroke:var(--blue);}
+.loop-svg .seg.ops.active rect{fill:rgba(242,169,59,.18); stroke:var(--gold);}
+.loop-svg .seg.active text{fill:var(--text); font-weight:700;}
+.loop-svg .path{fill:none; stroke:var(--border); stroke-width:2; stroke-dasharray:5 6;}
+.loop-svg .side-l{font-family:var(--mono); font-size:10px; letter-spacing:.12em; fill:var(--text-faint); text-anchor:middle;}
+.phase-panel{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid var(--border-soft); border-radius:var(--radius); padding:1.1rem 1.3rem; min-height:230px;}
+.phase-panel h4{font-family:var(--disp); color:var(--gold); font-size:1.05rem; margin-bottom:.1rem;}
+.phase-panel .tag{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); display:block; margin-bottom:.7rem;}
+.phase-panel p{font-size:.84rem; color:var(--text-dim); line-height:1.5;}
+.phase-panel .tools{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.7rem;}
+.phase-panel .tools span{font-family:var(--mono); font-size:.7rem; padding:.2rem .55rem; border-radius:99px; border:1px solid var(--border); color:var(--blue);}
+.phase-panel .week{margin-top:.8rem; font-size:.78rem; color:var(--green); font-family:var(--mono);}
+
+/* ============================= HANDS-ON ============================= */
+.slide.hands-on .kicker{color:var(--gold);}
+.mm-badge{display:inline-block; padding:.15rem .65rem; border-radius:999px; background:rgba(242,169,59,.14); border:1px solid rgba(242,169,59,.45); color:var(--gold); font-family:var(--mono); font-size:.68rem; letter-spacing:.04em; text-transform:none;}
+ol.steps{list-style:none; counter-reset:st; display:grid; gap:.5rem; margin-top:.3rem;}
+ol.steps li{counter-increment:st; display:flex; gap:.65rem; font-size:.84rem; color:var(--text-dim); line-height:1.45; align-items:flex-start;}
+ol.steps li::before{content:counter(st); flex:none; width:22px; height:22px; border-radius:50%; background:var(--gold); color:#101010; font-weight:700; font-size:.72rem; display:grid; place-items:center; margin-top:.1rem;}
+.hands-on .card{border-color:rgba(242,169,59,.28);}
+
+/* ============================= QUIZ / GABARITOS ============================= */
+.quiz-list{display:flex; flex-direction:column; gap:.5rem;}
+.qcard{border:1px solid var(--border-soft); border-radius:12px; background:var(--surface); overflow:hidden;}
+.qcard .qhead{display:flex; justify-content:space-between; align-items:center; padding:.65rem 1rem; cursor:pointer; gap:1rem; width:100%; background:none; border:none; text-align:left; color:inherit; font:inherit;}
+.qcard .qhead .qtext{font-size:.85rem; color:var(--text);}
+.qcard .qhead .qtag{font-family:var(--mono); font-size:.62rem; color:var(--text-faint); flex-shrink:0; margin-left:auto;}
+.qcard .qbody{max-height:0; overflow:hidden; transition:max-height .35s var(--ease);}
+.qcard.open .qbody{max-height:280px;}
+.qcard .qanswer{padding:.6rem 1rem 1rem; color:var(--text-dim); font-size:.8rem; line-height:1.5; border-top:1px solid var(--border-soft);}
+.qcard .qanswer b{color:var(--green);}
+.qcard .chev{transition:transform .3s var(--ease); color:var(--text-faint); font-family:var(--mono);}
+.qcard.open .chev{transform:rotate(45deg); color:var(--gold);}
+
+/* ============================= DRILL: É DEVOPS? ============================= */
+.drill{background:linear-gradient(180deg,var(--surface),var(--bg-2)); border:1px solid rgba(242,169,59,.28); border-radius:var(--radius); padding:1.3rem 1.4rem;}
+.drill-q{font-family:var(--disp); font-size:clamp(1rem,1.7vw,1.3rem); font-weight:700; color:var(--text); min-height:3.2em; line-height:1.35;}
+.drill-btns{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+.verdict{margin-top:.9rem; padding:.7rem .9rem; border-radius:10px; border:1px solid var(--border); background:var(--surface); font-size:.82rem; color:var(--text-dim); line-height:1.5; min-height:4.4em;}
+.verdict b.t{font-family:var(--mono); font-size:.85rem;}
+.verdict.ok{border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.07);} .verdict.ok b.t{color:var(--green);}
+.verdict.no{border-color:rgba(239,91,91,.5); background:rgba(239,91,91,.07);} .verdict.no b.t{color:var(--red);}
+.verdict.warn{border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.07);} .verdict.warn b.t{color:var(--gold);}
+.drill-score{font-family:var(--mono); font-size:.76rem; color:var(--gold); margin-top:.6rem;}
+
+/* ============================= GIT 3 ÁREAS ============================= */
+.areas{display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-top:.9rem;}
+.area{background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:.8rem .9rem; min-height:150px; transition:box-shadow .3s;}
+.area h4{font-family:var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.15rem;}
+.area .sub{font-size:.72rem; color:var(--text-faint); margin-bottom:.6rem;}
+.area.wd h4{color:var(--red);} .area.st h4{color:var(--gold);} .area.rp h4{color:var(--green);}
+.area.flash{box-shadow:0 0 0 3px rgba(47,176,232,.25);}
+.fchip{display:inline-flex; align-items:center; gap:.35em; font-family:var(--mono); font-size:.72rem; padding:.25rem .55rem; border-radius:7px; margin:0 .3rem .3rem 0; border:1px solid var(--border);}
+.fchip.m{color:var(--red); border-color:rgba(239,91,91,.45); background:rgba(239,91,91,.07);}
+.fchip.s{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.07);}
+.commit-row{font-family:var(--mono); font-size:.7rem; color:var(--text-dim); padding:.2rem 0; border-bottom:1px solid var(--border-soft);}
+.commit-row .h{color:var(--gold);}
+.empty{font-size:.74rem; color:var(--text-faint); font-style:italic;}
+.git-ctrl{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem;}
+.term{margin-top:.8rem; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.7rem .9rem; font-family:var(--mono); font-size:.76rem; color:var(--text-dim); min-height:3.6em; white-space:pre-wrap; overflow-x:auto;}
+.term .p{color:var(--green);} .term .c{color:var(--text);} .term .e{color:var(--red);} .term .y{color:var(--gold);}
+
+/* ============================= CODE BLOCK ============================= */
+.codeblock{position:relative; background:#04070c; border:1px solid var(--border); border-radius:12px; min-width:0;}
+.codeblock pre{font-family:var(--mono); font-size:.74rem; line-height:1.6; color:var(--text); padding:.8rem 1rem; overflow:auto; max-height:52vh;}
+.codeblock pre .cm{color:var(--text-faint);}
+.codeblock .copy{position:absolute; top:.5rem; right:.5rem; font-family:var(--mono); font-size:.66rem; padding:.25rem .6rem; border-radius:7px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); cursor:pointer;}
+.codeblock .copy:hover{color:var(--blue); border-color:var(--blue);}
+.codeblock .cb-title{font-family:var(--mono); font-size:.66rem; color:var(--text-faint); padding:.5rem 1rem 0; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ============================= COMMIT CHECKER ============================= */
+.ip-input{font-family:var(--mono); font-size:.88rem; padding:.6rem .8rem; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); width:100%;}
+.ip-input:focus{outline:none; border-color:var(--blue);}
+.input-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;}
+.input-row .ip-input{flex:1; min-width:200px;}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.6rem;}
+.chip{font-family:var(--mono); font-size:.7rem; padding:.22rem .6rem; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer;}
+.chip:hover{border-color:var(--blue); color:var(--blue);}
+.types{display:grid; grid-template-columns:repeat(2,1fr); gap:.25rem .9rem; font-size:.78rem; color:var(--text-dim);}
+.types b{font-family:var(--mono); color:var(--blue); font-weight:600;}
+
+/* ============================= MISC ============================= */
+.warn-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(242,169,59,.07); border:1px solid rgba(242,169,59,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.warn-box b{color:var(--gold);}
+.info-box{margin-top:1rem; font-size:.82rem; color:var(--text-dim); background:rgba(47,176,232,.07); border:1px solid rgba(47,176,232,.3); border-radius:10px; padding:.7rem .95rem; line-height:1.5;}
+.info-box b{color:var(--blue);}
+.refs-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.8rem 1rem; min-width:0;}
+.refs-box .refs-title{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:.5rem;}
+.refs-box ul{list-style:none; display:flex; flex-direction:column; gap:.4rem;}
+.refs-box a, .refs-box span.ref{color:var(--text-dim); text-decoration:none; font-size:.8rem; display:flex; align-items:baseline; gap:.5em; line-height:1.4;}
+.refs-box a:hover{color:var(--blue);}
+.refs-box .ext{color:var(--text-faint); font-family:var(--mono); font-size:.66rem; flex:none;}
+.cta-next{display:inline-flex; align-items:center; gap:.8rem; padding:1rem 1.6rem; border-radius:14px; border:1px solid var(--border); background:var(--surface); margin-top:1.4rem; flex-wrap:wrap;}
+.cta-next .arrow{font-size:1.3rem; color:var(--gold);}
+.deliver{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.7rem;}
+.deliver span{font-family:var(--mono); font-size:.72rem; padding:.3rem .65rem; border-radius:8px; border:1px solid rgba(54,197,143,.4); background:rgba(54,197,143,.07); color:var(--green);}
+.tree{font-family:var(--mono); font-size:.76rem; line-height:1.6; color:var(--text-dim); white-space:pre; overflow-x:auto;}
+.tree b{color:var(--gold); font-weight:600;}
+
+/* ============================= RESPONSIVO ============================= */
+@media (max-width:860px){
+  html,body{overflow:auto;}
+  .deck{height:auto; overflow:visible; scroll-snap-type:none;}
+  .slide{height:auto; min-height:auto; padding:3.5rem 16px; overflow:visible;}
+  .grid-3,.grid-2,.grid-4,.grid-5,.ways,.loop-wrap,.areas,.agenda,.wall,.types{grid-template-columns:1fr;}
+  .wall .brick{writing-mode:horizontal-tb; padding:.5rem;}
+  .toc{grid-template-columns:1fr;}
+  .dotnav,.capa-bits,.hint,.slide-no{display:none;}
+  .timeline{flex-direction:column;}
+  .animate{opacity:1; transform:none;}
+}
+
+/* ============================= AUTOESTUDO (trilha, biblioteca, glossário, autoavaliação) ============================= */
+.slide.tall{justify-content:flex-start; overflow-y:auto; padding-top:6vh; padding-bottom:10vh;}
+table.trail td:nth-child(4){white-space:nowrap;}
+table.trail td{font-size:.8rem; line-height:1.45;}
+table.trail td:first-child{font-family:var(--mono); color:var(--text-faint); font-weight:600; width:2.2em;}
+table.trail td a{color:var(--blue); text-decoration:none;}
+table.trail td a:hover{text-decoration:underline;}
+table.trail .goal{color:var(--text);}
+.req{display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.04em; padding:.1rem .45rem; border-radius:99px; border:1px solid var(--border); color:var(--text-faint); white-space:nowrap; margin-left:.3rem; vertical-align:1px;}
+.req.ob{color:var(--gold); border-color:rgba(242,169,59,.45); background:rgba(242,169,59,.08);}
+.lib h4{font-family:var(--mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin:.2rem 0 .45rem;}
+.lib ul{list-style:none; display:grid; gap:.45rem;}
+.lib li{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.lib li b{color:var(--text);}
+.lib li a{color:var(--blue); text-decoration:none;}
+.lib li a:hover{text-decoration:underline;}
+.lib .find{display:block; font-size:.74rem; color:var(--text-faint); margin-top:.1rem;}
+.gloss{display:grid; grid-template-columns:repeat(2,1fr); gap:.2rem 1.6rem; margin-top:.8rem;}
+.gloss div{border-bottom:1px solid var(--border-soft); padding:.4rem 0; min-width:0;}
+.gloss dt{font-family:var(--mono); color:var(--blue); font-size:.78rem; font-weight:600;}
+.gloss dd{font-size:.78rem; color:var(--text-dim); line-height:1.45; margin-top:.1rem;}
+.method{display:grid; grid-template-columns:repeat(4,1fr); gap:.7rem; margin-top:1rem;}
+.method .card .icon-chip{font-size:.9rem;}
+.review-hint{font-family:var(--mono); font-size:.7rem; color:var(--text-faint); margin-left:auto; flex:none; padding-top:.15rem;}
+@media (max-width:860px){ .gloss,.method{grid-template-columns:1fr;} .slide.tall{overflow-y:visible;} }
+
+/* ============================= AULA 04 — componentes novos ============================= */
+.opt{display:inline-flex; align-items:center; gap:.45rem; font-size:.8rem; color:var(--text-dim); background:var(--surface); border:1px solid var(--border-soft); border-radius:9px; padding:.4rem .7rem; cursor:pointer;}
+.opt input{accent-color:var(--gold);}
+.yaml-wrap{display:grid; grid-template-columns:1.1fr 1fr; gap:1.2rem; align-items:start; margin-top:.8rem;}
+pre.yaml{font-family:var(--mono); font-size:.76rem; line-height:1.55; background:#04070c; border:1px solid var(--border); border-radius:12px; padding:.6rem 0; overflow-x:auto; margin:0;}
+pre.yaml .yl{display:block; padding:0 .9rem; white-space:pre; cursor:pointer; color:var(--text-dim); border-left:3px solid transparent;}
+pre.yaml .yl:hover{background:rgba(47,176,232,.06);}
+pre.yaml .yl.hot{color:var(--text); background:rgba(242,169,59,.1); border-left-color:var(--gold);}
+pre.yaml .yk{color:var(--blue);} pre.yaml .cm2{color:var(--text-faint);}
+pre.yaml .yl:focus-visible{outline:2px solid var(--gold); outline-offset:-2px;}
+
+.cd-flow{display:grid; gap:.55rem; margin-top:1rem;}
+.cd-row{display:flex; align-items:center; gap:.35rem; flex-wrap:wrap; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; padding:.55rem .8rem;}
+.cd-lbl{font-family:var(--disp); font-weight:700; font-size:.84rem; width:11.5rem; flex:none; color:var(--text);}
+.cd-st{font-family:var(--mono); font-size:.72rem; padding:.25rem .55rem; border-radius:7px; border:1px solid var(--border); color:var(--text-dim);}
+.cd-st.gate{color:var(--gold); border-color:rgba(242,169,59,.5); background:rgba(242,169,59,.08);}
+.cd-st.auto{color:var(--green); border-color:rgba(54,197,143,.5); background:rgba(54,197,143,.08);}
+.cd-ar{color:var(--text-faint); font-family:var(--mono); font-size:.75rem;}
+
+.dep-ctrl{display:flex; flex-wrap:wrap; gap:.6rem .9rem; align-items:center; margin-top:.9rem;}
+.seg-btns{display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; flex-wrap:wrap;}
+.segb{font-family:var(--mono); font-size:.74rem; padding:.5rem .8rem; background:var(--surface); color:var(--text-dim); border:none; border-right:1px solid var(--border); cursor:pointer;}
+.segb:last-child{border-right:none;}
+.segb[aria-pressed="true"]{background:rgba(47,176,232,.16); color:var(--blue); font-weight:700;}
+.dep-stage{background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.9rem 1rem; min-width:0;}
+.dep-router{display:flex; align-items:center; gap:.7rem; font-family:var(--mono); font-size:.74rem; color:var(--text-dim);}
+.dep-bar{flex:1; display:flex; height:22px; border-radius:6px; overflow:hidden; background:var(--surface-2); border:1px solid var(--border);}
+.dep-bar span{display:flex; align-items:center; justify-content:center; font-size:.66rem; font-weight:700; white-space:nowrap; overflow:hidden; transition:width .5s var(--ease);}
+#depV1{background:rgba(47,176,232,.3); color:var(--text);} #depV2{background:rgba(54,197,143,.35); color:var(--text);}
+#depV2.bad{background:rgba(239,91,91,.45);}
+.dep-servers{display:grid; grid-template-columns:repeat(4,1fr); gap:.45rem; margin-top:.8rem;}
+.dep-servers .grp{grid-column:1/-1; font-family:var(--mono); font-size:.64rem; letter-spacing:.08em; color:var(--text-faint); text-transform:uppercase; margin-top:.2rem;}
+.srv{border:1px solid var(--border); border-radius:10px; padding:.5rem .4rem; text-align:center; font-family:var(--mono); font-size:.72rem; color:var(--text-faint); background:var(--bg-2); transition:all .35s var(--ease); min-height:3.3em;}
+.srv b{display:block; font-size:.84rem;}
+.srv.v1{border-color:rgba(47,176,232,.55); color:var(--blue); background:rgba(47,176,232,.08);}
+.srv.v2{border-color:rgba(54,197,143,.55); color:var(--green); background:rgba(54,197,143,.08);}
+.srv.err{border-color:rgba(239,91,91,.6); color:var(--red); background:rgba(239,91,91,.08);}
+.srv.start{border-color:rgba(242,169,59,.55); color:var(--gold); border-style:dashed;}
+.srv.off{opacity:.45;}
+.srv.idle{opacity:.6; border-style:dotted;}
+.dep-metrics{display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin-top:.8rem;}
+.dep-metrics div{background:var(--bg-2); border:1px solid var(--border-soft); border-radius:10px; padding:.5rem .6rem;}
+.dep-metrics b{display:block; font-family:var(--disp); font-size:1.15rem; color:var(--text); font-variant-numeric:tabular-nums;}
+.dep-metrics span{font-size:.68rem; color:var(--text-faint);}
+.dep-metrics b.bad{color:var(--red);} .dep-metrics b.good{color:var(--green);}
+
+.flow4{display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:.6rem; align-items:center; margin-top:1rem;}
+.f4{background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:.9rem 1rem; min-width:0;}
+.f4-ic{font-size:1.4rem;} .f4 h4{font-family:var(--disp); font-size:.95rem; margin:.3rem 0 .2rem;} .f4 p{font-size:.8rem; color:var(--text-dim); line-height:1.45;}
+.f4-ar{font-family:var(--mono); font-size:.72rem; color:var(--gold); text-align:center;}
+
+.k8s-diag{margin-top:.8rem; background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius); padding:.5rem .8rem; overflow-x:auto;}
+.k8s-diag svg{width:100%; min-width:560px; height:auto; display:block; max-height:34vh;}
+.k8t{font-family:'JetBrains Mono', monospace; font-size:11px; fill:var(--text-dim);}
+.k8t.c{text-anchor:middle;} .k8t.b{fill:var(--text); font-weight:700; font-size:12px;} .k8t.q{fill:var(--text-faint); font-size:10px; letter-spacing:.06em;}
+
+@media (max-width:860px){ .yaml-wrap,.flow4,.dep-metrics{grid-template-columns:1fr;} .f4-ar{transform:rotate(90deg);} .cd-lbl{width:100%;} .dep-servers{grid-template-columns:repeat(2,1fr);} }
+.ctx{margin-top:.8rem; padding:.65rem .95rem; border-left:3px solid var(--gold); background:rgba(242,169,59,.07); border-radius:0 10px 10px 0; font-size:.88rem; color:var(--text-dim); line-height:1.55; max-width:95ch;}
+.ctx b{color:var(--text);}
+.ctx b.tag{display:inline-block; font-family:var(--mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); margin-right:.5rem;}
+.deep{margin-top:.9rem; display:flex; flex-wrap:wrap; gap:.35rem 1rem; align-items:baseline; font-size:.8rem; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:.6rem;}
+.deep > span:first-child{font-family:var(--mono); font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue);}
+.deep a{color:var(--blue); text-decoration:none;}
+.deep a:hover{text-decoration:underline;}
+.deep a::after{content:' ↗'; font-size:.75em; color:var(--text-faint);}
+.deep .ref{color:var(--text-dim);}
+.card p.ex{margin-top:.45rem; padding-top:.45rem; border-top:1px dashed var(--border-soft); font-size:.78rem;}
+.card p.ex b{color:var(--gold);}
+/* ============================= CHECKPOINT PASSO A PASSO ============================= */
+.who{display:inline-block; font-family:var(--mono); font-size:.66rem; font-weight:700; padding:.08rem .45rem; border-radius:6px; margin-right:.3rem; vertical-align:1px;}
+.who.a{background:rgba(47,176,232,.16); color:var(--blue); border:1px solid rgba(47,176,232,.45);}
+.who.b{background:rgba(54,197,143,.14); color:var(--green); border:1px solid rgba(54,197,143,.45);}
+.who.ab{background:rgba(242,169,59,.14); color:var(--gold); border:1px solid rgba(242,169,59,.45);}
+ol.cp-steps{list-style:none; counter-reset:cp; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin-top:.9rem;}
+ol.cp-steps[start="7"]{counter-reset:cp 6; grid-template-columns:1fr; margin-top:0;}
+ol.cp-steps > li{counter-increment:cp; position:relative; background:var(--surface); border:1px solid rgba(242,169,59,.28); border-radius:12px; padding:.7rem .9rem .7rem 2.6rem; min-width:0;}
+ol.cp-steps > li::before{content:counter(cp); position:absolute; left:.75rem; top:.7rem; width:24px; height:24px; border-radius:50%; background:var(--gold); color:#101010; font-weight:800; font-size:.75rem; display:grid; place-items:center;}
+.cp-h{font-family:var(--disp); font-weight:700; font-size:.9rem; color:var(--text); margin-bottom:.3rem;}
+ol.cp-steps p{font-size:.8rem; color:var(--text-dim); line-height:1.5; margin-top:.3rem;}
+ol.cp-steps p a{color:var(--blue);}
+ol.cp-steps .tree{font-size:.72rem; background:#04070c; border:1px solid var(--border); border-radius:8px; padding:.45rem .6rem; margin-top:.35rem; overflow-x:auto;}
+ol.cp-steps p.ok{color:var(--green); font-size:.76rem;}
+.tree .cm2{color:var(--text-faint);}
+@media (min-width:861px){ #s-cp2 ol.cp-steps{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:860px){ ol.cp-steps{grid-template-columns:1fr;} }
+#s-cp-codigo .cb-title{text-transform:none; letter-spacing:.02em;}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="progress" id="progress"></div>
+<div class="slide-no" id="slideNo">01 <span style="color:var(--text-faint)">/</span> <b id="totalNo">--</b></div>
+<div class="dotnav" id="dotnav"></div>
+<div class="hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Esc</kbd> topo</div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================ CAPA -->
+  <section class="slide" id="s-capa">
+    <div class="slide-inner">
+      <div class="capa-badge animate"><span class="dot"></span> DEVOPS TOOLS · ADS 5º PERÍODO · AULA 04 · 18/11/2026</div>
+      <h1 class="title animate delay-1"><span class="accent-b">Entrega Contínua</span> com<br><span class="accent">Docker</span> e Kubernetes</h1>
+      <p class="subtitle animate delay-2">Como empacotar a aplicação num container que roda igual em qualquer lugar e colocar uma versão nova no ar sem tirar o sistema do ar.</p>
+      <div class="capa-foot animate delay-3">
+        <div><b>Prof. Patrick José Cardoso</b><br>Análise e Desenvolvimento de Sistemas · UNIPAR</div>
+        <div><b>Semana 4 de 6 · Unidade II</b><br>1 h síncrona + ~5h40 de autoestudo</div>
+        <div><b>Entrega</b><br>Checkpoint 4 até 24/11, 23h59</div>
+      </div>
+    </div>
+    <div class="capa-bits">$ docker build -t taskflow .
+$ docker run -p 8000:8000
+$ kubectl apply -f k8s/
+deployment "taskflow"
+successfully rolled out
+3/3 pods Running</div>
+  </section>
+
+  <!-- ============================================================ SUMÁRIO -->
+  <section class="slide" id="s-toc">
+    <div class="slide-inner">
+      <div class="kicker animate">Roteiro da aula</div>
+      <h2 class="stitle animate delay-1">O que você vai encontrar neste material</h2>
+      <div class="toc animate delay-2" style="margin-top:.8rem;">
+        <div>
+          <div class="toc-group">Antes de começar</div>
+          <a href="#s-prep"><span class="n"></span><span class="t">Checklist antes do encontro</span></a>
+          <a href="#s-agenda"><span class="n"></span><span class="t">Roteiro do encontro de hoje</span></a>
+          <a href="#s-revisao"><span class="n"></span><span class="t">Revisão relâmpago da Aula 03</span></a>
+          <a href="#s-gancho"><span class="n"></span><span class="t">15 minutos fora do ar por deploy</span></a>
+          <div class="toc-group">Entrega contínua</div>
+          <a href="#s-cd"><span class="n"></span><span class="t">Entrega × implantação contínua</span></a>
+          <a href="#s-estrategias"><span class="n"></span><span class="t">Simulador de estratégias de deploy</span></a>
+          <div class="toc-group">Docker</div>
+          <a href="#s-containers"><span class="n"></span><span class="t">Por que containers</span></a>
+          <a href="#s-imagem"><span class="n"></span><span class="t">Imagem, container e registry</span></a>
+          <a href="#s-dockerfile"><span class="n"></span><span class="t">Anatomia do Dockerfile</span></a>
+        </div>
+        <div>
+          <a href="#s-mm-docker"><span class="n"></span><span class="t">🛠️ Comandos Docker essenciais</span></a>
+          <a href="#s-boas"><span class="n"></span><span class="t">Imagens enxutas e seguras</span></a>
+          <a href="#s-ghcr"><span class="n"></span><span class="t">Publicar a imagem pelo Actions</span></a>
+          <div class="toc-group">Kubernetes</div>
+          <a href="#s-k8s"><span class="n"></span><span class="t">O que o Kubernetes resolve</span></a>
+          <a href="#s-manifestos"><span class="n"></span><span class="t">Deployment e Service</span></a>
+          <a href="#s-kubectl"><span class="n"></span><span class="t">🛠️ kubectl e rollout</span></a>
+          <a href="#s-exagero"><span class="n"></span><span class="t">Quando Kubernetes é exagero</span></a>
+          <div class="toc-group">Autoestudo da semana</div>
+          <a href="#s-pbl"><span class="n"></span><span class="t">Situação-problema: ShopRápido</span></a>
+          <a href="#s-lab"><span class="n"></span><span class="t">Laboratório: Docker + Kubernetes</span></a>
+        </div>
+        <div>
+          <a href="#s-projeto"><span class="n"></span><span class="t">TaskFlow: checkpoint 4</span></a>
+          <a href="#s-cp1"><span class="n"></span><span class="t">🛠️ Checkpoint 4 passo a passo</span></a>
+          <a href="#s-cp-check"><span class="n"></span><span class="t">Checkpoint 4: conferência</span></a>
+          <a href="#s-plano"><span class="n"></span><span class="t">Seu plano da semana</span></a>
+          <a href="#s-trilha"><span class="n"></span><span class="t">Trilha de estudo da semana</span></a>
+          <a href="#s-fontes"><span class="n"></span><span class="t">Biblioteca: livros e documentação</span></a>
+          <a href="#s-glossario"><span class="n"></span><span class="t">Glossário da aula</span></a>
+          <a href="#s-autoavaliacao"><span class="n"></span><span class="t">Autoavaliação</span></a>
+          <a href="#s-quiz"><span class="n"></span><span class="t">Quiz de fixação</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PREP -->
+  <section class="slide hands-on" id="s-prep">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Antes do encontro <span class="mm-badge">⏱ 20 min · faça antes de 18/11</span></div>
+      <h2 class="stitle animate delay-1">Chegue com a CI verde e o Killercoda pronto</h2>
+      <p class="subtitle animate delay-2">Hoje o TaskFlow vira uma imagem de container. Confira estes itens antes da aula (fica salvo neste navegador).</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="check-list" data-check="prep">
+          <label class="check-item"><input type="checkbox" id="p4a"><div><div class="ci-t">Checkpoint 3 entregue (tag v0.3)</div><div class="ci-d">CI verde na main e check <span class="code">testes</span> obrigatório. A imagem que vamos gerar parte desse código.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p4b"><div><div class="ci-t">Testou os dois playgrounds do Killercoda</div><div class="ci-d">Em <a href="https://killercoda.com/playgrounds" target="_blank" rel="noopener">killercoda.com/playgrounds</a>, abra o <b>Ubuntu</b> e rode <span class="code">docker version</span>. Depois abra o <b>Kubernetes</b> e rode <span class="code">kubectl get nodes</span>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p4c"><div><div class="ci-t">Inscrição no curso LFS158</div><div class="ci-d"><a href="https://training.linuxfoundation.org/training/introduction-to-kubernetes/" target="_blank" rel="noopener">Introduction to Kubernetes</a>, Linux Foundation, gratuito, com badge digital.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="p4d"><div><div class="ci-t">Opcional: Docker na sua máquina</div><div class="ci-d"><a href="https://docs.docker.com/get-started/get-docker/" target="_blank" rel="noopener">Docker Desktop</a> (Windows/macOS) ou Docker Engine (Linux). Não é obrigatório: tudo funciona no Killercoda.</div></div></label>
+        </div>
+        <div class="card">
+          <h3 class="accent">Por que dois playgrounds?</h3>
+          <p>O <b>Ubuntu Playground</b> tem Docker instalado: é onde você constrói e roda a imagem. O <b>Kubernetes Playground</b> traz um cluster pronto com <span class="code">kubectl</span>: é onde você faz o deploy.</p>
+          <div class="info-box"><b>Lembrete:</b> a sessão gratuita do Killercoda dura cerca de 1 hora e é apagada ao fechar. Guarde Dockerfile e manifestos no GitHub, nunca só no playground.</div>
+          <div class="check-meter" id="prepMeter"><span>0/4</span><div class="check-bar"><span></span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ AGENDA -->
+  <section class="slide" id="s-agenda">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Encontro síncrono · Google Meet · 18/11</div>
+      <h2 class="stitle animate delay-1">Como serão os 60 minutos de hoje</h2>
+      <div class="agenda animate delay-2">
+        <div class="ag"><div class="min">0–10 min</div><h4>Gancho</h4><p>"Funciona no dev, quebra em produção" por diferença de versão do Python. O container como contrato do ambiente.</p></div>
+        <div class="ag"><div class="min">10–35 min</div><h4>Demonstração</h4><p>Dockerfile multi-stage do TaskFlow, <span class="code">docker build</span> e <span class="code">run</span>, publicação no GHCR pelo Actions e um rolling update ao vivo com <span class="code">kubectl</span>.</p></div>
+        <div class="ag"><div class="min">35–50 min</div><h4>Discussão</h4><p>Imagem × container, por que não usar a tag <span class="code">latest</span> e quando o Kubernetes é exagero.</p></div>
+        <div class="ag"><div class="min">50–60 min</div><h4>Tarefa</h4><p>Checkpoint 4 e início do 2º bimestre.</p></div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pergunta para pensar antes da aula:</b> se o TaskFlow tivesse 1.000 usuários e você precisasse publicar uma versão nova agora, quantos segundos o sistema poderia ficar fora do ar? E se a versão nova tivesse um bug?</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ REVISÃO -->
+  <section class="slide" id="s-revisao">
+    <div class="slide-inner" style="max-width:960px;">
+      <div class="kicker animate"><span class="knum"></span>Revisão da Aula 03</div>
+      <h2 class="stitle animate delay-1">Antes de seguir: 4 perguntas rápidas</h2>
+      <p class="subtitle animate delay-2">Responda de cabeça e clique para conferir.</p>
+      <div class="quiz-list static animate delay-3" style="margin-top:.9rem;">
+        <div class="qcard"><button class="qhead"><span class="qtext">O que é Integração Contínua, em uma frase?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Integrar o código de todos com frequência, com <b>cada integração verificada por build e testes automáticos</b>.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Qual a diferença entre <span class="code">uses</span> e <span class="code">run</span> num workflow?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer"><span class="code">uses</span> chama uma action pronta; <span class="code">run</span> executa comandos de terminal. Hoje vamos usar actions prontas do Docker.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Por que o runner do Actions acaba com o "na minha máquina funciona"?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Ele é uma <b>máquina limpa</b> a cada execução. O container leva essa ideia até a produção: o ambiente vai junto com o código.</div></div></div>
+        <div class="qcard"><button class="qhead"><span class="qtext">Depois da CI verde, o que ainda falta para o código chegar ao usuário?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">Empacotar, publicar e <b>implantar</b> a versão. Esse é o assunto de hoje: Entrega Contínua (CD).</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ GANCHO -->
+  <section class="slide" id="s-gancho">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Gancho do mundo real</div>
+      <h2 class="stitle animate delay-1">15 minutos fora do ar, toda vez que sai uma versão</h2>
+      <p class="subtitle animate delay-2">Um e-commerce típico sem entrega contínua faz deploy assim: avisa os clientes, para o servidor, copia os arquivos, instala dependências e liga de novo. Agora some dois problemas comuns:</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem;">
+        <div class="card"><h3 class="accent-r">"Funciona no dev, quebra em produção"</h3><p>O dev usa Python 3.12; o servidor tem 3.9. Uma sintaxe nova faz a API cair logo depois do deploy. Ninguém percebe até os pedidos pararem.</p></div>
+        <div class="card"><h3 class="accent-r">Deploy = parada</h3><p>Cada versão nova tira o site do ar por 15 minutos. Por isso o time junta mudanças e faz deploy raro, o que deixa cada deploy maior e mais arriscado.</p></div>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:.9rem;">
+        <div class="card"><h3 class="accent-g">Container resolve o primeiro</h3><p>A versão do Python, as bibliotecas e o código vão juntos numa <b>imagem</b>. O que foi testado na CI é exatamente o que roda em produção.</p></div>
+        <div class="card"><h3 class="accent-g">Orquestração resolve o segundo</h3><p>O Kubernetes troca as cópias da aplicação <b>uma de cada vez</b>, só manda tráfego para quem está saudável e volta à versão anterior com um comando.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CD -->
+  <section class="slide" id="s-cd">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Entrega contínua</div>
+      <h2 class="stitle animate delay-1">Entrega contínua × implantação contínua</h2>
+      <p class="subtitle animate delay-2">As duas são chamadas de "CD". A diferença está no último passo: quem decide colocar em produção.</p>
+      <div class="cd-flow animate delay-3">
+        <div class="cd-row"><span class="cd-lbl">Integração contínua</span><span class="cd-st">commit</span><span class="cd-ar">→</span><span class="cd-st">build</span><span class="cd-ar">→</span><span class="cd-st">testes</span></div>
+        <div class="cd-row"><span class="cd-lbl">Entrega contínua</span><span class="cd-st">commit</span><span class="cd-ar">→</span><span class="cd-st">build</span><span class="cd-ar">→</span><span class="cd-st">testes</span><span class="cd-ar">→</span><span class="cd-st">homologação</span><span class="cd-ar">→</span><span class="cd-st gate">👤 aprovação</span><span class="cd-ar">→</span><span class="cd-st">produção</span></div>
+        <div class="cd-row"><span class="cd-lbl">Implantação contínua</span><span class="cd-st">commit</span><span class="cd-ar">→</span><span class="cd-st">build</span><span class="cd-ar">→</span><span class="cd-st">testes</span><span class="cd-ar">→</span><span class="cd-st">homologação</span><span class="cd-ar">→</span><span class="cd-st auto">⚙ automático</span><span class="cd-ar">→</span><span class="cd-st">produção</span></div>
+      </div>
+      <div class="grid-2 animate delay-4" style="margin-top:1rem;">
+        <div class="card"><h3 class="accent">Entrega contínua (Continuous Delivery)</h3><p>Toda versão que passa no pipeline <b>está pronta</b> para produção. Uma pessoa decide <b>quando</b> publicar, com um clique. Termo popularizado por Jez Humble e David Farley no livro <i>Continuous Delivery</i> (2010).</p></div>
+        <div class="card"><h3 class="accent-b">Implantação contínua (Continuous Deployment)</h3><p>Toda versão que passa no pipeline <b>vai para produção sozinha</b>, sem aprovação manual. Exige testes muito confiáveis e monitoramento (Semana 6).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ ESTRATÉGIAS -->
+  <section class="slide" id="s-estrategias">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Estratégias de deploy · Simulador</div>
+      <h2 class="stitle animate delay-1">Como trocar a versão sem derrubar o sistema</h2>
+      <p class="subtitle animate delay-2">Escolha uma estratégia, decida se a v2 tem bug e clique em <b>Fazer deploy</b>. Compare a disponibilidade e quantos usuários seriam afetados.</p>
+      <div class="dep-ctrl animate delay-3">
+        <div class="seg-btns" role="radiogroup" aria-label="Estratégia">
+          <button class="segb" data-st="recreate" aria-pressed="false">Recreate</button>
+          <button class="segb" data-st="rolling" aria-pressed="true">Rolling update</button>
+          <button class="segb" data-st="bluegreen" aria-pressed="false">Blue-green</button>
+          <button class="segb" data-st="canary" aria-pressed="false">Canary</button>
+        </div>
+        <label class="opt"><input type="checkbox" id="depBug"> A v2 tem um bug</label>
+        <button class="btn" id="depRun">Fazer deploy</button>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem; grid-template-columns:1.3fr 1fr; align-items:start;">
+        <div class="dep-stage">
+          <div class="dep-router"><span>🌐 usuários</span><div class="dep-bar"><span id="depV1" style="width:100%">v1 100%</span><span id="depV2" style="width:0%"></span></div></div>
+          <div class="dep-servers" id="depServers"></div>
+          <div class="dep-metrics"><div><b id="mAvail">100%</b><span>disponível agora</span></div><div><b id="mErr">0%</b><span>requisições com erro</span></div><div><b id="mInfra">4</b><span>servidores em uso</span></div></div>
+        </div>
+        <div class="phase-panel" id="depPanel" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CONTAINERS -->
+  <section class="slide" id="s-containers">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Docker</div>
+      <h2 class="stitle animate delay-1">Por que containers?</h2>
+      <p class="subtitle animate delay-2">Um <b>container</b> é um processo isolado que leva junto tudo o que precisa para rodar: sistema base, linguagem, bibliotecas e código. Ele usa o kernel do sistema hospedeiro, por isso é leve e sobe em segundos.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem; align-items:start;">
+        <div class="tbl-wrap"><table class="cmp">
+          <tr><th>Aspecto</th><th>Máquina virtual</th><th>Container</th></tr>
+          <tr><td>O que isola</td><td>Um sistema operacional inteiro, com kernel próprio</td><td>Só o processo, compartilhando o kernel</td></tr>
+          <tr><td>Tamanho típico</td><td>Gigabytes</td><td>Dezenas a centenas de megabytes</td></tr>
+          <tr><td>Tempo para subir</td><td>Minutos</td><td>Segundos</td></tr>
+          <tr><td>Quantos por servidor</td><td>Poucos</td><td>Dezenas ou centenas</td></tr>
+          <tr><td>Uso típico</td><td>Isolar sistemas diferentes (ex.: Windows num Linux)</td><td>Empacotar e escalar aplicações</td></tr>
+        </table></div>
+        <div class="card">
+          <h3 class="accent">A analogia do contêiner de navio</h3>
+          <p>Antes dos contêineres padronizados, cada carga era embarcada de um jeito. Com a caixa de tamanho padrão, qualquer navio, trem ou caminhão carrega qualquer carga.</p>
+          <p style="margin-top:.5rem;">O container de software faz o mesmo: o servidor não precisa saber se dentro há Python, Java ou Node. Ele só sabe rodar containers.</p>
+          <div class="info-box"><b>Contrato do ambiente:</b> a imagem testada na CI é a mesma que vai para produção. Acabou a diferença de versão entre a máquina do dev e o servidor.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ IMAGEM -->
+  <section class="slide" id="s-imagem">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Docker</div>
+      <h2 class="stitle animate delay-1">Dockerfile, imagem, container e registry</h2>
+      <div class="flow4 animate delay-2">
+        <div class="f4"><div class="f4-ic">📄</div><h4>Dockerfile</h4><p>A <b>receita</b>: arquivo de texto com os passos para montar o ambiente.</p></div>
+        <div class="f4-ar">docker build →</div>
+        <div class="f4"><div class="f4-ic">📦</div><h4>Imagem</h4><p>O <b>pacote</b> pronto, imutável, identificado por nome e tag (<span class="code">taskflow:v0.4</span>).</p></div>
+        <div class="f4-ar">docker run →</div>
+        <div class="f4"><div class="f4-ic">▶️</div><h4>Container</h4><p>A imagem <b>em execução</b>. Da mesma imagem saem quantos containers você quiser.</p></div>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:1rem;">
+        <div class="card"><h3 class="accent-b">Registry</h3><p>Repositório de imagens, como o GitHub é para código. <span class="code">docker push</span> envia, <span class="code">docker pull</span> baixa. Exemplos: <b>Docker Hub</b>, <b>GitHub Container Registry (ghcr.io)</b>, registries das nuvens.</p></div>
+        <div class="card"><h3 class="accent">Analogia de programação</h3><p>A <b>imagem</b> está para o <b>container</b> assim como a <b>classe</b> está para o <b>objeto</b>: uma definição, várias instâncias. Apagar um container não apaga a imagem.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ DOCKERFILE -->
+  <section class="slide" id="s-dockerfile">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Docker · Interativo</div>
+      <h2 class="stitle animate delay-1">O Dockerfile do TaskFlow: clique em cada linha</h2>
+      <div class="yaml-wrap animate delay-2">
+        <div class="codeblock" style="margin:0;"><button class="copy" data-copy="dfText">copiar</button><pre class="yaml" id="dfCode"></pre></div>
+        <div class="phase-panel" id="dfPanel" aria-live="polite"></div>
+      </div>
+      <div class="grid-2 animate delay-3" style="margin-top:.8rem;">
+        <div class="codeblock"><div class="cb-title">.dockerignore · o que não entra na imagem</div><button class="copy">copiar</button>
+<pre>.venv/
+__pycache__/
+.pytest_cache/
+.git/
+tests/
+*.md</pre></div>
+        <div class="card"><h3>Camadas e cache</h3><p>Cada instrução cria uma <b>camada</b>. O Docker reaproveita camadas que não mudaram. Por isso copiamos o <span class="code">requirements.txt</span> e instalamos as dependências <b>antes</b> de copiar o código: mudar uma linha do código não reinstala tudo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MM DOCKER -->
+  <section class="slide hands-on" id="s-mm-docker">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 15 min · durante a demonstração</span></div>
+      <h2 class="stitle animate delay-1">Construa e rode o TaskFlow num container</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="codeblock">
+          <div class="cb-title">Killercoda · Ubuntu Playground</div>
+          <button class="copy">copiar</button>
+<pre>git clone https://github.com/USUARIO/taskflow.git
+cd taskflow
+<span class="cm"># crie o Dockerfile e o .dockerignore do slide <span class="sref" data-s="s-dockerfile"></span></span>
+
+docker build -t taskflow:dev .        <span class="cm"># constrói a imagem</span>
+docker images                         <span class="cm"># lista imagens e tamanhos</span>
+docker run -d --name api -p 8000:8000 taskflow:dev
+docker ps                             <span class="cm"># containers rodando</span>
+curl localhost:8000/tasks             <span class="cm"># deve responder []</span>
+docker logs api                       <span class="cm"># saída do uvicorn</span>
+docker exec -it api python --version  <span class="cm"># comando dentro do container</span>
+docker stop api && docker rm api</pre>
+        </div>
+        <div class="card"><h3 class="accent">Qual comando usar?</h3>
+          <div class="kicker" style="margin:.2rem 0 .3rem;" id="dkCount">Situação 1 de 6</div>
+          <div class="drill-q" id="dkQ" style="font-size:1rem; min-height:2.6em;"></div>
+          <div class="drill-btns">
+            <button class="btn ghost" data-dk="build">build</button><button class="btn ghost" data-dk="run">run</button><button class="btn ghost" data-dk="ps">ps</button><button class="btn ghost" data-dk="logs">logs</button><button class="btn ghost" data-dk="exec">exec</button><button class="btn ghost" data-dk="push">push</button>
+          </div>
+          <div class="verdict" id="dkFb">Escolha o comando.</div>
+          <div class="drill-score" id="dkScore">Acertos: 0 / 0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ BOAS PRÁTICAS -->
+  <section class="slide" id="s-boas">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Docker · Boas práticas</div>
+      <h2 class="stitle animate delay-1">Imagens enxutas, seguras e rastreáveis</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem;">
+        <div class="card"><div class="icon-chip">🪶</div><h3>Base pequena</h3><p>Prefira variantes <span class="code">-slim</span> ou <span class="code">-alpine</span>. Menos pacotes = imagem menor, download mais rápido e menos vulnerabilidades.</p></div>
+        <div class="card"><div class="icon-chip">🧱</div><h3>Multi-stage</h3><p>Um estágio instala e compila; a imagem final copia só o resultado. Ferramentas de build não vão para produção.</p></div>
+        <div class="card"><div class="icon-chip">👤</div><h3>Usuário sem privilégio</h3><p>Rode como usuário comum (<span class="code">USER appuser</span>), não como root. Se alguém invadir o container, terá menos poder.</p></div>
+        <div class="card"><div class="icon-chip">🏷️</div><h3>Tag versionada, nunca latest</h3><p><span class="code">latest</span> muda sem aviso: você não sabe qual código está rodando nem consegue voltar. Use a versão: <span class="code">taskflow:v0.4</span>.</p></div>
+        <div class="card"><div class="icon-chip">🔐</div><h3>Sem segredos na imagem</h3><p>Senhas e tokens entram no container por variáveis de ambiente ou <i>secrets</i> do orquestrador, nunca dentro do Dockerfile.</p></div>
+        <div class="card"><div class="icon-chip">🙈</div><h3>.dockerignore</h3><p>Evita copiar <span class="code">.git</span>, <span class="code">.venv</span> e arquivos locais. Imagem menor e sem vazar o que não deve.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ GHCR -->
+  <section class="slide hands-on" id="s-ghcr">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Implantação automatizada <span class="mm-badge">⏱ 15 min</span></div>
+      <h2 class="stitle animate delay-1">Publique a imagem automaticamente a cada versão</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start; grid-template-columns:1.15fr 1fr;">
+        <div class="codeblock">
+          <div class="cb-title">.github/workflows/cd.yml</div>
+          <button class="copy">copiar</button>
+<pre>name: CD
+
+on:
+  push:
+    tags: ["v*"]          <span class="cm"># roda quando você cria uma tag v…</span>
+
+jobs:
+  imagem:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write     <span class="cm"># permite publicar no ghcr.io</span>
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Gerar nome e tags da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: type=ref,event=tag
+
+      - name: Construir e publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}</pre>
+        </div>
+        <div class="card">
+          <h3 class="accent">Como funciona</h3>
+          <ol class="steps">
+            <li><span>Você cria a tag: <span class="code">git tag v0.4</span> e <span class="code">git push --tags</span>.</span></li>
+            <li><span>O workflow faz login no <b>ghcr.io</b> com o token automático do próprio Actions (<span class="code">GITHUB_TOKEN</span>). Não precisa criar senha.</span></li>
+            <li><span>O <span class="code">metadata-action</span> monta o nome <span class="code">ghcr.io/usuario/taskflow:v0.4</span>, em minúsculas.</span></li>
+            <li><span>O <span class="code">build-push-action</span> constrói com o seu Dockerfile e publica.</span></li>
+            <li><span>A imagem aparece em <i>Packages</i>, no seu perfil. Abra o pacote → <i>Package settings</i> → <b>Change visibility → Public</b>, para o Kubernetes conseguir baixar sem senha.</span></li>
+          </ol>
+          <div class="info-box"><b>CI + CD juntos:</b> a CI (Aula 03) roda a cada PR; o CD roda a cada versão marcada. Só crie a tag depois que a main estiver verde.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ K8S -->
+  <section class="slide" id="s-k8s">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Kubernetes</div>
+      <h2 class="stitle animate delay-1">O que o Kubernetes resolve</h2>
+      <p class="subtitle animate delay-2">Rodar 1 container é fácil. Rodar 30, em 5 servidores, reiniciando os que caem, distribuindo tráfego e trocando de versão sem parar o sistema, não é. O <b>Kubernetes</b> (K8s) é um <b>orquestrador</b>: você descreve o estado desejado e ele trabalha para mantê-lo.</p>
+      <div class="k8s-diag animate delay-3">
+        <svg viewBox="0 0 760 250" role="img" aria-label="Cluster Kubernetes: um Service distribui tráfego para 3 Pods de um Deployment, espalhados em 2 nós">
+          <defs><marker id="k8a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--text-faint)"/></marker></defs>
+          <rect x="140" y="10" width="610" height="230" rx="14" fill="none" stroke="var(--border)" stroke-dasharray="6 5"/>
+          <text x="156" y="32" class="k8t q">CLUSTER</text>
+          <rect x="10" y="100" width="100" height="44" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+          <text x="60" y="127" class="k8t c">🌐 usuários</text>
+          <rect x="170" y="96" width="120" height="52" rx="10" fill="rgba(242,169,59,.12)" stroke="var(--gold)"/>
+          <text x="230" y="118" class="k8t c b">Service</text><text x="230" y="136" class="k8t c q">IP e porta fixos</text>
+          <path d="M110 122 H166" stroke="var(--text-faint)" stroke-width="1.5" marker-end="url(#k8a)"/>
+          <rect x="330" y="46" width="200" height="170" rx="12" fill="none" stroke="var(--border)"/><text x="344" y="66" class="k8t q">NÓ 1</text>
+          <rect x="540" y="46" width="200" height="170" rx="12" fill="none" stroke="var(--border)"/><text x="554" y="66" class="k8t q">NÓ 2</text>
+          <rect x="350" y="80" width="160" height="48" rx="10" fill="rgba(47,176,232,.12)" stroke="var(--blue)"/><text x="430" y="101" class="k8t c b">Pod taskflow</text><text x="430" y="118" class="k8t c q">container v0.4</text>
+          <rect x="350" y="150" width="160" height="48" rx="10" fill="rgba(47,176,232,.12)" stroke="var(--blue)"/><text x="430" y="171" class="k8t c b">Pod taskflow</text><text x="430" y="188" class="k8t c q">container v0.4</text>
+          <rect x="560" y="80" width="160" height="48" rx="10" fill="rgba(47,176,232,.12)" stroke="var(--blue)"/><text x="640" y="101" class="k8t c b">Pod taskflow</text><text x="640" y="118" class="k8t c q">container v0.4</text>
+          <path d="M290 112 C320 104 330 104 346 104" stroke="var(--text-faint)" stroke-width="1.3" fill="none" marker-end="url(#k8a)"/>
+          <path d="M290 132 C320 160 330 174 346 174" stroke="var(--text-faint)" stroke-width="1.3" fill="none" marker-end="url(#k8a)"/>
+          <path d="M290 112 C410 14 520 14 556 96" stroke="var(--text-faint)" stroke-width="1.3" fill="none" marker-end="url(#k8a)"/>
+          <text x="535" y="232" class="k8t c q">Deployment: "quero 3 réplicas"</text>
+        </svg>
+      </div>
+      <div class="tbl-wrap animate delay-4" style="margin-top:.6rem;"><table class="cmp">
+        <tr><th>Objeto</th><th>O que é</th></tr>
+        <tr><td>Pod</td><td>Menor unidade do K8s: um ou mais containers que rodam juntos. É descartável: se cai, outro é criado.</td></tr>
+        <tr><td>Deployment</td><td>Diz qual imagem usar e quantas réplicas manter. Faz o rolling update e guarda o histórico para rollback.</td></tr>
+        <tr><td>Service</td><td>Endereço fixo que distribui o tráfego entre os Pods saudáveis, mesmo quando eles são trocados.</td></tr>
+        <tr><td>Nó (node)</td><td>Máquina (física ou virtual) do cluster onde os Pods rodam.</td></tr>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ MANIFESTOS -->
+  <section class="slide" id="s-manifestos">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Kubernetes · Manifestos</div>
+      <h2 class="stitle animate delay-1">Infraestrutura descrita em YAML: Deployment e Service</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="codeblock">
+          <div class="cb-title">k8s/deployment.yaml</div>
+          <button class="copy">copiar</button>
+<pre>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskflow
+spec:
+  replicas: 3                    <span class="cm"># quero 3 cópias</span>
+  selector:
+    matchLabels:
+      app: taskflow
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                <span class="cm"># sobe 1 extra por vez</span>
+      maxUnavailable: 0          <span class="cm"># nunca fica abaixo de 3</span>
+  template:
+    metadata:
+      labels:
+        app: taskflow
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/USUARIO/taskflow:v0.4
+          ports:
+            - containerPort: 8000
+          readinessProbe:        <span class="cm"># só recebe tráfego se responder</span>
+            httpGet:
+              path: /tasks
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 250m, memory: 128Mi}</pre>
+        </div>
+        <div>
+          <div class="codeblock">
+            <div class="cb-title">k8s/service.yaml</div>
+            <button class="copy">copiar</button>
+<pre>apiVersion: v1
+kind: Service
+metadata:
+  name: taskflow
+spec:
+  type: NodePort
+  selector:
+    app: taskflow        <span class="cm"># envia para Pods com este label</span>
+  ports:
+    - port: 80
+      targetPort: 8000   <span class="cm"># porta do container</span>
+      nodePort: 30080    <span class="cm"># porta aberta no nó</span></pre>
+          </div>
+          <div class="card" style="margin-top:.8rem;">
+            <h3 class="accent">O que observar</h3>
+            <ul>
+              <li><b>Declarativo:</b> você diz o estado final ("3 réplicas da v0.4"), não os passos.</li>
+              <li>O <b>label</b> <span class="code">app: taskflow</span> liga o Service aos Pods do Deployment.</li>
+              <li>A <b>readinessProbe</b> impede que um Pod com bug receba tráfego.</li>
+              <li><span class="code">maxUnavailable: 0</span> garante deploy sem indisponibilidade.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ KUBECTL -->
+  <section class="slide hands-on" id="s-kubectl">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>🛠️ Mão na Massa <span class="mm-badge">⏱ 10 min</span></div>
+      <h2 class="stitle animate delay-1">kubectl: aplicar, observar, atualizar e voltar</h2>
+      <div class="tbl-wrap animate delay-2" style="margin-top:.8rem;">
+        <table class="cmp">
+          <tr><th>Comando</th><th>O que faz</th></tr>
+          <tr><td><span class="code">kubectl apply -f k8s/</span></td><td>Cria ou atualiza tudo o que está nos arquivos da pasta. Rodar de novo sem mudança não altera nada.</td></tr>
+          <tr><td><span class="code">kubectl get pods -o wide</span></td><td>Lista os Pods, o estado (<i>Running</i>, <i>Pending</i>, <i>CrashLoopBackOff</i>) e em qual nó estão.</td></tr>
+          <tr><td><span class="code">kubectl describe pod &lt;nome&gt;</span></td><td>Detalhes e eventos de um Pod. O primeiro lugar para olhar quando algo não sobe.</td></tr>
+          <tr><td><span class="code">kubectl logs &lt;pod&gt;</span></td><td>Saída do container, como o <span class="code">docker logs</span>.</td></tr>
+          <tr><td><span class="code">kubectl set image deployment/taskflow api=…:v0.5</span></td><td>Troca a imagem e dispara o rolling update (ou edite o YAML e rode <span class="code">apply</span>).</td></tr>
+          <tr><td><span class="code">kubectl rollout status deployment/taskflow</span></td><td>Acompanha a troca, Pod a Pod, até terminar.</td></tr>
+          <tr><td><span class="code">kubectl rollout undo deployment/taskflow</span></td><td>Volta para a versão anterior. Rollback em segundos.</td></tr>
+          <tr><td><span class="code">kubectl delete pod &lt;nome&gt;</span></td><td>Apaga um Pod. Repare que o Deployment cria outro na hora: é a autocorreção.</td></tr>
+        </table>
+      </div>
+      <div class="warn-box animate delay-3"><b>Experimente no laboratório:</b> apague um Pod e rode <span class="code">kubectl get pods -w</span>. Em poucos segundos aparece um novo. Você declarou "quero 3"; o Kubernetes garante 3.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ EXAGERO -->
+  <section class="slide" id="s-exagero">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Discussão</div>
+      <h2 class="stitle animate delay-1">Quando o Kubernetes é exagero</h2>
+      <p class="subtitle animate delay-2">Kubernetes é poderoso e também complexo: exige gente para operar, monitorar e atualizar o cluster. Ferramenta certa é a que resolve o problema com o menor custo.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:1rem;">
+        <table class="cmp">
+          <tr><th>Cenário</th><th>Opção mais simples</th><th>Quando migrar para Kubernetes</th></tr>
+          <tr><td>Projeto pessoal ou MVP com 1 serviço</td><td>Plataforma gerenciada (PaaS), como Render, Railway, Azure App Service ou Google Cloud Run</td><td>Quando o custo ou as limitações da plataforma começarem a atrapalhar</td></tr>
+          <tr><td>Poucos containers num único servidor</td><td><b>Docker Compose</b> (você usa na Semana 6)</td><td>Quando precisar de vários servidores ou alta disponibilidade</td></tr>
+          <tr><td>Dezenas de serviços, vários times, tráfego variável</td><td>—</td><td>Aqui o Kubernetes (gerenciado pela nuvem: EKS, AKS, GKE) costuma compensar</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Para a prova:</b> saiba explicar <b>o que</b> o Kubernetes resolve (escala, autocorreção, deploy sem parada, rollback) e citar um caso em que ele <b>não</b> é a melhor escolha.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PBL -->
+  <section class="slide hands-on" id="s-pbl">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Autoestudo · Situação-problema <span class="mm-badge">⏱ 30 min</span></div>
+      <h2 class="stitle animate delay-1">Caso ShopRápido: a Black Friday que saiu do ar</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">O cenário</h3>
+          <p>O e-commerce <b>ShopRápido</b> roda num único servidor. Cada deploy deixa o site <b>15 minutos fora do ar</b>: o técnico para a aplicação, atualiza os pacotes do Python, copia o código e reinicia.</p>
+          <p style="margin-top:.5rem;">Na véspera da Black Friday, uma correção no carrinho foi publicada às 20h. O servidor tinha uma versão de biblioteca diferente da usada pelo dev; a aplicação não voltou. Foram <b>2 horas</b> para descobrir o problema e reinstalar a versão antiga à mão.</p>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">Sua tarefa</h3>
+          <ol class="steps">
+            <li><span><b>Diagnóstico:</b> separe os problemas de <b>ambiente</b> dos problemas de <b>estratégia de deploy</b>.</span></li>
+            <li><span><b>Estratégia:</b> escolha entre rolling, blue-green e canary para a ShopRápido. Justifique com o simulador do slide <span class="sref" data-s="s-estrategias"></span> (indisponibilidade, usuários afetados e custo).</span></li>
+            <li><span><b>Rollback:</b> descreva como, na sua proposta, a versão antiga voltaria em menos de 1 minuto.</span></li>
+            <li><span><b>Simule:</b> mostre no laboratório um rolling update e um <span class="code">rollout undo</span> e anexe os prints.</span></li>
+          </ol>
+          <div class="deliver"><span>Entrega: docs/pbl-semana4.md (via PR)</span><span>Até 24/11, 23h59</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ LAB -->
+  <section class="slide hands-on" id="s-lab">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Autoestudo · Laboratório <span class="mm-badge">⏱ 1 h</span></div>
+      <h2 class="stitle animate delay-1">Laboratório: do container ao rolling update</h2>
+      <div class="grid-2 animate delay-2" style="margin-top:.8rem; align-items:start;">
+        <div class="codeblock">
+          <div class="cb-title">Parte 1 · Ubuntu Playground (20 min)</div>
+          <button class="copy">copiar</button>
+<pre>git clone https://github.com/USUARIO/taskflow.git
+cd taskflow
+docker build -t taskflow:lab .
+docker images taskflow            <span class="cm"># anote o tamanho</span>
+docker run -d --name api -p 8000:8000 taskflow:lab
+curl -X POST localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Estudar Docker"}'
+curl localhost:8000/tasks
+docker exec api whoami            <span class="cm"># deve mostrar appuser</span>
+docker rm -f api
+<span class="cm"># Desafio: troque a base para python:3.12 (sem -slim),
+# reconstrua e compare o tamanho da imagem.</span></pre>
+        </div>
+        <div class="codeblock">
+          <div class="cb-title">Parte 2 · Kubernetes Playground (30 min)</div>
+          <button class="copy">copiar</button>
+<pre><span class="cm"># Pratique o rolling update com uma imagem pública</span>
+kubectl create deployment web --image=nginx:1.27-alpine --replicas=3
+kubectl expose deployment web --port=80 --type=NodePort
+kubectl get pods -o wide
+kubectl rollout status deployment/web
+
+<span class="cm"># Atualiza para outra versão e acompanha</span>
+kubectl set image deployment/web nginx=nginx:1.28-alpine
+kubectl rollout status deployment/web
+kubectl rollout history deployment/web
+
+<span class="cm"># Simula versão quebrada (a imagem não existe)</span>
+kubectl set image deployment/web nginx=nginx:9.99-nao-existe
+kubectl get pods            <span class="cm"># ErrImagePull, mas os antigos seguem no ar</span>
+kubectl rollout undo deployment/web
+kubectl get pods
+
+<span class="cm"># Autocorreção</span>
+kubectl delete pod $(kubectl get pods -l app=web -o name | head -1)
+kubectl get pods -w         <span class="cm"># Ctrl+C para sair</span></pre>
+        </div>
+      </div>
+      <div class="card animate delay-3" style="margin-top:.8rem;">
+        <h3 class="accent">Parte 3 · Perguntas (10 min) <span style="font-weight:400; color:var(--text-faint); font-size:.75rem;">(clique para ver o gabarito)</span></h3>
+        <div class="quiz-list static" style="margin-top:.4rem;">
+          <div class="qcard"><button class="qhead"><span class="qtext">Por que, com a imagem quebrada, o site continuou no ar?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">O rolling update só derruba um Pod antigo quando o novo fica <b>pronto</b>. Como o novo nem conseguiu baixar a imagem, os antigos continuaram servindo.</div></div></div>
+          <div class="qcard"><button class="qhead"><span class="qtext">O que o <span class="code">rollout history</span> mostra e para que serve?</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">As <b>revisões</b> do Deployment. O <span class="code">rollout undo</span> volta para a anterior; com <span class="code">--to-revision=N</span>, para uma específica.</div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PROJETO -->
+  <section class="slide hands-on tall" id="s-projeto">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Projeto evolutivo <span class="mm-badge">⏱ 1h30 · em dupla</span></div>
+      <h2 class="stitle animate delay-1">TaskFlow · Checkpoint 4 (tag v0.4): container e entrega contínua</h2>
+      <p class="subtitle animate delay-2">O TaskFlow passa a ser entregue como imagem versionada e implantado num cluster Kubernetes. Primeiro checkpoint do 2º bimestre.</p>
+      <div class="grid-3 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="card">
+          <h3 class="accent">1. Container</h3>
+          <ul>
+            <li><span class="code">Dockerfile</span> multi-stage, base slim e usuário sem root (slide <span class="sref" data-s="s-dockerfile"></span>).</li>
+            <li><span class="code">.dockerignore</span>.</li>
+            <li>Seção "Como rodar com Docker" no README.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent">2. Entrega</h3>
+          <ul>
+            <li><span class="code">.github/workflows/cd.yml</span> (slide <span class="sref" data-s="s-ghcr"></span>).</li>
+            <li>Tag <span class="code">v0.4</span> criada com a main verde.</li>
+            <li>Imagem <span class="code">ghcr.io/usuario/taskflow:v0.4</span> publicada e <b>pública</b>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="accent-b">3. Kubernetes</h3>
+          <ul>
+            <li>Pasta <span class="code">k8s/</span> com Deployment (3 réplicas, readinessProbe) e Service.</li>
+            <li>Deploy no Kubernetes Playground: print de <span class="code">kubectl get pods</span> com 3 Pods <i>Running</i>.</li>
+            <li>Print de um <span class="code">rollout undo</span>.</li>
+            <li><span class="code">docs/pbl-semana4.md</span>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ctx animate delay-4"><b class="tag">Como fazer</b> O passo a passo completo, com quem faz cada etapa, o código pronto e o checklist, está nos slides <span class="sref" data-s="s-cp1"></span> a <span class="sref" data-s="s-cp-check"></span>.</div>
+      <div class="deliver animate delay-4"><span>Prazo: terça, 24/11/2026, 23h59</span><span>Entregar no AVA: link do repositório</span><span>Vale nota de atividades do 2º bimestre</span></div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ CHECKPOINT 4 · PARTE 1 -->
+  <section class="slide hands-on tall" id="s-cp1">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 4 · passo a passo · parte 1 de 2 <span class="mm-badge">⏱ 50 min</span></div>
+      <h2 class="stitle animate delay-1">Parte 1: empacote, publique a imagem e descreva o deploy</h2>
+      <p class="subtitle animate delay-2">Tudo continua entrando por <b>PR revisado com CI verde</b>. <span class="who a">A</span> é o dono do fork, <span class="who b">B</span> é o colega, <span class="who ab">A+B</span> são os dois. Antes de cada branch nova: <span class="code">git switch main &amp;&amp; git pull</span>. Sem Docker na sua máquina? Use o <a href="https://killercoda.com/playgrounds" target="_blank" rel="noopener" style="color:var(--blue)">Ubuntu Playground</a> do Killercoda.</p>
+      <ol class="cp-steps animate delay-3">
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Dockerfile e .dockerignore (PR 1)</div>
+          <div class="tree">git switch main && git pull
+git switch -c build/docker
+<span class="cm2"># crie Dockerfile e .dockerignore (slide <span class="sref" data-s="s-cp-codigo"></span>)</span>
+git add Dockerfile .dockerignore
+git commit -m "build: adiciona Dockerfile multi-stage"
+<span class="cm2"># seção "Como rodar com Docker" no README</span>
+git commit -am "docs: explica como rodar com Docker"
+git push -u origin build/docker</div>
+          <p>Abra o PR e peça revisão ao B.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Revise rodando a imagem</div>
+          <p>A melhor revisão de um Dockerfile é construir e rodar. No Ubuntu Playground (ou na sua máquina):</p>
+          <div class="tree">git clone -b build/docker https://github.com/USUARIO/taskflow.git
+cd taskflow
+docker build -t taskflow:pr .
+docker run -d --name api -p 8000:8000 taskflow:pr
+curl localhost:8000/tasks       <span class="cm2"># []</span>
+docker exec api whoami          <span class="cm2"># appuser</span></div>
+          <p>Comente o tamanho da imagem (<span class="code">docker images taskflow</span>) e aprove. <span class="who a">A</span> faz o merge.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Workflow de entrega (PR 2)</div>
+          <div class="tree">git switch main && git pull
+git switch -c ci/cd-ghcr
+<span class="cm2"># cole o cd.yml do slide <span class="sref" data-s="s-ghcr"></span> em .github/workflows/cd.yml</span>
+git add .github/workflows/cd.yml
+git commit -m "ci: publica a imagem no GHCR a cada tag"
+git push -u origin ci/cd-ghcr</div>
+          <p>No PR roda só a CI. O CD <b>não</b> roda aqui: ele só dispara com uma tag <span class="code">v*</span>. Isso é esperado. <span class="who a">A</span> revisa e faz o merge.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Manifestos do Kubernetes (PR 3)</div>
+          <div class="tree">git switch main && git pull
+git switch -c deploy/k8s
+mkdir k8s
+<span class="cm2"># cole deployment.yaml e service.yaml do slide <span class="sref" data-s="s-manifestos"></span></span>
+<span class="cm2"># troque USUARIO pelo seu usuário em MINÚSCULAS</span>
+git add k8s
+git commit -m "deploy: adiciona Deployment e Service do Kubernetes"
+git push -u origin deploy/k8s</div>
+          <p class="ok">✓ Confira: a linha <span class="code">image:</span> ficou como <span class="code">ghcr.io/seuusuario/taskflow:v0.4</span>, tudo minúsculo. <span class="who b">B</span> revisa e faz o merge.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Crie a tag v0.4: ela publica a imagem</div>
+          <p>Só crie a tag com a main <b>verde</b> e com os 3 PRs já na main.</p>
+          <div class="tree">git switch main && git pull
+git tag v0.4
+git push --tags</div>
+          <p>Aba <i>Actions</i>: o workflow <b>CD</b> roda (≈ 2 min).</p>
+          <p class="ok">✓ Confira: o workflow CD terminou verde ✓.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who a">A</span> Deixe a imagem pública</div>
+          <p>No seu perfil do GitHub → aba <b>Packages</b> → <span class="code">taskflow</span> → <b>Package settings</b> → <b>Change visibility</b> → <b>Public</b>. Sem isso, o Kubernetes não consegue baixar a imagem.</p>
+          <p class="ok">✓ Confira: <span class="code">docker pull ghcr.io/seuusuario/taskflow:v0.4</span> funciona num playground, sem login.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 4 · PARTE 2 -->
+  <section class="slide hands-on tall" id="s-cp2">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 4 · passo a passo · parte 2 de 2 <span class="mm-badge">⏱ 40 min</span></div>
+      <h2 class="stitle animate delay-1">Parte 2: implante no Kubernetes, faça um rollback e entregue</h2>
+      <div class="ctx animate delay-2"><b class="tag">Onde fazer</b> No <a href="https://killercoda.com/playgrounds" target="_blank" rel="noopener" style="color:var(--blue)">Kubernetes Playground</a> do Killercoda, que já tem um cluster pronto. A sessão dura cerca de 1 hora e é apagada no fim: <b>tire os prints antes de fechar</b>. Os dois podem fazer juntos, em chamada, com um compartilhando a tela.</div>
+      <ol class="cp-steps animate delay-3" start="7">
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Aplique os manifestos</div>
+          <div class="tree">git clone https://github.com/USUARIO/taskflow.git
+cd taskflow
+kubectl apply -f k8s/
+kubectl get pods -w      <span class="cm2"># Ctrl+C quando os 3 estiverem Running</span></div>
+          <p>Print 1: <span class="code">kubectl get pods</span> com <b>3 Pods Running</b> e READY <span class="code">1/1</span> → <span class="code">docs/img/k8s-pods.png</span>.</p>
+          <p class="ok">✓ Se aparecer <span class="code">ErrImagePull</span>: a imagem não está pública ou o nome não está em minúsculas (passos 4 e 6).</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Teste a API pelo Service</div>
+          <div class="tree">kubectl port-forward service/taskflow 8080:80 &
+curl -X POST localhost:8080/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Rodando no Kubernetes"}'
+curl localhost:8080/tasks</div>
+          <p class="ok">✓ Confira: o segundo <span class="code">curl</span> devolve a tarefa criada.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Simule uma versão quebrada e volte</div>
+          <div class="tree">kubectl set image deployment/taskflow \
+  api=ghcr.io/seuusuario/taskflow:v9.9   <span class="cm2"># não existe</span>
+kubectl get pods         <span class="cm2"># 1 com ErrImagePull, 3 antigos Running</span>
+kubectl rollout undo deployment/taskflow
+kubectl rollout status deployment/taskflow
+kubectl rollout history deployment/taskflow
+kubectl get pods</div>
+          <p>Print 2: a tela com o <span class="code">ErrImagePull</span> e o <span class="code">rollout undo</span> → <span class="code">docs/img/k8s-rollback.png</span>. Note que a API <b>nunca saiu do ar</b> (<span class="code">maxUnavailable: 0</span>).</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who b">B</span> Documente (PR 4)</div>
+          <div class="tree">git switch main && git pull
+git switch -c docs/checkpoint-4</div>
+          <p>Com os modelos do slide <span class="sref" data-s="s-cp-codigo"></span>: seção "Kubernetes" no README com os 2 prints e <span class="code">docs/pbl-semana4.md</span>. Abra o PR. <span class="who a">A</span> revisa e faz o merge.</p>
+          <p>A tag <span class="code">v0.4</span> fica onde está: ela marca a versão do código que virou imagem. A documentação entra depois, sem tag nova.</p>
+        </li>
+        <li>
+          <div class="cp-h"><span class="who ab">A+B</span> Confira e entregue</div>
+          <p>Passe pelo checklist do slide <span class="sref" data-s="s-cp-check"></span>. Os dois integrantes enviam o link do repositório no AVA.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 4 · CÓDIGO E MODELOS -->
+  <section class="slide hands-on tall" id="s-cp-codigo">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 4 · código e modelos</div>
+      <h2 class="stitle animate delay-1">Dockerfile, .dockerignore e os modelos para o README</h2>
+      <p class="subtitle animate delay-2">O <span class="code">cd.yml</span> está no slide <span class="sref" data-s="s-ghcr"></span> e os manifestos no slide <span class="sref" data-s="s-manifestos"></span>. Troque <span class="code">USUARIO</span>/<span class="code">seuusuario</span> pelo usuário do dono do fork, em minúsculas.</p>
+      <div class="grid-2 animate delay-3" style="margin-top:.9rem; align-items:start;">
+        <div class="codeblock"><div class="cb-title"><span class="who a">A</span> Dockerfile (na raiz do projeto)</div><button class="copy">copiar</button>
+<pre># ---------- Estágio 1: build (instala dependências) ----------
+FROM python:3.12-slim AS build
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ---------- Estágio 2: imagem final, só o necessário ----------
+FROM python:3.12-slim
+WORKDIR /app
+COPY --from=build /install /usr/local
+COPY app/ ./app/
+RUN useradd --create-home appuser
+USER appuser
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</pre></div>
+        <div>
+          <div class="codeblock"><div class="cb-title"><span class="who a">A</span> .dockerignore</div><button class="copy">copiar</button>
+<pre>.venv/
+__pycache__/
+.pytest_cache/
+.git/
+tests/
+*.md</pre></div>
+          <div class="codeblock" style="margin-top:.7rem;"><div class="cb-title">README.md · seção "Como rodar com Docker"</div><button class="copy">copiar</button>
+<pre>## Como rodar com Docker
+
+```bash
+docker build -t taskflow .
+docker run -d -p 8000:8000 taskflow
+```
+
+Acesse http://localhost:8000/docs
+
+Imagem publicada a cada versão:
+`ghcr.io/seuusuario/taskflow:v0.4`</pre></div>
+        </div>
+        <div class="codeblock"><div class="cb-title">README.md · seção "Kubernetes"</div><button class="copy">copiar</button>
+<pre>## Kubernetes
+
+Manifestos em `k8s/`: Deployment com 3 réplicas,
+rolling update sem indisponibilidade e readinessProbe,
+e Service NodePort.
+
+```bash
+kubectl apply -f k8s/
+kubectl get pods
+```
+
+### 3 Pods rodando
+![Pods](docs/img/k8s-pods.png)
+
+### Rollback de uma versão quebrada
+![Rollback](docs/img/k8s-rollback.png)
+
+[Explique em 2 linhas o que aconteceu e
+por que a API não saiu do ar.]</pre></div>
+        <div class="codeblock"><div class="cb-title">docs/pbl-semana4.md</div><button class="copy">copiar</button>
+<pre># Situação-problema: ShopRápido
+
+## 1. Diagnóstico
+| Problemas de ambiente | Problemas de deploy |
+| --- | --- |
+|  |  |
+
+## 2. Estratégia escolhida
+[rolling, blue-green ou canary]
+Justificativa (indisponibilidade, usuários
+afetados e custo):
+
+## 3. Rollback em menos de 1 minuto
+[Como a versão antiga volta.]
+
+## 4. Simulação
+![Rolling update e rollback](img/k8s-rollback.png)</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CHECKPOINT 4 · CONFERÊNCIA -->
+  <section class="slide hands-on tall" id="s-cp-check">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate"><span class="knum"></span>Checkpoint 4 · conferência final</div>
+      <h2 class="stitle animate delay-1">Antes de entregar: confira os 8 itens</h2>
+      <p class="subtitle animate delay-2">Faça a conferência com a dupla. Se algum item falhar, volte ao passo correspondente nos slides <span class="sref" data-s="s-cp1"></span> e <span class="sref" data-s="s-cp2"></span>.</p>
+      <div class="card animate delay-3" style="margin-top:.9rem;">
+        <h3 class="accent">Checklist (fica salvo neste navegador)</h3>
+        <div class="check-list" data-check="entrega" style="margin-top:.5rem;">
+          <label class="check-item"><input type="checkbox" id="en1"><div><div class="ci-t">Dockerfile multi-stage e .dockerignore na main</div><div class="ci-d">Base <span class="code">python:3.12-slim</span> e <span class="code">USER appuser</span>; <span class="code">docker exec api whoami</span> mostra appuser.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en2"><div><div class="ci-t">cd.yml na main e workflow CD verde</div><div class="ci-d">Aba <i>Actions</i>: a execução disparada pela tag <span class="code">v0.4</span> terminou com ✓.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en3"><div><div class="ci-t">Imagem v0.4 publicada e pública</div><div class="ci-d">Aba <i>Packages</i> do perfil: <span class="code">taskflow</span> com a tag <span class="code">v0.4</span> e visibilidade <b>Public</b>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en4"><div><div class="ci-t">Pasta k8s/ com Deployment e Service</div><div class="ci-d">3 réplicas, <span class="code">readinessProbe</span> e imagem em minúsculas.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en5"><div><div class="ci-t">Print com 3 Pods Running</div><div class="ci-d"><span class="code">docs/img/k8s-pods.png</span> aparece no README.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en6"><div><div class="ci-t">Print do rollback</div><div class="ci-d"><span class="code">docs/img/k8s-rollback.png</span> mostra o <span class="code">ErrImagePull</span> e o <span class="code">rollout undo</span>.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en7"><div><div class="ci-t">README e docs/pbl-semana4.md completos</div><div class="ci-d">Seções "Como rodar com Docker" e "Kubernetes"; nenhum texto entre colchetes nos modelos.</div></div></label>
+          <label class="check-item"><input type="checkbox" id="en8"><div><div class="ci-t">Link enviado no AVA pelos dois integrantes</div><div class="ci-d">Até terça, 24/11/2026, 23h59.</div></div></label>
+        </div>
+        <div class="check-meter" id="entregaMeter"><span>0/8</span><div class="check-bar"><span></span></div></div>
+        <div class="deep"><span>📖 Para aprofundar:</span><a href="https://docs.github.com/pt/packages/working-with-a-github-packages-registry/working-with-the-container-registry" target="_blank" rel="noopener">GitHub · Container registry</a><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/" target="_blank" rel="noopener">Kubernetes · Deployment e rollback</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PLANO -->
+  <section class="slide" id="s-plano">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate"><span class="knum"></span>Autoestudo</div>
+      <h2 class="stitle animate delay-1">Seu plano da Semana 4 (≈ 5h40)</h2>
+      <p class="subtitle animate delay-2">Sugestão de ordem. Marque o que concluir (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="week" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="w4a"><div><div class="ci-t">Revisar este material</div><div class="ci-d">Refaça o simulador de estratégias de deploy e o Dockerfile interativo.</div></div><span class="ci-time">15 min</span></label>
+        <label class="check-item"><input type="checkbox" id="w4b"><div><div class="ci-t">Trilha de estudo: itens 1 a 6</div><div class="ci-d">Livros da bibliografia e documentação oficial, na ordem do slide <span class="sref" data-s="s-trilha"></span>.</div></div><span class="ci-time">2 h</span></label>
+        <label class="check-item"><input type="checkbox" id="w4c"><div><div class="ci-t">Laboratório: Docker + Kubernetes</div><div class="ci-d">Partes 1 a 3 do slide <span class="sref" data-s="s-lab"></span>.</div></div><span class="ci-time">1 h</span></label>
+        <label class="check-item"><input type="checkbox" id="w4d"><div><div class="ci-t">Situação-problema ShopRápido</div><div class="ci-d">docs/pbl-semana4.md, entregue via PR.</div></div><span class="ci-time">30 min</span></label>
+        <label class="check-item"><input type="checkbox" id="w4e"><div><div class="ci-t">Projeto TaskFlow: checkpoint 4</div><div class="ci-d">Dockerfile, CD para o GHCR, manifestos e deploy no cluster.</div></div><span class="ci-time">1h30</span></label>
+        <label class="check-item"><input type="checkbox" id="w4f"><div><div class="ci-t">Curso LFS158: primeiros capítulos</div><div class="ci-d">Introduction to Kubernetes, até o capítulo sobre a arquitetura.</div></div><span class="ci-time">25 min</span></label>
+      </div>
+      <div class="check-meter" id="weekMeter"><span>0/6</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ TRILHA -->
+  <section class="slide tall" id="s-trilha">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Trilha de estudo da semana</div>
+      <h2 class="stitle animate delay-1">O que estudar, em que ordem e para quê</h2>
+      <p class="subtitle animate delay-2">Siga na ordem. Os itens <span class="req ob">obrigatório</span> cobrem a prova e o checkpoint; os <span class="req">complementar</span> aprofundam e ficam fora das ~5h40 da semana. A última coluna diz o que você deve saber explicar ao terminar.</p>
+      <div class="tbl-wrap animate delay-3" style="margin-top:.8rem;">
+        <table class="cmp trail">
+          <tr><th>#</th><th>Estude</th><th>Onde</th><th>Tempo</th><th>Ao terminar, você sabe…</th></tr>
+          <tr><td>1</td><td>Entrega contínua e implantação automatizada <span class="req ob">obrigatório</span></td><td>MONTEIRO et al. <i>DevOps</i> (SAGAH) e MUNIZ et al. <i>Jornada DevOps</i>: capítulos sobre entrega contínua e deploy</td><td>30 min</td><td class="goal">diferenciar entrega e implantação contínua</td></tr>
+          <tr><td>2</td><td>Containers e orquestração na nuvem <span class="req ob">obrigatório</span></td><td>SILVA, F. R. <i>Cloud Computing</i> (SAGAH): capítulos sobre virtualização e containers</td><td>25 min</td><td class="goal">comparar máquina virtual e container</td></tr>
+          <tr><td>3</td><td>Conceitos do Docker <span class="req ob">obrigatório</span></td><td><a href="https://docs.docker.com/get-started/" target="_blank" rel="noopener">Docker Docs: Get started</a>, parte <i>Docker concepts → The basics</i> (container, imagem, registry)</td><td>25 min</td><td class="goal">explicar imagem, container e registry</td></tr>
+          <tr><td>4</td><td>Dockerfile e multi-stage <span class="req ob">obrigatório</span></td><td><a href="https://docs.docker.com/build/building/multi-stage/" target="_blank" rel="noopener">Multi-stage builds</a> + <a href="https://docs.docker.com/build/building/best-practices/" target="_blank" rel="noopener">Building best practices</a></td><td>20 min</td><td class="goal">escrever o Dockerfile do TaskFlow sem copiar</td></tr>
+          <tr><td>5</td><td>Kubernetes na prática <span class="req ob">obrigatório</span></td><td><a href="https://kubernetes.io/pt-br/docs/tutorials/kubernetes-basics/" target="_blank" rel="noopener">Kubernetes: aprenda o básico (pt-br)</a>, módulos 1 a 3 e 6 (atualização)</td><td>35 min</td><td class="goal">explicar Pod, Deployment, Service e rolling update</td></tr>
+          <tr><td>6</td><td>Publicar imagens no GHCR <span class="req ob">obrigatório</span></td><td><a href="https://docs.github.com/pt/packages/working-with-a-github-packages-registry/working-with-the-container-registry" target="_blank" rel="noopener">GitHub Docs: registro de contêiner</a></td><td>15 min</td><td class="goal">publicar a imagem e torná-la pública</td></tr>
+          <tr><td>7</td><td>Blue-green e canary <span class="req">complementar</span></td><td>FOWLER, M. <a href="https://martinfowler.com/bliki/BlueGreenDeployment.html" target="_blank" rel="noopener">BlueGreenDeployment</a> e SATO, D. <a href="https://martinfowler.com/bliki/CanaryRelease.html" target="_blank" rel="noopener">CanaryRelease</a></td><td>20 min</td><td class="goal">escolher a estratégia de deploy para um cenário</td></tr>
+          <tr><td>8</td><td>Entrega contínua (fonte original) <span class="req">complementar</span></td><td>HUMBLE, J. <a href="https://continuousdelivery.com/" target="_blank" rel="noopener">continuousdelivery.com</a>, página de princípios</td><td>20 min</td><td class="goal">citar os princípios da entrega contínua</td></tr>
+        </table>
+      </div>
+      <div class="info-box animate delay-4"><b>Livros da bibliografia:</b> estão on-line nas bibliotecas virtuais da UNIPAR (portal do aluno). Abra o <b>sumário</b> e procure pelo tema indicado.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ BIBLIOTECA -->
+  <section class="slide tall" id="s-fontes">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Biblioteca da semana</div>
+      <h2 class="stitle animate delay-1">Livros, documentação oficial e cursos</h2>
+      <div class="grid-3 animate delay-2" style="margin-top:.9rem; align-items:start;">
+        <div class="card lib">
+          <h4>📚 Livros da bibliografia</h4>
+          <ul>
+            <li><b>MONTEIRO, E. R. et al.</b> <i>DevOps.</i> SAGAH (on-line). <span class="find">Procure: entrega contínua; implantação automatizada; containers.</span></li>
+            <li><b>MUNIZ, A. et al.</b> <i>Jornada DevOps.</i> Brasport (on-line). <span class="find">Procure: entrega contínua; estratégias de deploy.</span></li>
+            <li><b>SILVA, F. R.</b> <i>Cloud Computing.</i> SAGAH (on-line). <span class="find">Procure: virtualização, containers e orquestração.</span></li>
+            <li><b>VERA, M. S.; DIOGENES, Y.</b> <i>Computação em nuvem.</i> Brasport (on-line). <span class="find">Complementar. Procure: modelos de serviço (IaaS, PaaS) para comparar com Kubernetes.</span></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>📘 Documentação oficial</h4>
+          <ul>
+            <li><a href="https://docs.docker.com/get-started/" target="_blank" rel="noopener">Docker: Get started</a></li>
+            <li><a href="https://docs.docker.com/reference/dockerfile/" target="_blank" rel="noopener">Referência do Dockerfile</a> <span class="find">Todas as instruções (FROM, COPY, RUN…).</span></li>
+            <li><a href="https://kubernetes.io/pt-br/docs/tutorials/kubernetes-basics/" target="_blank" rel="noopener">Kubernetes: tutorial básico (pt-br)</a></li>
+            <li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/" target="_blank" rel="noopener">Kubernetes: Deployments</a> · <a href="https://kubernetes.io/docs/concepts/services-networking/service/" target="_blank" rel="noopener">Services</a></li>
+            <li><a href="https://kubernetes.io/pt-br/docs/reference/kubectl/cheatsheet/" target="_blank" rel="noopener">kubectl: folha de referência (pt-br)</a></li>
+            <li><a href="https://docs.github.com/pt/packages/working-with-a-github-packages-registry/working-with-the-container-registry" target="_blank" rel="noopener">GitHub: registro de contêiner (ghcr.io)</a></li>
+          </ul>
+        </div>
+        <div class="card lib">
+          <h4>🎓 Cursos e prática extra</h4>
+          <ul>
+            <li><a href="https://training.linuxfoundation.org/training/introduction-to-kubernetes/" target="_blank" rel="noopener"><b>LFS158</b>: Introduction to Kubernetes</a> <span class="find">Linux Foundation · gratuito · 15–20 h · laboratórios · badge digital · 90 dias de acesso.</span></li>
+            <li><a href="https://training.linuxfoundation.org/training/introduction-to-gitops-lfs169/" target="_blank" rel="noopener"><b>LFS169</b>: Introduction to GitOps</a> <span class="find">Opcional, gratuito, badge digital. Deploy no Kubernetes a partir do Git.</span></li>
+            <li><a href="https://killercoda.com/playgrounds" target="_blank" rel="noopener">Killercoda Playgrounds</a> <span class="find">Ubuntu (Docker) e Kubernetes, no navegador.</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="warn-box animate delay-3"><b>Pod não sobe?</b> 1) <span class="code">kubectl get pods</span> e anote o estado. 2) <span class="code">kubectl describe pod &lt;nome&gt;</span> e leia os <i>Events</i> no fim. <i>ErrImagePull</i> = nome da imagem errado ou pacote privado; <i>CrashLoopBackOff</i> = a aplicação cai ao iniciar (veja <span class="code">kubectl logs</span>).</div>
+    </div>
+  </section>
+
+  <!-- ============================================================ GLOSSÁRIO -->
+  <section class="slide tall" id="s-glossario">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Glossário da aula</div>
+      <h2 class="stitle animate delay-1">Termos que você precisa dominar</h2>
+      <dl class="gloss animate delay-2">
+        <div><dt>Entrega contínua</dt><dd>Toda versão aprovada no pipeline fica pronta para produção; uma pessoa decide quando publicar.</dd></div>
+        <div><dt>Implantação contínua</dt><dd>Toda versão aprovada no pipeline vai para produção automaticamente.</dd></div>
+        <div><dt>Rolling update</dt><dd>Troca as instâncias aos poucos, sem parar o serviço.</dd></div>
+        <div><dt>Blue-green</dt><dd>Dois ambientes completos; o tráfego é trocado de uma vez para o novo, e o antigo fica de reserva.</dd></div>
+        <div><dt>Canary</dt><dd>A versão nova recebe uma pequena parte do tráfego antes de ser liberada para todos.</dd></div>
+        <div><dt>Rollback</dt><dd>Voltar para a versão anterior.</dd></div>
+        <div><dt>Container</dt><dd>Processo isolado que leva junto tudo o que precisa para rodar, usando o kernel do hospedeiro.</dd></div>
+        <div><dt>Imagem</dt><dd>Pacote imutável a partir do qual containers são criados; identificada por nome e tag.</dd></div>
+        <div><dt>Dockerfile</dt><dd>Arquivo com as instruções para construir uma imagem.</dd></div>
+        <div><dt>Registry</dt><dd>Repositório de imagens (Docker Hub, ghcr.io).</dd></div>
+        <div><dt>Multi-stage build</dt><dd>Dockerfile com vários estágios; a imagem final leva só o necessário.</dd></div>
+        <div><dt>Orquestrador</dt><dd>Sistema que gerencia muitos containers em vários servidores (ex.: Kubernetes).</dd></div>
+        <div><dt>Pod</dt><dd>Menor unidade do Kubernetes: um ou mais containers rodando juntos.</dd></div>
+        <div><dt>Deployment</dt><dd>Objeto que mantém N réplicas de uma imagem e controla atualizações e rollback.</dd></div>
+        <div><dt>Service</dt><dd>Endereço fixo que distribui tráfego entre os Pods saudáveis.</dd></div>
+        <div><dt>readinessProbe</dt><dd>Teste periódico que decide se um Pod está pronto para receber tráfego.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ============================================================ AUTOAVALIAÇÃO -->
+  <section class="slide" id="s-autoavaliacao">
+    <div class="slide-inner" style="max-width:980px;">
+      <div class="kicker animate"><span class="knum"></span>Autoavaliação</div>
+      <h2 class="stitle animate delay-1">Antes da próxima aula, você consegue…</h2>
+      <p class="subtitle animate delay-2">Marque só o que conseguir fazer <b>sem consultar</b>. O que ficar desmarcado, revise pela seção indicada (fica salvo neste navegador).</p>
+      <div class="check-list animate delay-3" data-check="auto" style="margin-top:.9rem;">
+        <label class="check-item"><input type="checkbox" id="au4a"><div><div class="ci-t">Diferenciar entrega contínua e implantação contínua</div></div><span class="review-hint">slide <span class="sref" data-s="s-cd"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au4b"><div><div class="ci-t">Comparar recreate, rolling, blue-green e canary</div></div><span class="review-hint">slide <span class="sref" data-s="s-estrategias"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au4c"><div><div class="ci-t">Explicar container × máquina virtual e imagem × container</div></div><span class="review-hint">slides <span class="sref" data-s="s-containers"></span> a <span class="sref" data-s="s-imagem"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au4d"><div><div class="ci-t">Escrever um Dockerfile multi-stage e justificar cada linha</div></div><span class="review-hint">slides <span class="sref" data-s="s-dockerfile"></span> e <span class="sref" data-s="s-boas"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au4e"><div><div class="ci-t">Publicar uma imagem no ghcr.io pelo Actions</div></div><span class="review-hint">slide <span class="sref" data-s="s-ghcr"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au4f"><div><div class="ci-t">Explicar Pod, Deployment e Service e aplicar os manifestos</div></div><span class="review-hint">slides <span class="sref" data-s="s-k8s"></span> a <span class="sref" data-s="s-manifestos"></span></span></label>
+        <label class="check-item"><input type="checkbox" id="au4g"><div><div class="ci-t">Fazer um rolling update e um rollback com kubectl</div></div><span class="review-hint">slide <span class="sref" data-s="s-kubectl"></span></span></label>
+      </div>
+      <div class="check-meter" id="autoMeter"><span>0/7</span><div class="check-bar"><span></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ QUIZ -->
+  <section class="slide" id="s-quiz">
+    <div class="slide-inner">
+      <div class="kicker animate"><span class="knum"></span>Fixação</div>
+      <h2 class="stitle animate delay-1">Fixação: responda antes de clicar</h2>
+      <div class="quiz-list animate delay-2" id="quizList" style="margin-top:.8rem;"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FIM -->
+  <section class="slide" id="s-fim">
+    <div class="slide-inner">
+      <div class="kicker animate">Encerramento</div>
+      <h2 class="title animate delay-1" style="font-size:clamp(1.8rem,3.4vw,2.6rem);">Hoje a aplicação ganhou uma <span class="accent-b">embalagem</span> e um <span class="accent">piloto automático</span>.<br>Na próxima aula, a infraestrutura vira código.</h2>
+      <p class="subtitle animate delay-2" style="margin-top:1rem;">Vimos entrega e implantação contínua, estratégias de deploy, containers, Dockerfile multi-stage, publicação no ghcr.io pelo Actions, Pods, Deployments, Services, rolling update e rollback no Kubernetes.</p>
+      <div class="cta-next animate delay-3"><span>Próxima aula · <b style="color:var(--text)">25/11 · Infraestrutura como Código com Terraform e Ansible</b></span><span class="arrow">→</span></div>
+      <div class="grid-2 animate delay-4" style="margin-top:1.2rem; max-width:820px;">
+        <div class="card"><h3 class="accent">Até terça, 24/11, 23h59</h3><p>Checkpoint 4 (tag <span class="code">v0.4</span>) + <span class="code">docs/pbl-semana4.md</span>, com o link do repositório no AVA.</p></div>
+        <div class="card"><h3 class="accent-b">Dúvidas?</h3><p>Poste no canal da disciplina com <b>o comando, o print do erro e a saída do <span class="code">kubectl describe</span></b> quando for problema no cluster.</p></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   MOTOR DO DECK — scroll-snap + nav por pontos + teclado + numeração
+   ====================================================================== */
+const deck = document.getElementById('deck');
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotnav = document.getElementById('dotnav');
+const slideNo = document.getElementById('slideNo');
+const progress = document.getElementById('progress');
+document.getElementById('totalNo').textContent = String(slides.length).padStart(2,'0');
+
+slides.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.setAttribute('aria-label','slide '+(i+1));
+  b.addEventListener('click', ()=> s.scrollIntoView({behavior:'smooth'}));
+  dotnav.appendChild(b);
+});
+const dots = Array.from(dotnav.children);
+const pad = n => String(n).padStart(2,'0');
+slides.forEach((s,i)=>{ const k=s.querySelector('.knum'); if(k) k.textContent = pad(i+1)+' · '; });
+document.querySelectorAll('.toc a').forEach(a=>{ const t=document.querySelector(a.getAttribute('href')); const n=a.querySelector('.n'); if(t&&n) n.textContent = pad(slides.indexOf(t)+1); });
+document.querySelectorAll('.sref').forEach(r=>{ const t=document.getElementById(r.dataset.s); if(t) r.textContent = pad(slides.indexOf(t)+1); });
+
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('in-view'); }
+    if(e.isIntersecting && e.intersectionRatio > .55){
+      const i = slides.indexOf(e.target);
+      dots.forEach(d=>d.classList.remove('active'));
+      dots[i].classList.add('active');
+      slideNo.innerHTML = String(i+1).padStart(2,'0')+' <span style="color:var(--text-faint)">/</span> <b>'+String(slides.length).padStart(2,'0')+'</b>';
+      progress.style.width = ((i+1)/slides.length*100)+'%';
+    }
+  });
+}, {threshold:[0,.2,.55,1]});
+slides.forEach(s=>io.observe(s));
+slides[0].classList.add('in-view');
+
+document.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const curr = Math.max(0, dots.findIndex(d=>d.classList.contains('active')));
+  if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); slides[Math.min(curr+1, slides.length-1)].scrollIntoView({behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); slides[Math.max(curr-1,0)].scrollIntoView({behavior:'smooth'}); }
+  else if(e.key==='Escape'){ slides[0].scrollIntoView({behavior:'smooth'}); }
+});
+document.querySelectorAll('.toc a').forEach(a=>{
+  a.addEventListener('click', ev=>{ ev.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); });
+});
+
+/* ===== Gabaritos expansíveis (cards estáticos) ===== */
+function bindQ(root){ root.querySelectorAll('.qcard .qhead').forEach(hd=>{ hd.addEventListener('click', ()=> hd.parentElement.classList.toggle('open')); }); }
+document.querySelectorAll('.quiz-list.static').forEach(bindQ);
+
+/* ===== Botões copiar ===== */
+document.querySelectorAll('.codeblock .copy').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const pre = btn.parentElement.querySelector('pre');
+    const txt = pre.innerText;
+    const done = ()=>{ btn.textContent='copiado ✓'; setTimeout(()=>btn.textContent='copiar',1600); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent='selecionado: Ctrl+C'; setTimeout(()=>btn.textContent='copiar',2200); };
+    try{ navigator.clipboard.writeText(txt).then(done, fallback); }catch(e){ fallback(); }
+  });
+});
+
+/* ===== Checklists com localStorage ===== */
+document.querySelectorAll('.check-list[data-check]').forEach(list=>{
+  const key = 'devops-aula04-'+list.dataset.check;
+  const meter = document.getElementById(list.dataset.check+'Meter');
+  const boxes = Array.from(list.querySelectorAll('input[type=checkbox]'));
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  function render(){
+    let n=0; boxes.forEach(b=>{ b.closest('.check-item').classList.toggle('done', b.checked); if(b.checked) n++; });
+    meter.querySelector('span').textContent = n+'/'+boxes.length;
+    meter.querySelector('.check-bar span').style.width = (n/boxes.length*100)+'%';
+  }
+  boxes.forEach(b=>{
+    b.checked = !!saved[b.id];
+    b.addEventListener('change', ()=>{ saved[b.id]=b.checked; try{ localStorage.setItem(key, JSON.stringify(saved)); }catch(e){} render(); });
+  });
+  render();
+});
+
+
+/* ===== Utilitário: exercício de múltipla escolha em sequência ===== */
+function makeDrill(cfg){
+  let i=0, ok=0, tot=0, answered=false;
+  const q=document.getElementById(cfg.q), fb=document.getElementById(cfg.fb), sc=document.getElementById(cfg.score), ct=document.getElementById(cfg.count);
+  const btns=Array.from(document.querySelectorAll('['+cfg.attr+']'));
+  function load(){ answered=false; const it=cfg.items[i]; if(cfg.html) q.innerHTML=it.q; else q.textContent=it.q; ct.textContent=cfg.label+' '+(i+1)+' de '+cfg.items.length; fb.className='verdict'; fb.textContent=cfg.prompt; btns.forEach(b=>b.disabled=false); }
+  function answer(v){
+    if(answered) return; answered=true; tot++;
+    const it=cfg.items[i], right=v===it.a; if(right) ok++;
+    const last=i===cfg.items.length-1;
+    fb.className='verdict '+(right?'ok':'no');
+    fb.innerHTML='<b class="t">'+(right?'✓ Isso mesmo!':'✗ A resposta é: '+(cfg.names?cfg.names[it.a]:it.a)+'.')+'</b> '+it.why+'<br><button class="btn ghost" style="margin-top:.6rem;">'+(last?'recomeçar ↺':'próximo →')+'</button>';
+    fb.querySelector('button').addEventListener('click',()=>{ if(last){ i=0; ok=0; tot=0; sc.textContent='Acertos: 0 / 0'; } else i++; load(); });
+    sc.textContent='Acertos: '+ok+' / '+tot; btns.forEach(b=>b.disabled=true);
+  }
+  btns.forEach(b=>b.addEventListener('click',()=>answer(b.getAttribute(cfg.attr))));
+  load();
+}
+
+/* ===== Simulador de estratégias de deploy ===== */
+(function(){
+  const info={
+    recreate:{n:'Recreate',d:'Desliga todas as instâncias da v1 e depois sobe todas da v2.',p:'Simples; nunca há duas versões ao mesmo tempo.',c:'O sistema fica <b>fora do ar</b> durante a troca. Rollback = outra parada.',w:'Sistemas internos que podem parar, ou quando v1 e v2 não podem coexistir.'},
+    rolling:{n:'Rolling update',d:'Troca as instâncias aos poucos: sobe uma v2, espera ficar pronta, desliga uma v1, e repete.',p:'Sem indisponibilidade e sem dobrar a infraestrutura. É o padrão do Kubernetes.',c:'Por um tempo, v1 e v2 atendem juntas. O rollback também é gradual.',w:'A maioria das aplicações web. É o que usamos no TaskFlow.'},
+    bluegreen:{n:'Blue-green',d:'Monta um ambiente completo com a v2 (green) ao lado da v1 (blue) e troca o tráfego de uma vez.',p:'Troca e rollback instantâneos: é só apontar o roteador de volta.',c:'Precisa do <b>dobro da infraestrutura</b> durante o deploy.',w:'Sistemas críticos em que voltar rápido vale o custo extra.'},
+    canary:{n:'Canary',d:'Manda uma pequena parte do tráfego (ex.: 10%) para a v2, observa as métricas e só então aumenta.',p:'Um bug atinge <b>poucos usuários</b> e é detectado com dados reais.',c:'Exige monitoramento bom (Semana 6) e roteamento por porcentagem.',w:'Produtos com muitos usuários, onde errar para todos custa caro.'}
+  };
+  // Cada quadro: grupos de servidores [rótulo, [classe:texto]], % v2, erro?, disponível, % erro, infra, mensagem
+  const S=(c,t)=>({c,t}); const V1=S('v1','v1'), V2=S('v2','v2'), ERR=S('err','v2 ✗'), ST=S('start','subindo'), OFF=S('off','—'), NR=S('err','não pronto');
+  const I1=S('idle v1','v1 reserva'), I2=S('idle v2','v2 testando');
+  function frames(st,bug){
+    const f=(groups,v2,bad,avail,err,infra,msg)=>({groups,v2,bad,avail,err,infra,msg});
+    if(st==='recreate'){
+      const a=[f([['',[V1,V1,V1,V1]]],0,0,100,0,4,'Estado inicial: 4 servidores com a v1.'),
+               f([['',[OFF,OFF,OFF,OFF]]],0,0,0,0,0,'Recreate desliga <b>tudo</b>. Sistema fora do ar.'),
+               f([['',[ST,ST,ST,ST]]],0,0,0,0,4,'A v2 está subindo. Ainda fora do ar.')];
+      if(!bug) return a.concat([f([['',[V2,V2,V2,V2]]],100,0,100,0,4,'Fim. Simples, mas houve indisponibilidade total durante a troca.')]);
+      return a.concat([f([['',[ERR,ERR,ERR,ERR]]],100,1,100,100,4,'A v2 tem bug: <b>100% das requisições com erro</b>.'),
+        f([['',[OFF,OFF,OFF,OFF]]],0,0,0,0,0,'Rollback com recreate: desliga tudo de novo…'),
+        f([['',[V1,V1,V1,V1]]],0,0,100,0,4,'v1 de volta, depois de duas paradas e de todos os usuários afetados.')]);
+    }
+    if(st==='rolling'){
+      const out=[f([['',[V1,V1,V1,V1,OFF]]],0,0,100,0,4,'Estado inicial: 4 Pods v1. A 5ª vaga é o <span class="code">maxSurge: 1</span>.')];
+      if(bug){
+        out.push(f([['',[V1,V1,V1,V1,ST]]],0,0,100,0,5,'Sobe 1 Pod v2 a mais. Os 4 v1 continuam atendendo.'));
+        out.push(f([['',[V1,V1,V1,V1,NR]]],0,0,100,0,5,'A <b>readinessProbe</b> falhou: o Pod v2 nunca recebe tráfego. O rollout para sozinho.'));
+        out.push(f([['',[V1,V1,V1,V1,OFF]]],0,0,100,0,4,'<span class="code">kubectl rollout undo</span> remove o Pod quebrado. <b>Nenhum usuário</b> viu erro.'));
+        return out;
+      }
+      let pods=[V1,V1,V1,V1];
+      for(let i=0;i<4;i++){
+        out.push(f([['',pods.concat([ST])]],Math.round(i/4*100),0,100,0,5,'Sobe 1 Pod v2 extra ('+(i+1)+'/4). Ninguém fica sem atendimento.'));
+        pods=pods.slice(); pods[i]=V2;
+        out.push(f([['',pods.concat([OFF])]],Math.round((i+1)/4*100),0,100,0,4,'Pod v2 pronto: um Pod v1 é desligado. '+(i+1)+' de 4 trocados.'));
+      }
+      out[out.length-1].msg='Fim. <b>Zero indisponibilidade</b> e sem dobrar a infraestrutura.';
+      return out;
+    }
+    if(st==='bluegreen'){
+      const a=[f([['Blue (produção)',[V1,V1,V1,V1]],['Green',[OFF,OFF,OFF,OFF]]],0,0,100,0,4,'Blue atende 100% dos usuários.'),
+               f([['Blue (produção)',[V1,V1,V1,V1]],['Green',[ST,ST,ST,ST]]],0,0,100,0,8,'Sobe um ambiente Green completo com a v2: <b>8 servidores</b> ligados.'),
+               f([['Blue (produção)',[V1,V1,V1,V1]],['Green',[I2,I2,I2,I2]]],0,0,100,0,8,'Green pronto. O time roda testes rápidos (smoke tests) antes da troca.')];
+      if(!bug) return a.concat([f([['Blue',[I1,I1,I1,I1]],['Green (produção)',[V2,V2,V2,V2]]],100,0,100,0,8,'O roteador troca <b>de uma vez</b>: 100% na v2. Blue fica de reserva.'),
+        f([['Blue',[OFF,OFF,OFF,OFF]],['Green (produção)',[V2,V2,V2,V2]]],100,0,100,0,4,'Com a v2 estável, o Blue é desligado. Troca instantânea, mas com custo dobrado durante o deploy.')]);
+      return a.concat([f([['Blue',[I1,I1,I1,I1]],['Green (produção)',[ERR,ERR,ERR,ERR]]],100,1,100,100,8,'Troca feita… e a v2 tem bug que os smoke tests não pegaram: <b>100% com erro</b>.'),
+        f([['Blue (produção)',[V1,V1,V1,V1]],['Green',[OFF,OFF,OFF,OFF]]],0,0,100,0,4,'Rollback = apontar o roteador de volta para o Blue. <b>Segundos</b>, mas todos viram o erro nesse intervalo.')]);
+    }
+    // canary
+    const a=[f([['',[V1,V1,V1,V1]]],0,0,100,0,4,'Estado inicial: 4 servidores com a v1.'),
+             f([['',[ST,V1,V1,V1]]],0,0,100,0,4,'Um servidor recebe a v2: o "canário".')];
+    if(bug) return a.concat([f([['',[ERR,V1,V1,V1]]],10,1,100,10,4,'O canário recebe <b>10% do tráfego</b>. As métricas mostram erros só nesses 10%.'),
+      f([['',[V1,V1,V1,V1]]],0,0,100,0,4,'Canary abortado: tudo volta para a v1. Só uma pequena parte dos usuários foi afetada, por pouco tempo.')]);
+    return a.concat([f([['',[V2,V1,V1,V1]]],10,0,100,0,4,'10% do tráfego na v2. O time observa erros e latência.'),
+      f([['',[V2,V2,V1,V1]]],50,0,100,0,4,'Métricas boas: sobe para 50%.'),
+      f([['',[V2,V2,V2,V2]]],100,0,100,0,4,'Fim: 100% na v2, liberada aos poucos e com dados reais.')]);
+  }
+  const srvEl=document.getElementById('depServers'), v1=document.getElementById('depV1'), v2=document.getElementById('depV2');
+  const mA=document.getElementById('mAvail'), mE=document.getElementById('mErr'), mI=document.getElementById('mInfra'), panel=document.getElementById('depPanel'), run=document.getElementById('depRun');
+  const segs=Array.from(document.querySelectorAll('.segb'));
+  const reduced=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let st='rolling', timer=null;
+  function draw(fr){
+    srvEl.innerHTML=fr.groups.map(([lbl,list])=>(lbl?'<div class="grp">'+lbl+'</div>':'')+list.map(s=>'<div class="srv '+s.c+'"><b>'+s.t.split(' ')[0]+'</b>'+(s.t.split(' ').slice(1).join(' ')||'&nbsp;')+'</div>').join('')).join('');
+    v1.style.width=(100-fr.v2)+'%'; v1.textContent=fr.v2<100&&fr.avail>0?'v1 '+(100-fr.v2)+'%':'';
+    v2.style.width=fr.v2+'%'; v2.textContent=fr.v2>0?'v2 '+fr.v2+'%':''; v2.classList.toggle('bad',!!fr.bad);
+    if(fr.avail===0){ v1.style.width='100%'; v1.textContent='fora do ar'; v1.style.background='rgba(239,91,91,.35)'; } else v1.style.background='';
+    mA.textContent=fr.avail+'%'; mA.className=fr.avail<100?'bad':'good';
+    mE.textContent=fr.err+'%'; mE.className=fr.err>0?'bad':'good';
+    mI.textContent=fr.infra;
+  }
+  function showInfo(extra){
+    const x=info[st];
+    panel.innerHTML='<h4>'+x.n+'</h4><span class="tag">como funciona</span><p>'+x.d+'</p><p style="margin-top:.5rem;"><b style="color:var(--green)">A favor:</b> '+x.p+'</p><p style="margin-top:.3rem;"><b style="color:var(--red)">Contra:</b> '+x.c+'</p><p style="margin-top:.3rem;"><b style="color:var(--gold)">Quando usar:</b> '+x.w+'</p>'+(extra?'<div class="info-box" style="margin-top:.7rem;">'+extra+'</div>':'');
+  }
+  function reset(){ clearInterval(timer); timer=null; run.disabled=false; draw(frames(st,false)[0]); showInfo(); }
+  segs.forEach(b=>b.addEventListener('click',()=>{ st=b.dataset.st; segs.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); reset(); }));
+  run.addEventListener('click',()=>{
+    const fs=frames(st,document.getElementById('depBug').checked); let i=0; run.disabled=true;
+    clearInterval(timer); draw(fs[0]); showInfo(fs[0].msg);
+    timer=setInterval(()=>{ i++; if(i>=fs.length){ clearInterval(timer); run.disabled=false; return; } draw(fs[i]); showInfo('<b>Passo '+(i+1)+'/'+fs.length+':</b> '+fs[i].msg); }, reduced?250:1200);
+  });
+  reset();
+})();
+
+/* ===== Dockerfile anotado ===== */
+(function(){
+  const L=[
+    ['# ---------- Estágio 1: build ----------','s1','Comentário. Este Dockerfile tem <b>dois estágios</b>: um para instalar dependências, outro para a imagem final.'],
+    ['FROM python:3.12-slim AS build','s1','<span class="code">FROM</span> define a imagem base: Python 3.12 numa variante <b>slim</b> (Debian enxuto). <span class="code">AS build</span> dá nome ao estágio.'],
+    ['WORKDIR /app','s1','Cria e entra na pasta <span class="code">/app</span> dentro da imagem. Os próximos comandos rodam a partir dela.'],
+    ['COPY requirements.txt .','cache','Copia <b>só</b> a lista de dependências primeiro. Se ela não mudar, o Docker reaproveita a camada seguinte do cache.'],
+    ['RUN pip install --no-cache-dir --prefix=/install -r requirements.txt','cache','<span class="code">RUN</span> executa um comando durante o build. Instala as dependências numa pasta separada, <span class="code">/install</span>, que será copiada depois. <span class="code">--no-cache-dir</span> não guarda os downloads.'],
+    ['',null],
+    ['# ---------- Estágio 2: imagem final ----------','s2','Começa um estágio novo, limpo. Nada do estágio 1 vem junto, a não ser o que for copiado explicitamente.'],
+    ['FROM python:3.12-slim','s2','A mesma base, sem ferramentas de build. A imagem final fica menor.'],
+    ['WORKDIR /app','s2','Pasta de trabalho da imagem final.'],
+    ['COPY --from=build /install /usr/local','s2','Copia do estágio <b>build</b> só as bibliotecas já instaladas. Esse é o truque do multi-stage.'],
+    ['COPY app/ ./app/','code','Copia o código da aplicação. Fica por último porque é o que mais muda: só esta camada é refeita a cada alteração.'],
+    ['RUN useradd --create-home appuser','sec','Cria um usuário comum dentro da imagem.'],
+    ['USER appuser','sec','Daqui em diante, tudo roda como <b>appuser</b>, não como root. Menos risco se o container for invadido.'],
+    ['EXPOSE 8000','run','Documenta que a aplicação escuta na porta 8000. Não abre a porta sozinho: quem publica é o <span class="code">-p 8000:8000</span> do docker run.'],
+    ['CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]','run','Comando executado quando o container inicia. <span class="code">--host 0.0.0.0</span> é obrigatório: sem ele, a API só aceitaria conexões de dentro do próprio container.']
+  ];
+  const T={s1:'Estágio de build',cache:'Camadas e cache',s2:'Imagem final',code:'Código da aplicação',sec:'Segurança',run:'Execução'};
+  const pre=document.getElementById('dfCode'), panel=document.getElementById('dfPanel');
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  window.dfText=L.map(l=>l[0]).join('\n');
+  pre.innerHTML=L.map((l,i)=>{
+    if(!l[1]) return '<span class="yl" aria-hidden="true"> </span>';
+    let body;
+    if(l[0].startsWith('#')) body='<span class="cm2">'+esc(l[0])+'</span>';
+    else { const m=/^(\S+)(.*)$/.exec(l[0]); body='<span class="yk">'+esc(m[1])+'</span>'+esc(m[2]); }
+    return '<span class="yl" tabindex="0" role="button" data-i="'+i+'">'+body+'</span>';
+  }).join('');
+  const spans=Array.from(pre.querySelectorAll('.yl[data-i]'));
+  function show(i){ const g=L[i][1]; spans.forEach(s=>s.classList.toggle('hot', L[+s.dataset.i][1]===g)); panel.innerHTML='<h4>'+T[g]+'</h4><span class="tag">linha '+(i+1)+'</span><p>'+L[i][2]+'</p>'; }
+  spans.forEach(s=>{ s.addEventListener('click',()=>show(+s.dataset.i)); s.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); show(+s.dataset.i); } }); });
+  show(9);
+  // botão copiar do Dockerfile usa o texto puro
+  const cb=document.querySelector('.copy[data-copy="dfText"]');
+  if(cb){ const clone=cb.cloneNode(true); cb.replaceWith(clone); clone.addEventListener('click',()=>{ const done=()=>{ clone.textContent='copiado ✓'; setTimeout(()=>clone.textContent='copiar',1600); }; try{ navigator.clipboard.writeText(window.dfText).then(done,()=>{ clone.textContent='use Ctrl+C'; }); }catch(e){ clone.textContent='use Ctrl+C'; } }); }
+})();
+
+/* ===== Qual comando Docker? ===== */
+makeDrill({q:'dkQ', fb:'dkFb', score:'dkScore', count:'dkCount', attr:'data-dk', label:'Situação', prompt:'Escolha o comando.',
+  names:{build:'docker build',run:'docker run',ps:'docker ps',logs:'docker logs',exec:'docker exec',push:'docker push'}, items:[
+  {q:'Você criou o Dockerfile e quer gerar a imagem.', a:'build', why:'<span class="code">docker build -t nome:tag .</span> lê o Dockerfile e monta a imagem.'},
+  {q:'A API não responde. Você quer ver as mensagens de erro que ela imprimiu.', a:'logs', why:'<span class="code">docker logs api</span> mostra a saída do processo do container.'},
+  {q:'Quer saber quais containers estão rodando agora e em quais portas.', a:'ps', why:'<span class="code">docker ps</span> lista os containers ativos (<span class="code">-a</span> inclui os parados).'},
+  {q:'Quer abrir um terminal dentro do container para conferir a versão do Python.', a:'exec', why:'<span class="code">docker exec -it api bash</span> (ou <span class="code">python --version</span>) executa um comando num container que já está rodando.'},
+  {q:'A imagem está pronta e você quer enviá-la para o ghcr.io.', a:'push', why:'<span class="code">docker push</span> envia a imagem para um registry. No TaskFlow, o Actions faz isso por você.'},
+  {q:'Quer iniciar a aplicação a partir da imagem, publicando a porta 8000.', a:'run', why:'<span class="code">docker run -d -p 8000:8000 taskflow:dev</span> cria e inicia um container.'}
+]});
+
+/* ===== Quiz de fixação ===== */
+(function(){
+  const quiz=[
+    {tag:'CD', q:'Qual a diferença entre entrega contínua e implantação contínua?', a:'Na <b>entrega contínua</b>, toda versão aprovada fica pronta e uma pessoa decide quando publicar. Na <b>implantação contínua</b>, ela vai para produção automaticamente.'},
+    {tag:'Estratégias', q:'Qual estratégia permite voltar à versão anterior apenas trocando o roteador, e qual o custo disso?', a:'<b>Blue-green.</b> O custo é manter o <b>dobro da infraestrutura</b> durante o deploy.'},
+    {tag:'Estratégias', q:'Por que o canary reduz o impacto de um bug?', a:'Só uma <b>pequena parte do tráfego</b> (ex.: 10%) vai para a versão nova no começo. Se as métricas piorarem, o deploy é abortado.'},
+    {tag:'Docker', q:'Qual a diferença entre imagem e container?', a:'A <b>imagem</b> é o pacote imutável; o <b>container</b> é a imagem em execução. De uma imagem saem vários containers.'},
+    {tag:'Docker', q:'Por que copiar o requirements.txt e instalar dependências antes de copiar o código?', a:'Para aproveitar o <b>cache de camadas</b>: mudar o código não força reinstalar todas as dependências. O build fica muito mais rápido.'},
+    {tag:'Docker', q:'Por que não usar a tag <span class="code">latest</span> em produção?', a:'Ela muda sem aviso: você não sabe qual versão está rodando nem consegue voltar com segurança. Use tags versionadas como <span class="code">v0.4</span>.'},
+    {tag:'Kubernetes', q:'Um Pod do TaskFlow foi apagado. O que o Deployment faz?', a:'Cria outro na hora. O Deployment mantém o <b>estado desejado</b> (3 réplicas): é a autocorreção do Kubernetes.'},
+    {tag:'Kubernetes', q:'Para que serve a readinessProbe num rolling update?', a:'Garante que um Pod só recebe tráfego quando responde. Se a versão nova estiver quebrada, ela <b>não recebe usuários</b> e o rollout para.'}
+  ];
+  const list=document.getElementById('quizList');
+  quiz.forEach((it,k)=>{
+    const c=document.createElement('div'); c.className='qcard';
+    c.innerHTML='<button class="qhead"><span class="qtext"><b style="color:var(--text-faint); font-family:var(--mono); font-size:.8em;">Q'+(k+1)+'.</b> '+it.q+'</span><span class="qtag">'+it.tag+'</span><span class="chev">＋</span></button><div class="qbody"><div class="qanswer">'+it.a+'</div></div>';
+    list.appendChild(c);
+  });
+  bindQ(list);
+})();
+</script>
+
+</body>
+</html>
